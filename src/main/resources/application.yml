@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: default
+    active: temporary
   
   application:
     name: CampusFormServer
@@ -19,7 +19,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        show_sql: true
     defer-datasource-initialization: true
   output:
     ansi:

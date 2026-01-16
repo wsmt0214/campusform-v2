@@ -10,13 +10,13 @@ package com.campusform.server.notification.domain.model.value;
 public enum NotificationType {
     /** 시트 동기화 결과 */
     SHEET_SYNC_RESULT,
-    
+
     /** 새 지원자 유입 */
     NEW_APPLICANT,
-    
+
     /** 댓글 생성 */
     COMMENT_CREATED,
-    
+
     /** 관리자 추가 */
     ADMIN_ADDED
 }
