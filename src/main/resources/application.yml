@@ -1,7 +1,7 @@
 spring:
   profiles:
     active: temporary
-  
+
   application:
     name: CampusFormServer
   datasource:
@@ -23,6 +23,23 @@ spring:
   output:
     ansi:
       enabled: always
+
+  # Google OAuth2 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+# OAuth2 리다이렉트 URL 설정
+app:
+  oauth2:
+    redirect-uri: ${FRONTEND_URL:http://localhost:3000}
 
 logging:
   level:
