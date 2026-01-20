@@ -23,6 +23,7 @@ public class ProjectResponse {
     private Long id;
     private String title;
     private Long ownerId;
+    private String state;
     private String sheetUrl;
     private LocalDate startAt;
     private LocalDate endAt;
@@ -41,6 +42,7 @@ public class ProjectResponse {
                 project.getId(),
                 project.getTitle(),
                 project.getOwnerId(),
+                project.getState().name(),
                 project.getSheetUrl(),
                 project.getStartAt(),
                 project.getEndAt(),
