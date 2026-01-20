@@ -34,4 +34,41 @@ public class UserNotificationSettings {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    // ============ Factory Method ============
+
+    /**
+     * 사용자 알림 설정 생성 정적 팩토리 메서드
+     * 기본값으로 알림 수신이 활성화됩니다.
+     *
+     * @param userId 사용자 ID (Identity Context)
+     * @return 생성된 UserNotificationSettings 객체
+     */
+    public static UserNotificationSettings create(Long userId) {
+        if (userId == null)
+            throw new IllegalArgumentException("userId는 필수입니다.");
+
+        UserNotificationSettings settings = new UserNotificationSettings();
+        settings.userId = userId;
+        settings.notificationEnabled = true;
+        return settings;
+    }
+
+    // ============ Business Methods ============
+
+    public boolean isNotificationEnabled() {
+        return Boolean.TRUE.equals(this.notificationEnabled);
+    }
+
+    public void enableNotification() {
+        this.notificationEnabled = true;
+    }
+
+    public void disableNotification() {
+        this.notificationEnabled = false;
+    }
+
+    public void toggleNotification() {
+        this.notificationEnabled = !this.notificationEnabled;
+    }
 }

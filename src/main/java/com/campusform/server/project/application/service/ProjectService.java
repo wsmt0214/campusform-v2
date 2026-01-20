@@ -2,9 +2,11 @@ package com.campusform.server.project.application.service;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.global.event.AdminAddedEvent;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectService {
 
     private final SpreadsheetService spreadsheetService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -52,6 +55,13 @@ public class ProjectService {
 
         // 부모 엔티티로 한 번에 저장
         projectRepository.save(project);
+
+        // 관리자 추가 알림 이벤트 발행 (중복 제거)
+        adminIds.stream().distinct().forEach(adminId ->
+            eventPublisher.publishEvent(new AdminAddedEvent(
+                    project.getId(), adminId, project.getTitle()
+            ))
+        );
 
         // 스프레드시트 초기 동기화 (지원자 데이터 가져오기)
         spreadsheetService.syncInitialApplicants(request.getSheetUrl());

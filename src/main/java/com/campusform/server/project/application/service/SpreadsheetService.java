@@ -1,14 +1,18 @@
 package com.campusform.server.project.application.service;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.campusform.server.global.event.SheetSyncCompletedEvent;
 import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
 import com.campusform.server.project.domain.model.setting.Project;
+import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.model.setting.ProjectRequiredMapping;
 import com.campusform.server.project.domain.model.sheet.SpreadsheetColumn;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -28,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class SpreadsheetService {
 
     private final SpreadsheetReader spreadsheetReader;
+    private final ApplicationEventPublisher eventPublisher;
+
     private final ProjectRepository projectRepository;
     private final ApplicantRepository applicantRepository;
 
@@ -66,6 +72,7 @@ public class SpreadsheetService {
         List<String[]> dataRows = spreadsheetReader.readAllLines(sheetUrl);
 
         // 각 행을 지원자로 변환
+        int syncedCount = 0;
         for (String[] columns : dataRows) {
             // 필수 필드 추출
             String name = getColumnValue(columns, mapping.getNameIdx());
@@ -91,7 +98,26 @@ public class SpreadsheetService {
             }
 
             applicantRepository.save(applicant);
+            syncedCount++;
         }
+
+        // 시트 동기화 완료 이벤트 발행
+        List<Long> adminIds = getProjectAdminIds(project);
+        eventPublisher.publishEvent(new SheetSyncCompletedEvent(
+                project.getId(), adminIds, syncedCount, true
+        ));
+    }
+
+    /**
+     * 프로젝트의 모든 관리자 ID 목록 조회 (OWNER 포함, 중복 제거)
+     */
+    private List<Long> getProjectAdminIds(Project project) {
+        Set<Long> adminIds = new LinkedHashSet<>();
+        adminIds.add(project.getOwnerId());
+        for (ProjectAdmin admin : project.getAdmins()) {
+            adminIds.add(admin.getAdminId());
+        }
+        return List.copyOf(adminIds);
     }
 
     /**

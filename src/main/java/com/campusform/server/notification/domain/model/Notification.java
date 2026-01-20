@@ -61,4 +61,53 @@ public class Notification {
      */
     @Column(name = "read_at")
     private LocalDateTime readAt;
+
+    // ============ Factory Method ============
+
+    /**
+     * 알림 생성 정적 팩토리 메서드
+     *
+     * @param receiverId 수신자 ID (Identity Context)
+     * @param projectId 프로젝트 ID (Project Context)
+     * @param type 알림 타입
+     * @param payload 알림 추가 데이터 (JSON 형식)
+     * @return 생성된 Notification 객체
+     */
+    public static Notification create(Long receiverId, Long projectId, NotificationType type, String payload) {
+        if (receiverId == null)
+            throw new IllegalArgumentException("receiverId는 필수입니다.");
+        if (projectId == null)
+            throw new IllegalArgumentException("projectId는 필수입니다.");
+        if (type == null)
+            throw new IllegalArgumentException("type은 필수입니다.");
+        if (payload == null || payload.isBlank())
+            throw new IllegalArgumentException("payload는 필수입니다.");
+
+        Notification notification = new Notification();
+        notification.receiverId = receiverId;
+        notification.projectId = projectId;
+        notification.type = type;
+        notification.payload = payload;
+        return notification;
+    }
+
+    // ============ Business Methods ============
+
+    /**
+     * 알림 읽음 처리
+     * 멱등성: 이미 읽은 알림에 대해서는 아무 동작도 하지 않음
+     */
+    public void markAsRead() {
+        if (this.readAt != null)
+            return; // 이미 읽은 경우 무시 (멱등성 보장)
+        this.readAt = LocalDateTime.now();
+    }
+
+    public boolean isRead() {
+        return this.readAt != null;
+    }
+
+    public boolean isOwner(Long userId) {
+        return this.receiverId.equals(userId);
+    }
 }

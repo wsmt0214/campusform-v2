@@ -10,6 +10,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.campusform.server.notification.domain.exception.NotificationAccessDeniedException;
+import com.campusform.server.notification.domain.exception.NotificationNotFoundException;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +69,27 @@ public class GlobalExceptionHandler {
         ErrorResponse response = new ErrorResponse("Illegal State Error", ex.getMessage(), null);
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
+     * 알림을 찾을 수 없을 때 발생하는 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleNotificationNotFoundException(NotificationNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse("Not Found", ex.getMessage(), null);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
+     * 알림 접근 권한이 없을 때 발생하는 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleNotificationAccessDeniedException(NotificationAccessDeniedException ex) {
+        log.warn("알림 접근 거부: {}", ex.getDetailMessage());
+        ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     /**
