@@ -45,12 +45,15 @@ jobs:
             # 1. 폴더가 없으면 생성하고 이동
             mkdir -p ~/campus-project
             cd ~/campus-project
+            
+            # 2. 기존 실행 중인 컨테이너가 있다면 내리기 (충돌 방지)
+            sudo docker-compose -f docker-compose.prod.yml down || true
 
-            # 2. docker-compose.prod.yml 파일을 기준으로 실행
+            # 3. docker-compose.prod.yml 파일을 기준으로 실행
             sudo docker-compose -f docker-compose.prod.yml pull
 
-            # 3. 컨테이너 재실행
+            # 4. 컨테이너 재실행
             sudo docker-compose -f docker-compose.prod.yml up -d
 
-            # 4. 안 쓰는 이미지 정리
+            # 5. 안 쓰는 이미지 정리
             sudo docker image prune -f

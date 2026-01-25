@@ -1,29 +1,59 @@
 spring:
+  profiles:
+    active: temporary
+
   application:
     name: CampusFormServer
-
-  # 1. 데이터베이스 설정
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-  # 2. JPA (ORM) 설정
+  h2:
+    console:
+      enabled: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
-        show_sql: true
     defer-datasource-initialization: true
-
-  # 3. 로깅 설정
   output:
     ansi:
       enabled: always
 
+  # Google OAuth2 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+# OAuth2 리다이렉트 URL 설정
+app:
+  oauth2:
+    redirect-uri: ${FRONTEND_URL:http://localhost:3000}
+
 logging:
   level:
     org.hibernate.SQL: debug
+
+
+---
+spring:
+  config:
+    activate:
+      on-profile: temporary
+
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:

@@ -1,0 +1,103 @@
+package com.campusform.server.global.config;
+
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.campusform.server.identity.infrastructure.oauth2.CustomLogoutSuccessHandler;
+import com.campusform.server.identity.infrastructure.oauth2.CustomOAuth2UserService;
+import com.campusform.server.identity.infrastructure.oauth2.OAuth2AuthenticationFailureHandler;
+import com.campusform.server.identity.infrastructure.oauth2.OAuth2AuthenticationSuccessHandler;
+
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Spring Security 설정
+ *
+ * OAuth2 로그인 및 세션 기반 인증 설정
+ */
+@Profile("!temporary") // API 테스트 환경에서는 스프링 시큐리티 비활성화
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+        private final CustomOAuth2UserService customOAuth2UserService;
+        private final OAuth2AuthenticationSuccessHandler successHandler;
+        private final OAuth2AuthenticationFailureHandler failureHandler;
+        private final CustomLogoutSuccessHandler logoutSuccessHandler;
+
+        @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000}")
+        private String corsAllowedOrigins;
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                        // CORS 설정
+                        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                        // CSRF 비활성화 (세션 기반이지만 API 서버이므로)
+                        .csrf(csrf -> csrf.disable())
+
+                        // 요청 권한 설정
+                        .authorizeHttpRequests(auth -> auth
+                                // 인증 없이 접근 가능한 경로
+                                .requestMatchers(
+                                                "/",
+                                                "/login/**",
+                                                "/oauth2/**",
+                                                "/api/auth/**",
+                                                "/swagger-ui/**",
+                                                "/v3/api-docs/**",
+                                                "/h2-console/**")
+                                .permitAll()
+                                // 나머지 요청은 인증 필요
+                                .anyRequest().authenticated())
+
+                        // H2 콘솔을 위한 설정
+                        .headers(headers -> headers
+                                .frameOptions(frame -> frame.sameOrigin()))
+
+                        // OAuth2 로그인 설정
+                        .oauth2Login(oauth2 -> oauth2
+                                .userInfoEndpoint(userInfo -> userInfo
+                                        .userService(customOAuth2UserService))
+                                .successHandler(successHandler)
+                                .failureHandler(failureHandler))
+
+                        // 로그아웃 설정
+                        .logout(logout -> logout
+                                .logoutUrl("/api/auth/logout")
+                                .logoutSuccessHandler(logoutSuccessHandler)
+                                .invalidateHttpSession(true)
+                                .clearAuthentication(true)
+                                .deleteCookies("JSESSIONID"));
+
+                return http.build();
+        }
+
+        /**
+         * CORS 설정
+         */
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(Arrays.asList(corsAllowedOrigins.split(",")));
+                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(Arrays.asList("*"));
+                configuration.setAllowCredentials(true);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
+}
