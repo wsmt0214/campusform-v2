@@ -1,5 +1,6 @@
 package com.campusform.server.identity.presentation;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import com.campusform.server.identity.application.dto.response.NotificationSetti
 import com.campusform.server.identity.application.dto.response.UpdateNicknameResponse;
 import com.campusform.server.identity.application.dto.response.UpdateProfileImageResponse;
 import com.campusform.server.identity.application.dto.response.UserExistsResponse;
+import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.identity.application.service.UserQueryService;
 import com.campusform.server.identity.application.service.UserService;
 import com.campusform.server.notification.application.service.NotificationService;
@@ -32,6 +34,7 @@ public class UserController {
     private final UserQueryService userQueryService;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final AuthService authService;
 
     /**
      * 이메일로 회원 존재 여부 확인
@@ -45,8 +48,9 @@ public class UserController {
      * 알림 수신 설정 조회
      */
     @GetMapping("/notification-setting")
-    public NotificationSettingResponse getNotificationSetting(@AuthenticationPrincipal OAuth2User oauth2User) {
-        Long userId = oauth2User.getAttribute("userId");
+    public NotificationSettingResponse getNotificationSetting(Authentication authentication) {
+        // userId 추출 책임을 AuthService로 일원화 (컨트롤러에서 Security 세부 구현 숨김)
+        Long userId = authService.extractUserId(authentication);
         boolean enabled = notificationService.getNotificationSetting(userId);
         return new NotificationSettingResponse(enabled);
     }
@@ -56,9 +60,9 @@ public class UserController {
      */
     @PatchMapping("/notification-setting")
     public NotificationSettingResponse updateNotificationSetting(
-            @AuthenticationPrincipal OAuth2User oauth2User,
+            Authentication authentication,
             @RequestBody UpdateNotificationSettingRequest request) {
-        Long userId = oauth2User.getAttribute("userId");
+        Long userId = authService.extractUserId(authentication);
         boolean enabled = notificationService.updateNotificationSetting(userId, request.enabled());
         return new NotificationSettingResponse(enabled);
     }

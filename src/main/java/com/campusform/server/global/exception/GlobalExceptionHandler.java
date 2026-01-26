@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.campusform.server.notification.domain.exception.NotificationAccessDeniedException;
 import com.campusform.server.notification.domain.exception.NotificationNotFoundException;
+import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -47,6 +48,16 @@ public class GlobalExceptionHandler {
         ErrorResponse response = new ErrorResponse("Validation Error", "입력 데이터 검증에 실패했습니다.", errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
+     * 인증이 없거나 인증 컨텍스트가 유효하지 않을 때의 예외 처리
+     * 예: 로그인 안했는데 보호 API 호출, principal에 userId 누락 등
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
+        ErrorResponse response = new ErrorResponse("Unauthorized", ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     /**
@@ -89,6 +100,15 @@ public class GlobalExceptionHandler {
         log.warn("알림 접근 거부: {}", ex.getDetailMessage());
         ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
 
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    /**
+     * 프로젝트 권한(OWNER 전용 등) 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleProjectAccessDeniedException(ProjectAccessDeniedException ex) {
+        ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 

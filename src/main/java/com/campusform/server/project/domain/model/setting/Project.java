@@ -9,6 +9,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
 import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.project.domain.model.setting.value.RequiredFieldMapping;
 import com.campusform.server.project.domain.model.setting.value.SyncStatus;
@@ -86,6 +87,32 @@ public class Project {
     @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private ProjectRequiredMapping mapping = new ProjectRequiredMapping();
 
+    /**
+     * 사용자가 프로젝트의 Owner인지 검증
+     */
+    public void validateOwnerAccess(Long userId) {
+        if (!this.ownerId.equals(userId)) {
+            throw new ProjectAccessDeniedException("프로젝트 OWNER만 접근할 수 있습니다.");
+        }
+    }
+
+    /**
+     * 사용자가 프로젝트의 관리자(Owner 또는 Admin)인지 검증
+     */
+    public void validateAdminAccess(Long userId) {
+        if (this.ownerId.equals(userId)) {
+            return; // Owner는 항상 관리자
+        }
+
+        boolean isAdmin = this.admins.stream()
+                .anyMatch(admin -> admin.getAdminId().equals(userId));
+
+        if (!isAdmin) {
+            throw new IllegalArgumentException(
+                    "해당 사용자는 프로젝트 관리자가 아닙니다. userId=" + userId + ", projectId=" + this.id);
+        }
+    }
+
     /** 프프로젝트 생성 팩토리 메서드 */
     public static Project create(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
         validate(title, ownerId, sheetUrl, startAt, endAt);
@@ -123,12 +150,13 @@ public class Project {
     public void completeDocument(Long userId) {
         // 상태 검증: DOCUMENT_LOCKED 상태에서만 가능
         if (state != ProjectState.DOCUMENT_LOCKED) {
-            throw new IllegalStateException("서류 단계 종료는 DOCUMENT_LOCKED 상태에서만 가능합니다.");
+            throw new ProjectAccessDeniedException("서류 단계 종료는 DOCUMENT_LOCKED 상태에서만 가능합니다.");
         }
 
         // OWNER 검증: 프로젝트의 ownerId와 요청한 사용자 ID가 일치해야 함
         if (!this.ownerId.equals(userId)) {
-            throw new IllegalArgumentException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
+            // 권한 문제는 400이 아니라 403으로 내려가야 하므로 도메인 예외로 분리합니다.
+            throw new ProjectAccessDeniedException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
         }
 
         this.state = ProjectState.DOCUMENT_DONE;
@@ -144,12 +172,12 @@ public class Project {
     public void completeAll(Long userId) {
         // 상태 검증: INTERVIEW_LOCKED 상태에서만 가능
         if (state != ProjectState.INTERVIEW_LOCKED) {
-            throw new IllegalStateException("전체 종료는 INTERVIEW_LOCKED 상태에서만 가능합니다.");
+            throw new ProjectAccessDeniedException("전체 종료는 INTERVIEW_LOCKED 상태에서만 가능합니다.");
         }
 
         // OWNER 검증: 프로젝트의 ownerId와 요청한 사용자 ID가 일치해야 함
         if (!this.ownerId.equals(userId)) {
-            throw new IllegalArgumentException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
+            throw new ProjectAccessDeniedException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
         }
 
         this.state = ProjectState.ALL_COMPLETE;

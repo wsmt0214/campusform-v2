@@ -54,12 +54,14 @@ logging:
   level:
     org.hibernate.SQL: debug
 
-
 ---
 spring:
   config:
     activate:
       on-profile: temporary
+  jpa:
+    hibernate:
+      ddl-auto: create
 
   datasource:
     url: jdbc:h2:tcp://localhost/~/testdb

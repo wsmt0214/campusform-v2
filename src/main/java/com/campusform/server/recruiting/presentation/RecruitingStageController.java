@@ -15,10 +15,6 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 모집(Recruiting) 컨텍스트의 "단계 종료" API
- *
- * 왜 Recruiting에 있나?
- * - "서류/면접 단계 마감 및 프로젝트 종료"는 모집 프로세스의 일부입니다.
- * - Project 컨텍스트는 프로젝트(모집 공고)의 설정/기본 정보에 집중합니다.
  */
 @RestController
 @RequestMapping("/api/recruiting/projects")
