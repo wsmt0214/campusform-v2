@@ -50,4 +50,49 @@ public class User {
         user.profileImageUrl = profileImageUrl;
         return user;
     }
+
+    /**
+     * 프로필 이미지 업데이트
+     *
+     * @param newProfileImageUrl 새로운 프로필 이미지 URL
+     */
+    public void updateProfileImage(String newProfileImageUrl) {
+        this.profileImageUrl = newProfileImageUrl;
+    }
+
+    /**
+     * 닉네임 업데이트
+     *
+     * @param newNickname 새로운 닉네임 (1~12자, 한글/영어만 허용)
+     */
+    public void updateNickname(String newNickname) {
+        String validatedNickname = validateNickname(newNickname);
+        this.nickname = validatedNickname;
+    }
+
+    /**
+     * 닉네임 유효성 검증
+     * - 1~12자
+     * - 한글, 영어만 허용
+     *
+     * @return trim된 검증된 닉네임
+     */
+    private String validateNickname(String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("닉네임은 비어있을 수 없습니다.");
+        }
+
+        String trimmed = nickname.trim();
+
+        if (trimmed.length() < 1 || trimmed.length() > 12) {
+            throw new IllegalArgumentException("닉네임은 1~12자 이내여야 합니다.");
+        }
+
+        // 한글, 영어만 허용 (공백 제외)
+        if (!trimmed.matches("^[가-힣a-zA-Z]+$")) {
+            throw new IllegalArgumentException("닉네임은 한글과 영어만 사용할 수 있습니다.");
+        }
+
+        return trimmed;
+    }
 }
