@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  *
  * 모든 컨텍스트에서 공유하는 파일 업로드 인프라 서비스
  */
+@Profile("!temporary")
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class S3Service {
     /**
      * 프로필 이미지 업로드
      *
-     * @param file 업로드할 이미지 파일
+     * @param file   업로드할 이미지 파일
      * @param userId 사용자 ID
      * @return S3에 저장된 파일의 URL
      */

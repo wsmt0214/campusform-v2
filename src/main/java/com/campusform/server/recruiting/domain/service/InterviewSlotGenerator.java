@@ -2,7 +2,6 @@ package com.campusform.server.recruiting.domain.service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -123,11 +122,14 @@ public class InterviewSlotGenerator {
                 break;
             }
 
-            // 슬롯과 겹치는 블록들의 고유 면접관 수 계산
+            // 슬롯이 완전히 포함되는 블록들의 고유 면접관 수 계산
             int uniqueInterviewerCount = calculateUniqueInterviewerCount(
                     currentSlotStart, slotDurationMin, blocks);
 
-            slots.add(new SlotInfo(currentSlotStart, slotEnd, uniqueInterviewerCount));
+            // 면접관이 있는 슬롯만 추가 (availableInterviewerCount > 0)
+            if (uniqueInterviewerCount > 0) {
+                slots.add(new SlotInfo(currentSlotStart, slotEnd, uniqueInterviewerCount));
+            }
 
             // 다음 슬롯 시작 시간 계산 (현재 슬롯 종료 시간 + BreakMin)
             currentSlotStart = slotEnd.plusMinutes(slotBreakMin);
@@ -137,51 +139,30 @@ public class InterviewSlotGenerator {
     }
 
     /**
-     * 슬롯과 겹치는 블록들의 고유 면접관 수 계산
+     * 슬롯이 완전히 포함되는 블록들의 고유 면접관 수 계산
+     * 
+     * 슬롯이 면접관의 블록에 완전히 포함되어야만 카운트됩니다.
+     * 예: 블록이 14:00~14:30이고 슬롯이 14:20~14:40이면 포함되지 않음 (14:30 이후 부분이 포함됨)
+     * 
      * 같은 면접관이 여러 블록을 선택했을 때 중복 카운트되지 않도록 Set을 사용
      */
     private int calculateUniqueInterviewerCount(
             LocalTime slotStart, int slotDurationMin, List<InterviewerAvailabilityBlock> allBlocks) {
-        // 슬롯과 겹치는 블록 시작 시간 목록
-        Set<LocalTime> overlappingBlockTimes = findOverlappingBlockTimes(slotStart, slotDurationMin);
+        LocalTime slotEnd = slotStart.plusMinutes(slotDurationMin);
 
-        // 해당 블록들을 선택한 면접관들의 고유 집합
+        // 슬롯이 완전히 포함되는 블록들을 선택한 면접관들의 고유 집합
         Set<Long> uniqueAdminIds = allBlocks.stream()
-                .filter(block -> overlappingBlockTimes.contains(block.getStartTime()))
+                .filter(block -> {
+                    LocalTime blockStart = block.getStartTime();
+                    LocalTime blockEnd = blockStart.plusMinutes(30); // 블록은 30분 단위
+
+                    // 슬롯이 블록에 완전히 포함되는지 확인
+                    // 슬롯의 시작 시간 >= 블록의 시작 시간 && 슬롯의 종료 시간 <= 블록의 종료 시간
+                    return !slotStart.isBefore(blockStart) && !slotEnd.isAfter(blockEnd);
+                })
                 .map(InterviewerAvailabilityBlock::getAdminId)
                 .collect(Collectors.toSet());
 
         return uniqueAdminIds.size();
-    }
-
-    /**
-     * 슬롯과 겹치는 블록 시작 시간 목록 조회
-     */
-    private Set<LocalTime> findOverlappingBlockTimes(LocalTime slotStart, int slotDurationMin) {
-        LocalTime slotEnd = slotStart.plusMinutes(slotDurationMin);
-        Set<LocalTime> overlappingBlockTimes = new HashSet<>();
-
-        LocalTime current = roundDownToBlockStart(slotStart);
-        while (current.isBefore(slotEnd)) {
-            overlappingBlockTimes.add(current);
-            current = current.plusMinutes(30);
-        }
-
-        return overlappingBlockTimes;
-    }
-
-    /**
-     * 시간을 가장 가까운 블록 시작 시간(xx:00 또는 xx:30)으로 내림
-     */
-    private LocalTime roundDownToBlockStart(LocalTime time) {
-        int minute = time.getMinute();
-        if (minute == 0 || minute == 30) {
-            return time;
-        }
-        if (minute < 30) {
-            return time.withMinute(0).withSecond(0).withNano(0);
-        } else {
-            return time.withMinute(30).withSecond(0).withNano(0);
-        }
     }
 }

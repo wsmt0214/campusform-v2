@@ -1,5 +1,8 @@
 package com.campusform.server.recruiting.domain.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 
 /**
@@ -11,4 +14,15 @@ import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 public interface ApplicantRepository {
 
     void save(Applicant applicant);
+
+    /**
+     * 프로젝트ID, 이름, 전화번호로 지원자 조회
+     */
+    Optional<Applicant> findByProjectIdAndNameAndPhone(Long projectId, String name, String phone);
+
+    /**
+     * 여러 ID로 지원자 목록 조회
+     * 슬롯별 지원자 정보 조회에 사용됩니다.
+     */
+    List<Applicant> findByIds(List<Long> applicantIds);
 }

@@ -15,4 +15,13 @@ public interface InterviewSettingRepository {
     void save(InterviewSetting setting);
 
     Optional<InterviewSetting> findByProjectId(Long projectId);
+
+    /**
+     * 지원자 면접 가능 시간 조사 링크 토큰으로 면접 설정 조회
+     * 
+     * DDD 원칙: InterviewAvailabilityInvestigationLink는 InterviewSetting 애그리거트 루트 안에
+     * 포함되므로
+     * 루트 애그리거트를 통해 접근합니다.
+     */
+    Optional<InterviewSetting> findByInvestigationLinkToken(String token);
 }

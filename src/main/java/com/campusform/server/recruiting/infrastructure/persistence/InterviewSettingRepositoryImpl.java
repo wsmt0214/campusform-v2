@@ -33,4 +33,9 @@ public class InterviewSettingRepositoryImpl implements InterviewSettingRepositor
     public Optional<InterviewSetting> findByProjectId(Long projectId) {
         return interviewSettingJpaRepository.findByProjectId(projectId);
     }
+
+    @Override
+    public Optional<InterviewSetting> findByInvestigationLinkToken(String token) {
+        return interviewSettingJpaRepository.findByInvestigationLinkToken(token);
+    }
 }

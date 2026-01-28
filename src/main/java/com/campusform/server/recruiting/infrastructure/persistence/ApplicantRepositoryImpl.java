@@ -1,5 +1,8 @@
 package com.campusform.server.recruiting.infrastructure.persistence;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Repository;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
@@ -22,5 +25,15 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     @Override
     public void save(Applicant applicant) {
         applicantJpaRepository.save(applicant);
+    }
+
+    @Override
+    public Optional<Applicant> findByProjectIdAndNameAndPhone(Long projectId, String name, String phone) {
+        return applicantJpaRepository.findByProjectIdAndNameAndPhone(projectId, name, phone);
+    }
+
+    @Override
+    public List<Applicant> findByIds(List<Long> applicantIds) {
+        return applicantJpaRepository.findByIdIn(applicantIds);
     }
 }

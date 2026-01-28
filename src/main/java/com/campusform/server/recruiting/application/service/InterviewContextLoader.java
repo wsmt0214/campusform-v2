@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.domain.model.interview.setup.InterviewAvailabilityInvestigationLink;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
 
@@ -47,6 +48,32 @@ public class InterviewContextLoader {
     public InterviewContext loadContext(Long projectId) {
         Project project = loadProjectOrThrow(projectId);
         InterviewSetting setting = loadSettingOrThrow(projectId);
+        return new InterviewContext(project, setting);
+    }
+
+    /**
+     * 토큰으로 프로젝트와 면접 설정을 함께 조회
+     * 
+     * 공개 API에서 토큰을 통해 접근할 때 사용합니다.
+     * DDD 원칙: InterviewAvailabilityInvestigationLink는 InterviewSetting 애그리거트 루트 안에
+     * 포함되므로
+     * 루트 애그리거트를 통해 접근합니다.
+     */
+    public InterviewContext loadContextByToken(String token) {
+        // 토큰으로 InterviewSetting 조회 (investigationLink 포함)
+        InterviewSetting setting = interviewSettingRepository.findByInvestigationLinkToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+
+        // investigationLink가 비활성화되어 있는지 확인
+        InterviewAvailabilityInvestigationLink link = setting.getInvestigationLink();
+        if (link == null || !link.getEnabled()) {
+            throw new IllegalStateException("현재 지원자 응답 제출 링크가 비활성화되어 있습니다.");
+        }
+
+        // InterviewSetting에서 projectId를 가져와서 Project 조회
+        Long projectId = setting.getProjectId();
+        Project project = loadProjectOrThrow(projectId);
+
         return new InterviewContext(project, setting);
     }
 

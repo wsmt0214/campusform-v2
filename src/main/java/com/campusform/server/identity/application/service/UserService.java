@@ -1,5 +1,6 @@
 package com.campusform.server.identity.application.service;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 사용자 정보 수정 서비스
  */
+@Profile("!temporary")
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class UserService {
     /**
      * 프로필 이미지 업데이트
      *
-     * @param userId 사용자 ID
+     * @param userId    사용자 ID
      * @param imageFile 새로운 프로필 이미지 파일
      * @return 업데이트된 프로필 이미지 URL
      */
@@ -92,7 +94,7 @@ public class UserService {
     /**
      * 닉네임 수정
      *
-     * @param userId 사용자 ID
+     * @param userId      사용자 ID
      * @param newNickname 새로운 닉네임
      * @return 수정된 닉네임
      */
