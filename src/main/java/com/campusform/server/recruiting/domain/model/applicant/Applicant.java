@@ -4,11 +4,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -36,7 +38,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Applicant {
+public class Applicant extends AbstractAggregateRoot<Applicant> {
 
     @Id
     @GeneratedValue
@@ -54,14 +56,13 @@ public class Applicant {
     @Column(nullable = false)
     private String email;
     private String position;
-
+    private StageStatus stage;
     /**
      * 서류 단계 심사 상태
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "document_status", nullable = false)
     private ApplicantStatus documentStatus = ApplicantStatus.HOLD;
-
     /**
      * 면접 단계 심사 상태
      */
@@ -83,6 +84,11 @@ public class Applicant {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    //누르면 true <-> false 바뀜
+    public void Bookmark(){
+        this.bookmarked = !this.bookmarked;
+    }
+
     public static Applicant create(Long projectId, String name, String email, String phone, String gender,
             String school, String major, String position) {
         Applicant applicant = new Applicant();
@@ -99,5 +105,37 @@ public class Applicant {
 
     public void addExtraAnswer(String questionText, String answerText) {
         extraAnswers.add(ApplicantExtraAnswer.create(this, questionText, answerText));
+    }
+
+    /**
+     * [비즈니스 로직] 서류 심사 결과 업데이트 및 이벤트 발행
+     */
+    public void updateApplicantStatus(StageStatus stage, ApplicantStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("newStatus must not be null");
+        }
+        if(stage==StageStatus.DOCUMENT) {
+            if (this.documentStatus == status) {
+                return;
+            }
+            this.documentStatus = status;
+        }else{
+            if(stage==StageStatus.INTERVIEW) {
+                if (this.interviewStatus == status) {
+                    return;
+                }
+                this.interviewStatus = status;
+            }
+        }
+
+        this.registerEvent(new ApplicantUpdated(
+                this.id,
+                this.projectId,
+                this.name,
+                this.phone,
+                this.position,
+                status,
+                stage
+        ));
     }
 }

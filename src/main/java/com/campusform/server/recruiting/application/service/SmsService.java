@@ -1,0 +1,95 @@
+package com.campusform.server.recruiting.application.service;
+
+import com.campusform.server.recruiting.application.component.MessageGenerator;
+import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
+import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
+import com.campusform.server.recruiting.domain.model.applicant.Applicant;
+import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.message.MessageTemplate;
+import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
+import com.campusform.server.recruiting.domain.repository.MessageTemplateRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class SmsService {
+    //문자 메시지 내용, 템플릿, 발송 서비스
+    private final ApplicantRepository applicantRepository;
+    private final MessageTemplateRepository templateRepository;
+    private final MessageGenerator messageGenerator;
+
+    /**
+     * 문자 관련 로직만
+     * 템플릿 저장
+     *
+     * @param projectId
+     * @param stage
+     * @param request   수정사항 문자열을 Enum으로 변환하여 Type Safety를 확보함
+     */
+    @Transactional
+    public void saveTemplate(Long projectId, StageStatus stage, SmsTemplateSaveRequest request) {
+        ApplicantStatus applicantStatus = request.getStatus();
+        // 1. 없으면 생성, 있으면 가져오기
+        MessageTemplate template = templateRepository.findByProjectId(projectId)
+                .orElseGet(() -> templateRepository.save(MessageTemplate.createEmpty(projectId)));
+
+        // 2. 내용 업데이트 (엔티티 메서드 활용)
+        template.updateTemplate(stage, applicantStatus, request.getContent());
+        // Dirty Checking으로 자동 저장됨
+    }
+
+    /**
+     * 개인별 문자메시지 미리보기
+     * stage와 status를 입력받아 동적으로 템플릿 선택, 변수 치환 로직을 엔티티에 위임한다.
+     */
+    @Transactional(readOnly = true)
+    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, StageStatus stageStr, ApplicantStatus statusStr) {
+
+        // 2. 지원자 조회
+        Applicant applicant = applicantRepository.findById(applicantId)
+                .filter(a -> a.getProjectId().equals(projectId))
+                .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
+
+        // 3. 템플릿 조회
+//        MessageTemplate templateContent = templateRepository.findByProjectId(projectId)
+//                .orElse(MessageTemplate.createEmpty(projectId));
+
+        //4. 메시지 생성 로직을 엔티티에게 위임 -> DDD 형태!!!
+        // 변수 바꾸기를 엔티티에서 알아서 할거임
+        String finalContent = messageGenerator.generateMessage(
+                projectId,
+                stageStr,
+                statusStr,
+                applicant.getName(),
+                applicant.getPosition() != null ? applicant.getPosition() : "-"
+        );
+
+        // 5. 응답 DTO 생성
+        SmsPreviewResponse.PreviewMessage message = SmsPreviewResponse.PreviewMessage.builder()
+                .applicantId(applicant.getId())
+                .name(applicant.getName())
+                .phoneNumber(applicant.getPhone())
+                .info(makeInfoString(applicant))
+                .content(finalContent)
+                .build();
+
+        return SmsPreviewResponse.builder()
+                .count(1)
+                .messages(List.of(message))
+                .build();
+    }
+
+    // 미리보기용 정보 문자열 생성 ("학교 / 전공 / 지원분야")
+    private String makeInfoString(Applicant applicant) {
+        return String.format("%s / %s / %s",
+                applicant.getSchool() != null ? applicant.getSchool() : "-",
+                applicant.getMajor() != null ? applicant.getMajor() : "-",
+                applicant.getPosition() != null ? applicant.getPosition() : "-"
+        );
+    }
+}
