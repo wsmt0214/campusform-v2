@@ -59,8 +59,6 @@ public interface ApplicantRepository{
 
     List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage);
 
-    void save(Applicant applicant);
-
     /**
      * 프로젝트ID, 이름, 전화번호로 지원자 조회
      */
