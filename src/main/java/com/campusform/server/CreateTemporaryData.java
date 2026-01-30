@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * 테스트용 데이터를 삽입
  * prod 에서는 비활성화 또는 삭제
  */
+@Profile("temporary1")
 @Slf4j
 @Component
 @RequiredArgsConstructor

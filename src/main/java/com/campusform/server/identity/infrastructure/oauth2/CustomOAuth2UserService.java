@@ -40,9 +40,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
 
+        // OAuth name에서 한글/영어만 추출, 최대 12자로 제한
+        String nickname = normalizeNickname(name);
+
         // 기존 사용자 조회 또는 신규 사용자 생성
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createUser(email, name, picture));
+                .orElseGet(() -> createUser(email, nickname, picture));
 
         Map<String, Object> extendedAttributes = new HashMap<>(attributes);
         extendedAttributes.put("userId", user.getId());
@@ -50,16 +53,39 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
                 extendedAttributes,
-                "email"
-        );
+                "email");
     }
 
     /**
      * 신규 사용자 생성 및 저장
      */
-    private User createUser(String email, String name, String profileImageUrl) {
-        User user = User.create(email, name, profileImageUrl);
+    private User createUser(String email, String nickname, String profileImageUrl) {
+        User user = User.create(email, nickname, profileImageUrl);
         userRepository.save(user);
         return user;
+    }
+
+    /**
+     * OAuth name에서 유효한 닉네임 추출
+     * 한글/영어만 필터링, 1~12자 제한
+     *
+     * @param name Google OAuth name 필드
+     * @return 검증 규칙에 맞는 닉네임
+     */
+    private String normalizeNickname(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "사용자";
+        }
+
+        // 한글, 영어만 추출 (공백, 숫자, 특수문자 제거)
+        String filtered = name.trim().replaceAll("[^가-힣a-zA-Z]", "");
+
+        // 필터링 후 비어있으면 기본값
+        if (filtered.isEmpty()) {
+            return "사용자";
+        }
+
+        // 12자 초과 시 잘라내기
+        return filtered.length() > 12 ? filtered.substring(0, 12) : filtered;
     }
 }

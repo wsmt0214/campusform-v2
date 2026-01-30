@@ -15,7 +15,7 @@ java {
 }
 
 configurations {
-	compileOnly {
+	compileOnly {  
 		extendsFrom annotationProcessor
 	}
 }
@@ -25,35 +25,41 @@ repositories {
 }
 
 dependencies {
-	// 1. Spring Initializr
+	// Spring Initializr
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// 2. 개발 편의 도구
+	// 개발 편의 도구
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
 
-	// 3. 테스트
+	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	// 4. JWT
+	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-	// 5. Swagger
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.15'
+	// Swagger 
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0' 
 
 	runtimeOnly 'com.h2database:h2'
 
+	// 변경된 클래스만 새로 로드하는 라이브러리
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	// 6. Google Sheet API
+	// AWS S3
+	implementation platform('software.amazon.awssdk:bom:2.34.0')
+	implementation 'software.amazon.awssdk:s3'
+
+	// Google Sheet API
 }
 
 tasks.named('test') {
