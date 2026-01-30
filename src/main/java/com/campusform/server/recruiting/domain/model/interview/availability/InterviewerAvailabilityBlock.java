@@ -46,4 +46,15 @@ public class InterviewerAvailabilityBlock {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    /**
+     * InterviewerAvailabilityBlock 생성 팩토리 메서드
+     */
+    public static InterviewerAvailabilityBlock create(Long adminId, Long interviewDayId, LocalTime startTime) {
+        InterviewerAvailabilityBlock block = new InterviewerAvailabilityBlock();
+        block.adminId = adminId;
+        block.interviewDayId = interviewDayId;
+        block.startTime = startTime;
+        return block;
+    }
 }

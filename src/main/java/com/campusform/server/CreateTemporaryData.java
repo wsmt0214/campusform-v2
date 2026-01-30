@@ -1,6 +1,7 @@
 package com.campusform.server;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@org.springframework.context.annotation.Profile("!prod")
 public class CreateTemporaryData {
 
     private final UserRepository userRepository;
