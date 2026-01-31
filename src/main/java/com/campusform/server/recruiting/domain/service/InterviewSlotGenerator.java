@@ -3,6 +3,7 @@ package com.campusform.server.recruiting.domain.service;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -139,30 +140,45 @@ public class InterviewSlotGenerator {
     }
 
     /**
-     * 슬롯이 완전히 포함되는 블록들의 고유 면접관 수 계산
+     * 슬롯이 면접관의 연속 가용 시간 범위에 완전히 포함되는 면접관 수 계산
      * 
-     * 슬롯이 면접관의 블록에 완전히 포함되어야만 카운트됩니다.
-     * 예: 블록이 14:00~14:30이고 슬롯이 14:20~14:40이면 포함되지 않음 (14:30 이후 부분이 포함됨)
+     * 면접관별로 선택한 블록들을 연속 범위로 합친 후,
+     * 슬롯이 해당 연속 범위에 완전히 포함되면 카운트합니다.
      * 
-     * 같은 면접관이 여러 블록을 선택했을 때 중복 카운트되지 않도록 Set을 사용
+     * 예: 면접관이 10:00, 10:30 블록을 선택하면 연속 범위는 10:00~11:00
+     * → 10:25~10:45 슬롯은 이 범위에 포함되므로 카운트됨
      */
     private int calculateUniqueInterviewerCount(
             LocalTime slotStart, int slotDurationMin, List<InterviewerAvailabilityBlock> allBlocks) {
         LocalTime slotEnd = slotStart.plusMinutes(slotDurationMin);
 
-        // 슬롯이 완전히 포함되는 블록들을 선택한 면접관들의 고유 집합
-        Set<Long> uniqueAdminIds = allBlocks.stream()
-                .filter(block -> {
-                    LocalTime blockStart = block.getStartTime();
-                    LocalTime blockEnd = blockStart.plusMinutes(30); // 블록은 30분 단위
+        // 면접관별로 블록 그룹화
+        Map<Long, List<InterviewerAvailabilityBlock>> blocksByAdmin = allBlocks.stream()
+                .collect(Collectors.groupingBy(InterviewerAvailabilityBlock::getAdminId));
 
-                    // 슬롯이 블록에 완전히 포함되는지 확인
-                    // 슬롯의 시작 시간 >= 블록의 시작 시간 && 슬롯의 종료 시간 <= 블록의 종료 시간
-                    return !slotStart.isBefore(blockStart) && !slotEnd.isAfter(blockEnd);
-                })
-                .map(InterviewerAvailabilityBlock::getAdminId)
-                .collect(Collectors.toSet());
+        int count = 0;
 
-        return uniqueAdminIds.size();
+        for (Map.Entry<Long, List<InterviewerAvailabilityBlock>> entry : blocksByAdmin.entrySet()) {
+            List<InterviewerAvailabilityBlock> adminBlocks = entry.getValue();
+
+            // 해당 면접관의 블록들을 시간순 정렬
+            List<LocalTime> sortedBlockTimes = adminBlocks.stream()
+                    .map(InterviewerAvailabilityBlock::getStartTime)
+                    .sorted()
+                    .toList();
+
+            // 연속 범위 계산
+            List<ContinuousTimeRange> continuousRanges = ContinuousTimeRange.groupFromBlocks(sortedBlockTimes);
+
+            // 슬롯이 어떤 연속 범위에라도 완전히 포함되면 카운트
+            boolean slotCovered = continuousRanges.stream()
+                    .anyMatch(range -> range.containsSlot(slotStart, slotEnd));
+
+            if (slotCovered) {
+                count++;
+            }
+        }
+
+        return count;
     }
 }

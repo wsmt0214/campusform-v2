@@ -6,10 +6,6 @@ import java.util.Optional;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
 import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * 도메인 계층의 Repository 인터페이스
@@ -19,16 +15,13 @@ import java.util.Optional;
  * 이 코드는 "도메인 영역의 요청"을 받아서 "스프링 JPA(DB)"에게 토스해주는 역할을 완벽하게 수행합니다.
  * 도메인 영역이므로 ApplicantJpaRepository에 의존 X
  */
-public interface ApplicantRepository{
+public interface ApplicantRepository {
 
     // 1. 저장 및 수정
     Applicant save(Applicant applicant);
 
     // 2. 일괄 저장 (ResultService.announceResults에서 사용)
     void saveAll(List<Applicant> applicants);
-
-    // 3. 단건 조회 (SmsService에서 사용)
-    Optional<Applicant> findById(Long id);
 
     // 4. 다건 ID 조회 (ResultService.announceResults에서 사용)
     List<Applicant> findAllById(List<Long> ids);
@@ -52,17 +45,36 @@ public interface ApplicantRepository{
 
     // 1. 이름 오름차순
     List<Applicant> findByProjectIdOrderByNameAsc(Long projectId);
+
     // 2. 이름 내림차순
     List<Applicant> findByProjectIdOrderByNameDesc(Long projectId);
+
     // 3. 찜한 순
     List<Applicant> findByProjectIdOrderByBookmarkedDescIdDesc(Long projectId);
 
     List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage);
 
     /**
+     * ID로 지원자 조회
+     */
+    Optional<Applicant> findById(Long applicantId);
+
+    /**
+     * 프로젝트의 전체 지원자 목록 조회
+     * 
+     * 최종 면접시간(Manual 우선 + Auto fallback) 조회 API에서 사용됩니다.
+     */
+    List<Applicant> findByProjectId(Long projectId);
+
+    /**
      * 프로젝트ID, 이름, 전화번호로 지원자 조회
      */
     Optional<Applicant> findByProjectIdAndNameAndPhone(Long projectId, String name, String phone);
+
+    /**
+     * 프로젝트ID, 이름, 이메일로 지원자 조회
+     */
+    Optional<Applicant> findByProjectIdAndNameAndEmail(Long projectId, String name, String email);
 
     /**
      * 여러 ID로 지원자 목록 조회

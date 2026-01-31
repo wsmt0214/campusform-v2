@@ -55,10 +55,24 @@ logging:
     org.hibernate.SQL: debug
 
 ---
+# OAuth2 리다이렉트 URL 설정
+app:
+  oauth2:
+    redirect-uri: http://localhost:3000/oauth/google/callback
 spring:
   config:
     activate:
       on-profile: temporary
+  security:
+    oauth2:
+        client:
+          registration:
+            google:
+              client-id: ${GOOGLE_CLIENT_ID}
+              client-secret: ${GOOGLE_CLIENT_SECRET}
+              scope:
+                - email
+                - profile
   jpa:
     hibernate:
       ddl-auto: update

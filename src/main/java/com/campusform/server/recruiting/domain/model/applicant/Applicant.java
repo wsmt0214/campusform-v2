@@ -4,13 +4,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
-import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -84,8 +85,8 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    //누르면 true <-> false 바뀜
-    public void Bookmark(){
+    // 누르면 true <-> false 바뀜
+    public void Bookmark() {
         this.bookmarked = !this.bookmarked;
     }
 
@@ -108,19 +109,20 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     }
 
     /**
+     * <<<<<<< HEAD
      * [비즈니스 로직] 서류 심사 결과 업데이트 및 이벤트 발행
      */
     public void updateApplicantStatus(StageStatus stage, ApplicantStatus status) {
         if (status == null) {
             throw new IllegalArgumentException("newStatus must not be null");
         }
-        if(stage==StageStatus.DOCUMENT) {
+        if (stage == StageStatus.DOCUMENT) {
             if (this.documentStatus == status) {
                 return;
             }
             this.documentStatus = status;
-        }else{
-            if(stage==StageStatus.INTERVIEW) {
+        } else {
+            if (stage == StageStatus.INTERVIEW) {
                 if (this.interviewStatus == status) {
                     return;
                 }
@@ -135,7 +137,22 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
                 this.phone,
                 this.position,
                 status,
-                stage
-        ));
+                stage));
+    }
+
+    /**
+     * 지원자 정보를 업데이트합니다.
+     * 
+     * 시트 동기화 시 기존 지원자의 정보를 최신 데이터로 갱신합니다.
+     * 심사 상태와 즐겨찾기는 유지하고, 기본 정보와 추가 답변만 업데이트합니다.
+     */
+    public void updateFromSheet(String phone, String gender, String school, String major, String position) {
+        this.phone = phone;
+        this.gender = gender;
+        this.school = school;
+        this.major = major;
+        this.position = position;
+        // extraAnswers는 orphanRemoval=true이므로 리스트를 비우면 자동 삭제됨
+        this.extraAnswers.clear();
     }
 }

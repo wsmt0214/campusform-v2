@@ -38,4 +38,10 @@ public interface IntervieweeAvailabilitySlotRepository {
      * 모든 슬롯별 지원자 정보 조회에 사용됩니다.
      */
     List<IntervieweeAvailabilitySlot> findByInterviewDayId(Long interviewDayId);
+
+    /**
+     * 여러 날짜의 모든 지원자 면접 가능 슬롯 조회
+     * 스마트 시간표 알고리즘에서 사용합니다.
+     */
+    List<IntervieweeAvailabilitySlot> findByInterviewDayIdIn(List<Long> interviewDayIds);
 }

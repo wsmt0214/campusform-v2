@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
-import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
 import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,7 +36,6 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
         applicantJpaRepository.saveAll(applicants);
     }
 
-
     // 3. ID로 조회 (여러 건)
     @Override
     public List<Applicant> findAllById(List<Long> ids) {
@@ -45,7 +44,7 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
 
     // 4. ID로 조회 (단건) - SmsService 등에서 사용
     @Override
-    public java.util.Optional<Applicant> findById(Long id) {
+    public Optional<Applicant> findById(Long id) {
         return applicantJpaRepository.findById(id);
     }
 
@@ -78,22 +77,27 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     public List<Applicant> findByProjectIdOrderByBookmarkedDescIdDesc(Long projectId) {
         return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescIdDesc(projectId);
     }
+
     @Override
-    public List<Applicant> findByProjectIdOrderByNameAsc(Long projectId){
+    public List<Applicant> findByProjectIdOrderByNameAsc(Long projectId) {
         return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescNameAsc(projectId);
     }
+
     @Override
-    public List<Applicant> findByProjectIdOrderByNameDesc(Long projectId){
+    public List<Applicant> findByProjectIdOrderByNameDesc(Long projectId) {
         return applicantJpaRepository.findByProjectIdOrderByNameDesc(projectId);
     }
+
     @Override
-    public List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage){
+    public List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage) {
         return applicantJpaRepository.findByProjectIdAndStage(projectId, stage);
     }
 
-//    public long countByProjectIdAndStatus(Long projectId, ApplicantStatus applicantStatus){
-//        return applicantJpaRepository.countByProjectIdAndStatus(projectId, applicantStatus);
-//    }
+    // public long countByProjectIdAndStatus(Long projectId, ApplicantStatus
+    // applicantStatus){
+    // return applicantJpaRepository.countByProjectIdAndStatus(projectId,
+    // applicantStatus);
+    // }
     @Override
     public long countByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus status) {
         return applicantJpaRepository.countByProjectIdAndDocumentStatus(projectId, status);
@@ -105,8 +109,18 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     }
 
     @Override
+    public List<Applicant> findByProjectId(Long projectId) {
+        return applicantJpaRepository.findByProjectId(projectId);
+    }
+
+    @Override
     public Optional<Applicant> findByProjectIdAndNameAndPhone(Long projectId, String name, String phone) {
         return applicantJpaRepository.findByProjectIdAndNameAndPhone(projectId, name, phone);
+    }
+
+    @Override
+    public Optional<Applicant> findByProjectIdAndNameAndEmail(Long projectId, String name, String email) {
+        return applicantJpaRepository.findByProjectIdAndNameAndEmail(projectId, name, email);
     }
 
     @Override

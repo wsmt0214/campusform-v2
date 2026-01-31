@@ -30,4 +30,9 @@ public interface InterviewerAvailabilityBlockJpaRepository extends JpaRepository
      * 특정 면접관의 특정 프로젝트 범위 내 블록 목록 조회
      */
     List<InterviewerAvailabilityBlock> findByAdminIdAndInterviewDayIdIn(Long adminId, List<Long> interviewDayIds);
+
+    /**
+     * 여러 날짜의 모든 면접관 가용 시간 블록 조회
+     */
+    List<InterviewerAvailabilityBlock> findByInterviewDayIdIn(List<Long> interviewDayIds);
 }

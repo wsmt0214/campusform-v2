@@ -1,5 +1,6 @@
 package com.campusform.server.identity.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.campusform.server.identity.domain.model.User;
@@ -22,4 +23,6 @@ public interface UserRepository {
     Optional<User> findById(Long id);
 
     boolean existsById(Long adminId);
+
+    List<User> findByIds(List<Long> ids);
 }

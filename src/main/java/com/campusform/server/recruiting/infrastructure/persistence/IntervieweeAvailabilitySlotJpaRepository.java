@@ -40,4 +40,9 @@ public interface IntervieweeAvailabilitySlotJpaRepository extends JpaRepository<
      * 특정 날짜의 모든 면접 가능 슬롯 목록 조회
      */
     List<IntervieweeAvailabilitySlot> findByInterviewDayId(Long interviewDayId);
+
+    /**
+     * 여러 날짜의 모든 지원자 면접 가능 슬롯 조회
+     */
+    List<IntervieweeAvailabilitySlot> findByInterviewDayIdIn(List<Long> interviewDayIds);
 }
