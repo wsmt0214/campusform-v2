@@ -73,4 +73,9 @@ public class InterviewerAvailabilityBlockRepositoryImpl implements InterviewerAv
     public void flush() {
         jpaRepository.flush();
     }
+
+    @Override
+    public List<InterviewerAvailabilityBlock> findByInterviewDayIdIn(List<Long> interviewDayIds) {
+        return jpaRepository.findByInterviewDayIdIn(interviewDayIds);
+    }
 }

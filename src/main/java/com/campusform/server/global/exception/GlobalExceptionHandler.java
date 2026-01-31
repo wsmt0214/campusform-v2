@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.campusform.server.notification.domain.exception.NotificationAccessDeniedException;
 import com.campusform.server.notification.domain.exception.NotificationNotFoundException;
 import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
+import com.campusform.server.project.domain.exception.TokenExpiredException;
+import com.campusform.server.project.domain.exception.TokenNotFoundException;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -110,6 +112,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleProjectAccessDeniedException(ProjectAccessDeniedException ex) {
         ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    /**
+     * Google OAuth 토큰을 찾을 수 없을 때 발생하는 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleTokenNotFoundException(TokenNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse("Token Not Found", ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
+     * Google OAuth 토큰이 만료되었을 때 발생하는 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleTokenExpiredException(TokenExpiredException ex) {
+        ErrorResponse response = new ErrorResponse("Token Expired", ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     /**

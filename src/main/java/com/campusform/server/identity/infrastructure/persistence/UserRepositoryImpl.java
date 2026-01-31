@@ -1,5 +1,6 @@
 package com.campusform.server.identity.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -44,5 +45,10 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public boolean existsById(Long adminId) {
         return userJpaRepository.existsById(adminId);
+    }
+
+    @Override
+    public List<User> findByIds(List<Long> ids) {
+        return userJpaRepository.findAllById(ids);
     }
 }

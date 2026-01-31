@@ -50,4 +50,9 @@ public class IntervieweeAvailabilitySlotRepositoryImpl implements IntervieweeAva
     public List<IntervieweeAvailabilitySlot> findByInterviewDayId(Long interviewDayId) {
         return jpaRepository.findByInterviewDayId(interviewDayId);
     }
+
+    @Override
+    public List<IntervieweeAvailabilitySlot> findByInterviewDayIdIn(List<Long> interviewDayIds) {
+        return jpaRepository.findByInterviewDayIdIn(interviewDayIds);
+    }
 }

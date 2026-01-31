@@ -57,4 +57,10 @@ public interface InterviewerAvailabilityBlockRepository {
      * 쓰기 지연으로 인한 unique 제약 조건 위반을 방지하기 위해 사용합니다.
      */
     void flush();
+
+    /**
+     * 여러 날짜의 모든 면접관 가용 시간 블록 조회
+     * 스마트 시간표 알고리즘에서 사용합니다.
+     */
+    List<InterviewerAvailabilityBlock> findByInterviewDayIdIn(List<Long> interviewDayIds);
 }

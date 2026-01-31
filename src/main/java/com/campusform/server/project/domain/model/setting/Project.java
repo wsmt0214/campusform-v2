@@ -3,7 +3,9 @@ package com.campusform.server.project.domain.model.setting;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -109,7 +111,7 @@ public class Project {
 
         if (!isAdmin) {
             throw new IllegalArgumentException(
-                    "해당 사용자는 프로젝트 관리자가 아닙니다. userId=" + userId + ", projectId=" + this.id);
+                    "해당 사용자는 프로젝트의 관리자가 아니거나 접근할 권한이 없습니다. userId=" + userId + ", projectId=" + this.id);
         }
     }
 
@@ -196,6 +198,28 @@ public class Project {
             throw new IllegalArgumentException("상태는 null일 수 없습니다.");
         }
         this.state = state;
+    }
+
+    /**
+     * 시트 동기화 상태 업데이트
+     * 
+     * @param status 동기화 상태 (OK 또는 ERROR)
+     */
+    public void updateSyncStatus(SyncStatus status) {
+        this.lastSyncStatus = status;
+        this.lastSyncedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 프로젝트의 모든 관리자 ID 목록 조회 (OWNER 포함, 중복 제거)
+     */
+    public List<Long> getAdminIds() {
+        Set<Long> adminIds = new LinkedHashSet<>();
+        adminIds.add(this.ownerId);
+        for (ProjectAdmin admin : this.admins) {
+            adminIds.add(admin.getAdminId());
+        }
+        return List.copyOf(adminIds);
     }
 
     /** 관리자 중복 여부 확인인 */
