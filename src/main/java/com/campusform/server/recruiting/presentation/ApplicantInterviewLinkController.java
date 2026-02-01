@@ -18,11 +18,15 @@ import com.campusform.server.recruiting.application.dto.response.SlotApplicantLi
 import com.campusform.server.recruiting.application.service.ApplicantInterviewLinkService;
 import com.campusform.server.recruiting.application.service.SlotApplicantService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
  * 스마트 시간표 설정 - 3. 지원자 면접 가능 시간 모집 (Owner용)
  */
+@Tag(name = "지원자 면접 링크", description = "지원자에게 발송할 면접 시간 제출 링크 및 관련 설정 API")
 @RestController
 @RequestMapping("/api/recruiting/projects")
 @RequiredArgsConstructor
@@ -33,44 +37,20 @@ public class ApplicantInterviewLinkController {
 
     private final AuthService authService;
 
-    /**
-     * 응답 예시
-     * 
-     * <pre>
-     * 응답 예시:
-     * {
-     *   "token": "550e8400-e29b-41d4-a716-446655440000",
-     *   "url": "/submit?token=550e8400-e29b-41d4-a716-446655440000"
-     * }
-     * </pre>
-     * 
-     * @param projectId
-     * @param authentication
-     * @return
-     */
+    @Operation(summary = "지원자 면접 시간 제출 링크 조회", description = "지원자에게 배포할, 면접 가능 시간을 제출받는 페이지의 고유 링크(토큰)를 조회합니다.")
     @GetMapping("/{projectId}/investigation-link")
     public ResponseEntity<ApplicantInterviewLinkResponse> getApplicantLink(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         ApplicantInterviewLinkResponse response = applicantInterviewLinkService.getApplicantLink(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 지원자 페이지 설정 조회
-     * 
-     * <pre>
-     * 응답 예시:
-     * {
-     *   "enabled": true,
-     *   "guidanceText": "면접 가능 시간을 선택해주세요."
-     * }
-     * </pre>
-     */
+    @Operation(summary = "지원자 시간 제출 페이지 설정 조회", description = "지원자에게 보여질 면접 시간 제출 페이지의 활성화 여부 및 안내 문구를 조회합니다.")
     @GetMapping("/{projectId}/investigation-link/config")
     public ResponseEntity<ApplicantInterviewLinkConfigResponse> getApplicantLinkConfig(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         ApplicantInterviewLinkConfigResponse response = applicantInterviewLinkService
@@ -78,20 +58,10 @@ public class ApplicantInterviewLinkController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 지원자 페이지 설정 수정
-     * 
-     * <pre>
-     * 요청 예시:
-     * {
-     *   "enabled": true,
-     *   "guidanceText": "면접 가능 시간을 선택해주세요."
-     * }
-     * </pre>
-     */
+    @Operation(summary = "지원자 시간 제출 페이지 설정 수정", description = "지원자에게 보여질 면접 시간 제출 페이지의 활성화 여부 및 안내 문구를 수정합니다.")
     @PutMapping("/{projectId}/investigation-link/config")
     public ResponseEntity<ApplicantInterviewLinkConfigResponse> updateApplicantLinkConfig(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication,
             @RequestBody UpdateApplicantLinkConfigRequest request) {
         Long userId = authService.extractUserId(authentication);
@@ -100,89 +70,20 @@ public class ApplicantInterviewLinkController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 면접 슬롯 목록 조회
-     * 
-     * <pre>
-     * 응답 예시:
-     * {
-     *   "summaries": [
-     *     {
-     *       "date": "2024-07-01",
-     *       "slots": [
-     *         {
-     *           "startTime": "10:00",
-     *           "endTime": "10:20",
-     *           "availableInterviewerCount": 2
-     *         },
-     *         {
-     *           "startTime": "10:25",
-     *           "endTime": "10:45",
-     *           "availableInterviewerCount": 1
-     *         }
-     *       ]
-     *     }
-     *   ]
-     * }
-     * </pre>
-     */
+    @Operation(summary = "관리자용 전체 면접 슬롯 목록 조회", description = "면접관들이 제출한 시간을 바탕으로 생성된 전체 면접 슬롯 목록과, 각 슬롯별 참여 가능 면접관 수를 함께 조회합니다.")
     @GetMapping("/{projectId}/interview-slots")
     public ResponseEntity<InterviewSlotListResponse> getInterviewSlotList(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         InterviewSlotListResponse response = applicantInterviewLinkService.getInterviewSlotList(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 모든 슬롯별 지원자 목록 조회
-     * 
-     * 프로젝트의 모든 날짜의 모든 슬롯에 제출한 지원자들의 정보를 조회합니다.
-     * 
-     * <pre>
-     * 응답 예시:
-     * {
-     *   "summaries": [
-     *     {
-     *       "date": "2024-07-01",
-     *       "slots": [
-     *         {
-     *           "startTime": "10:00",
-     *           "endTime": "10:20",
-     *           "applicants": [
-     *             {
-     *               "applicantId": 1,
-     *               "name": "홍길동",
-     *               "school": "서울대학교",
-     *               "major": "컴퓨터공학과",
-     *               "position": "백엔드"
-     *             },
-     *             {
-     *               "applicantId": 2,
-     *               "name": "김철수",
-     *               "school": "연세대학교",
-     *               "major": "정보시스템학과",
-     *               "position": null
-     *             }
-     *           ]
-     *         },
-     *         {
-     *           "startTime": "10:25",
-     *           "endTime": "10:45",
-     *           "applicants": []
-     *         }
-     *       ]
-     *     }
-     *   ]
-     * }
-     * </pre>
-     * 
-     * @param projectId 프로젝트 ID
-     */
+    @Operation(summary = "슬롯별 신청 지원자 목록 조회", description = "정의된 모든 면접 슬롯 별로, 해당 슬롯을 신청한 지원자들의 목록을 전체 조회합니다.")
     @GetMapping("/{projectId}/interview-slots/applicants")
     public ResponseEntity<SlotApplicantListResponse> getAllApplicantsBySlots(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
 

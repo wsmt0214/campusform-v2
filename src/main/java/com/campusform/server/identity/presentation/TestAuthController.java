@@ -20,6 +20,9 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  * 3. 이후 모든 API 요청에 해당 쿠키 포함
  */
 @Profile("temporary")
+@Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test/auth")
 @RequiredArgsConstructor
@@ -48,9 +52,10 @@ public class TestAuthController {
         /**
          * 특정 userId로 테스트용 세션 생성
          */
+        @Operation(summary = "테스트용 세션 생성", description = "지정한 `userId`로 강제 로그인하여 테스트용 세션을 생성합니다. Postman 등에서 API를 테스트할 때 사용합니다.", security = {})
         @PostMapping("/session")
         public ResponseEntity<Map<String, Object>> createTestSession(
-                        @RequestParam Long userId,
+                        @Parameter(description = "로그인할 사용자의 ID") @RequestParam Long userId,
                         HttpSession session) {
 
                 // 사용자 조회
@@ -108,6 +113,7 @@ public class TestAuthController {
         /**
          * 현재 세션의 인증 정보 확인 (테스트용)
          */
+        @Operation(summary = "현재 세션 정보 확인 (테스트용)", description = "현재 요청에 포함된 세션(쿠키)이 유효한지 확인하고, 인증된 사용자 정보를 반환합니다.")
         @PostMapping("/verify")
         public ResponseEntity<Map<String, Object>> verifySession(Authentication authentication) {
                 if (authentication == null || !authentication.isAuthenticated()) {

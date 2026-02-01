@@ -19,11 +19,15 @@ import com.campusform.server.project.application.service.SpreadsheetService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
  * Google Sheets API 관련 API 컨트롤러
  */
+@Tag(name = "Google 연동", description = "Google OAuth2 및 Sheets 연동 관련 API")
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
@@ -36,9 +40,10 @@ public class GoogleSheetController {
     /**
      * 시트 헤더 조회 API
      */
+    @Operation(summary = "Google Sheet 헤더(컬럼) 조회", description = "주어진 Google Sheet URL의 첫 번째 행(헤더)에 있는 컬럼 목록을 조회합니다.")
     @GetMapping("/sheet-headers")
     public ResponseEntity<List<SpreadsheetColumnResponse>> getSheetHeaders(
-            @RequestParam String sheetUrl,
+            @Parameter(description = "헤더를 조회할 Google Sheet의 전체 URL", required = true) @RequestParam String sheetUrl,
             Authentication authentication) {
 
         Long userId = authService.extractUserId(authentication);
@@ -55,9 +60,10 @@ public class GoogleSheetController {
     /**
      * 시트 동기화 API
      */
+    @Operation(summary = "Google Sheet와 지원자 정보 동기화", description = "프로젝트에 연결된 Google Sheet의 데이터를 읽어와 지원자 정보를 생성하거나 업데이트합니다.")
     @PostMapping("/{projectId}/sync-sheet")
     public ResponseEntity<SheetSyncResponse> syncSheet(
-            @PathVariable Long projectId,
+            @Parameter(description = "동기화할 프로젝트의 ID", required = true) @PathVariable Long projectId,
             Authentication authentication) {
 
         Long userId = authService.extractUserId(authentication);

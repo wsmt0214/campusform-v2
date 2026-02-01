@@ -12,11 +12,15 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse;
 import com.campusform.server.recruiting.application.service.SmartScheduleService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
  * 스마트 시간표 API 컨트롤러
  */
+@Tag(name = "스마트 시간표", description = "지원자와 면접관의 가능 시간을 바탕으로 최적의 면접 시간표를 자동 생성하는 API")
 @RestController
 @RequestMapping("/api/projects/{projectId}/interview/smart-schedule")
 @RequiredArgsConstructor
@@ -25,22 +29,20 @@ public class SmartScheduleController {
     private final SmartScheduleService smartScheduleService;
     private final AuthService authService;
 
-    /**
-     * 스마트 시간표 미리보기 (GET)
-     */
+    @Operation(summary = "스마트 시간표 생성 미리보기", description = "현재까지 수집된 정보를 바탕으로 스마트 시간표를 생성했을 때의 결과를 미리보기로 조회합니다. (저장되지 않음)")
     @GetMapping
-    public ResponseEntity<SmartScheduleResponse> previewSchedule(@PathVariable Long projectId,
+    public ResponseEntity<SmartScheduleResponse> previewSchedule(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         SmartScheduleResponse response = smartScheduleService.generateSchedule(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 스마트 시간표 생성 및 확정 (POST)
-     */
+    @Operation(summary = "스마트 시간표 생성 및 확정", description = "스마트 시간표를 생성하고, 그 결과를 최종 확정하여 저장합니다.")
     @PostMapping
-    public ResponseEntity<SmartScheduleResponse> generateAndSaveSchedule(@PathVariable Long projectId,
+    public ResponseEntity<SmartScheduleResponse> generateAndSaveSchedule(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         SmartScheduleResponse response = smartScheduleService.generateAndSaveSchedule(projectId, userId);

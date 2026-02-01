@@ -15,6 +15,10 @@ import com.campusform.server.identity.application.dto.response.UpdateNicknameRes
 import com.campusform.server.identity.application.dto.response.UpdateProfileImageResponse;
 import com.campusform.server.identity.application.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -23,6 +27,7 @@ import lombok.RequiredArgsConstructor;
  * 프로덕션 배포 시 이 파일은 삭제하거나 @Profile("temporary")로 제한됩니다.
  */
 @Profile("temporary1")
+@Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test")
 @RequiredArgsConstructor
@@ -36,10 +41,11 @@ public class TestController {
      * @param userId 테스트할 사용자 ID
      * @param image  업로드할 이미지
      */
+    @Operation(summary = "프로필 이미지 변경 (테스트)", description = "인증 없이 특정 사용자의 프로필 이미지를 변경합니다. `temporary` 프로필에서만 활성화됩니다.", security = {})
     @PatchMapping("/profile-image")
     public UpdateProfileImageResponse testUpdateProfileImage(
-            @RequestParam Long userId,
-            @RequestParam("image") MultipartFile image) {
+            @Parameter(description = "이미지를 변경할 사용자 ID") @RequestParam Long userId,
+            @Parameter(description = "업로드할 이미지 파일", schema = @Schema(type = "string", format = "binary")) @RequestParam("image") MultipartFile image) {
         String profileImageUrl = userService.updateProfileImage(userId, image);
         return new UpdateProfileImageResponse(profileImageUrl);
     }
@@ -49,9 +55,10 @@ public class TestController {
      *
      * @param userId 테스트할 사용자 ID
      */
+    @Operation(summary = "프로필 이미지 삭제 (테스트)", description = "인증 없이 특정 사용자의 프로필 이미지를 삭제합니다. `temporary` 프로필에서만 활성화됩니다.", security = {})
     @DeleteMapping("/profile-image")
     public DeleteProfileImageResponse testDeleteProfileImage(
-            @RequestParam Long userId) {
+            @Parameter(description = "이미지를 삭제할 사용자 ID") @RequestParam Long userId) {
         userService.deleteProfileImage(userId);
         return DeleteProfileImageResponse.success();
     }
@@ -62,9 +69,10 @@ public class TestController {
      * @param userId  테스트할 사용자 ID
      * @param request 닉네임 수정 요청
      */
+    @Operation(summary = "닉네임 변경 (테스트)", description = "인증 없이 특정 사용자의 닉네임을 변경합니다. `temporary` 프로필에서만 활성화됩니다.", security = {})
     @PatchMapping("/nickname")
     public UpdateNicknameResponse testUpdateNickname(
-            @RequestParam Long userId,
+            @Parameter(description = "닉네임을 변경할 사용자 ID") @RequestParam Long userId,
             @RequestBody UpdateNicknameRequest request) {
         String nickname = userService.updateNickname(userId, request.nickname());
         return new UpdateNicknameResponse(nickname);

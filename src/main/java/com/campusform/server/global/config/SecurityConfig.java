@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 /**
  * Spring Security 설정
  */
-@Profile("!temporary") // API 테스트 환경에서는 스프링 시큐리티 비활성화
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
