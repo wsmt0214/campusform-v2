@@ -15,6 +15,8 @@ import com.campusform.server.project.application.dto.request.ExchangeGoogleOAuth
 import com.campusform.server.project.application.dto.response.ExchangeGoogleOAuthCodeResponse;
 import com.campusform.server.project.application.service.GoogleOAuthTokenService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * 2. 프론트엔드가 해당 code를 서버로 전달하면, 서버에서 access/refresh token으로 교환
  * 3. 얻은 토큰을 DB에 저장하고, 이후 구글 시트 API 호출 시 활용
  */
+@Tag(name = "Google 연동", description = "Google OAuth2 및 Sheets 연동 관련 API")
 @RestController
 @RequestMapping("/api/projects/google-oauth")
 @RequiredArgsConstructor
@@ -43,6 +46,7 @@ public class GoogleOAuthController {
      * - Code 교환 실패: 500 Internal Server Error (Google API 오류)
      * - 잘못된 redirect_uri: Google에서 400 Bad Request 반환
      */
+    @Operation(summary = "Google OAuth 인증 코드를 토큰으로 교환", description = "Google로부터 받은 인증 코드를 서버에 전달하여 Access Token 및 Refresh Token으로 교환하고 저장합니다.")
     @PostMapping("/exchange-code")
     public ResponseEntity<ExchangeGoogleOAuthCodeResponse> exchangeCode(
             @RequestBody ExchangeGoogleOAuthCodeRequest request,
@@ -74,6 +78,7 @@ public class GoogleOAuthController {
      * - 구글 시트 접근 시 권한이 필요한 경우 (예: 사용자가 구글 시트 연동 버튼 클릭 시)
      * - 사용자를 구글 권한 승인 페이지로 리다이렉트 하기 전 URL 받기 위해 사용
      */
+    @Operation(summary = "Google 권한 요청 URL 생성", description = "Google Sheets API 접근 권한을 얻기 위한 동의 화면 URL을 생성하여 반환합니다.", security = {})
     @GetMapping("/authorize-url")
     public ResponseEntity<Map<String, String>> getAuthorizeUrl() {
         // 구글 Scope(시트 권한) 요청 URL 생성

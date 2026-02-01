@@ -109,7 +109,6 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     }
 
     /**
-     * <<<<<<< HEAD
      * [비즈니스 로직] 서류 심사 결과 업데이트 및 이벤트 발행
      */
     public void updateApplicantStatus(StageStatus stage, ApplicantStatus status) {

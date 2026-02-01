@@ -11,6 +11,9 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.recruiting.application.service.RecruitingStageService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
  * - "서류/면접 단계 마감 및 프로젝트 종료"는 모집 프로세스의 일부입니다.
  * - Project 컨텍스트는 프로젝트(모집 공고)의 설정/기본 정보에 집중합니다.
  */
+@Tag(name = "모집 단계", description = "서류/면접 단계 마감 및 프로젝트 종료 API")
 @RestController
 @RequestMapping("/api/recruiting/projects")
 @RequiredArgsConstructor
@@ -28,32 +32,20 @@ public class RecruitingStageController {
     private final RecruitingStageService recruitingStageService;
     private final AuthService authService;
 
-    /**
-     * 서류 단계 종료 및 프로젝트 종료
-     *
-     * 전제:
-     * - 프로젝트 상태가 DOCUMENT_LOCKED 인 경우에만 가능합니다.
-     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
-     */
+    @Operation(summary = "서류 단계 마감", description = "서류 단계를 마감하고 프로젝트 상태를 '서류 완료'로 변경합니다. (소유자만 가능)")
     @PatchMapping("/{projectId}/complete-document")
     public ResponseEntity<ProjectResponse> completeDocument(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         ProjectResponse response = recruitingStageService.completeDocument(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 면접 단계 종료 및 프로젝트 종료(전체 종료)
-     *
-     * 전제:
-     * - 프로젝트 상태가 INTERVIEW_LOCKED 인 경우에만 가능합니다.
-     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
-     */
+    @Operation(summary = "면접 단계 마감 (프로젝트 전체 종료)", description = "면접 단계를 마감하고 프로젝트 전체를 종료합니다. (소유자만 가능)")
     @PatchMapping("/{projectId}/complete-all")
     public ResponseEntity<ProjectResponse> completeAll(
-            @PathVariable Long projectId,
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         ProjectResponse response = recruitingStageService.completeAll(projectId, userId);

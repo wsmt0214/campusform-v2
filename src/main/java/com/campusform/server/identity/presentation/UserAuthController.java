@@ -17,9 +17,14 @@ import com.campusform.server.identity.application.dto.response.UpdateProfileImag
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.identity.application.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @Profile("!temporary")
+@Tag(name = "사용자", description = "사용자 정보 조회 및 설정 API")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -31,10 +36,11 @@ public class UserAuthController {
     /**
      * 프로필 이미지 업데이트
      */
+    @Operation(summary = "프로필 이미지 변경", description = "현재 로그인한 사용자의 프로필 이미지를 변경합니다.")
     @PatchMapping("/profile-image")
     public UpdateProfileImageResponse updateProfileImage(
             Authentication authentication,
-            @RequestParam("image") MultipartFile image) {
+            @Parameter(description = "업로드할 이미지 파일", schema = @Schema(type = "string", format = "binary")) @RequestParam("image") MultipartFile image) {
         Long userId = authService.extractUserId(authentication);
         String profileImageUrl = userService.updateProfileImage(userId, image);
         return new UpdateProfileImageResponse(profileImageUrl);
@@ -43,6 +49,7 @@ public class UserAuthController {
     /**
      * 프로필 이미지 삭제
      */
+    @Operation(summary = "프로필 이미지 삭제", description = "현재 로그인한 사용자의 프로필 이미지를 기본 이미지로 초기화합니다.")
     @DeleteMapping("/profile-image")
     public DeleteProfileImageResponse deleteProfileImage(
             Authentication authentication) {
@@ -54,6 +61,7 @@ public class UserAuthController {
     /**
      * 닉네임 수정
      */
+    @Operation(summary = "닉네임 변경", description = "현재 로그인한 사용자의 닉네임을 변경합니다.")
     @PatchMapping("/nickname")
     public UpdateNicknameResponse updateNickname(
             Authentication authentication,
