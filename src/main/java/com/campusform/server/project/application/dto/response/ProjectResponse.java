@@ -43,6 +43,8 @@ public class ProjectResponse {
     private List<Long> admins;
     @Schema(description = "프로젝트 생성 시각")
     private LocalDateTime createdAt;
+    @Schema(description = "현재 지원자 수", example = "42")
+    private Long applicantCount;
 
     public static ProjectResponse from(Project project) {
         // lastSyncStatus가 null일 수 있으므로 안전하게 처리
@@ -61,6 +63,28 @@ public class ProjectResponse {
                 project.getStartAt(),
                 project.getEndAt(),
                 project.getAdmins().stream().map(i -> i.getAdminId()).collect(Collectors.toList()),
-                project.getCreatedAt());
+                project.getCreatedAt(),
+                null);
+    }
+
+    public static ProjectResponse from(Project project, long applicantCount) {
+        // lastSyncStatus가 null일 수 있으므로 안전하게 처리
+        String syncStatus = project.getLastSyncStatus() != null
+                ? project.getLastSyncStatus().name()
+                : "NOT_SYNCED";
+
+        return new ProjectResponse(
+                project.getId(),
+                project.getTitle(),
+                project.getOwnerId(),
+                project.getState().name(),
+                project.getSheetUrl(),
+                syncStatus,
+                project.getLastSyncedAt(),
+                project.getStartAt(),
+                project.getEndAt(),
+                project.getAdmins().stream().map(i -> i.getAdminId()).collect(Collectors.toList()),
+                project.getCreatedAt(),
+                applicantCount);
     }
 }
