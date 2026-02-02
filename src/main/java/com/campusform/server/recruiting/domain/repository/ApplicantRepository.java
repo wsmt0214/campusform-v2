@@ -23,6 +23,9 @@ public interface ApplicantRepository {
     // 2. 일괄 저장 (ResultService.announceResults에서 사용)
     void saveAll(List<Applicant> applicants);
 
+    // 3. 단건 조회 (SmsService에서 사용)
+    Optional<Applicant> findById(Long id);
+
     // 4. 다건 ID 조회 (ResultService.announceResults에서 사용)
     List<Applicant> findAllById(List<Long> ids);
 
@@ -55,13 +58,8 @@ public interface ApplicantRepository {
     List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage);
 
     /**
-     * ID로 지원자 조회
-     */
-    Optional<Applicant> findById(Long applicantId);
-
-    /**
      * 프로젝트의 전체 지원자 목록 조회
-     * 
+     *
      * 최종 면접시간(Manual 우선 + Auto fallback) 조회 API에서 사용됩니다.
      */
     List<Applicant> findByProjectId(Long projectId);
