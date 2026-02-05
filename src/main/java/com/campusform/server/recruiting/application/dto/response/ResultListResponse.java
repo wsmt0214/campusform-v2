@@ -47,6 +47,8 @@ public class ResultListResponse {
         private int malePercent;
         @Schema(description = "여성 비율 (%)", example = "40")
         private int femalePercent;
+        @Schema(description = "기타 비율 (%)", example = "5")
+        private int otherPercent;
     }
 
     @Schema(description = "SMS 템플릿 정보")
@@ -75,5 +77,9 @@ public class ResultListResponse {
         private String major;
         @Schema(description = "지원 포지션", example = "백엔드")
         private String position;
+        @Schema(description = "전화번호", example = "010-1234-5678")
+        private String phoneNumber;
+        @Schema(description = "개인화된 메시지 내용 (@이름, @포지션이 치환된 메시지)", example = "안녕하세요, 홍길동님. 합격을 축하드립니다.")
+        private String personalizedMessage;
     }
 }

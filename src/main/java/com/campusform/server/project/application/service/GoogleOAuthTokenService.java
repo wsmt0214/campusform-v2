@@ -46,7 +46,7 @@ public class GoogleOAuthTokenService {
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
 
-    @Value("${app.oauth2.redirect-uri:http://localhost:3000}")
+    @Value("${app.oauth2.sheets-redirect-uri:http://localhost:3000/oauth/google/callback}")
     private String defaultRedirectUri;
 
     /**

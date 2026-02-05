@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 댓글(면접 코멘트) Entity
  * 지원자별 댓글과 답글을 관리합니다.
- * 최초 댓글에 대한 답글만 허용하며, 답글에 대한 대댓글은 지원하지 않습니다.
+ * 댓글에 대한 대댓글을 무제한으로 작성할 수 있습니다.
  */
 @Entity
 @Table(name = "comments",
@@ -61,8 +61,12 @@ public class Comment {
     /**
      * 답글 목록 (self-referencing 관계)
      * OneToMany 이므로 DB에 테이블 생성 안됨
+     * 
+     * cascade = CascadeType.ALL: 부모 댓글 삭제 시 모든 대댓글(무한 깊이)이 자동으로 삭제됨
+     * 
+     * 시나리오 2: 모든 대댓글이 루트 댓글의 직접 자식이므로 부모 재설정 로직 불필요
      */
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<Comment> replies = new ArrayList<>();
 
     @CreatedDate
@@ -72,6 +76,7 @@ public class Comment {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
 
     // 1. Private 생성자 : 외부에서 new Content() 금지
     private Comment(Long applicantId, Long authorId, String content, Comment parent) {
@@ -95,12 +100,24 @@ public class Comment {
 
     /**
      * 답글(대댓글) 작성 : 특정 댓글에 대한 댓글을 생성한다.
+     * 깊이 제한 없이 무제한으로 대댓글을 작성할 수 있습니다.
+     * 
+     * @throws IllegalArgumentException 부모 댓글이 null이거나, 부모 댓글의 applicantId와 일치하지 않는 경우
      */
     public static Comment createReply(Comment parent, Long applicantId, Long authorId, String content) {
         if(parent == null){
             throw new IllegalArgumentException("Parent comment cannot be null");
         }
+        // 부모 댓글과 applicantId 일치 검증 (데이터 무결성 보장)
+        if(!parent.getApplicantId().equals(applicantId)){
+            throw new IllegalArgumentException(
+                String.format("대댓글은 같은 지원자의 댓글에만 작성 가능합니다. 부모 댓글의 applicantId: %d, 요청한 applicantId: %d", 
+                    parent.getApplicantId(), applicantId)
+            );
+        }
+        // parent 객체를 직접 설정하여 parent_comment_id가 제대로 저장되도록 함
         Comment reply = new Comment(applicantId, authorId, content, parent);
+        // 양방향 관계 설정 (parent의 replies 리스트에 추가)
         parent.addReply(reply);
         return reply;
     }
@@ -129,6 +146,5 @@ public class Comment {
     public boolean isWrittenBy(Long currentMemberId) {
         return this.authorId.equals(currentMemberId);
     }
-
 
 }

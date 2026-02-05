@@ -1,5 +1,6 @@
 package com.campusform.server.recruiting.application.service;
 
+import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.request.ResultAnnouncementRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class ResultService {
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
+    private final MessageGenerator messageGenerator;
 
     // 합,불 명단/ 통계 조회
     public ResultListResponse getResults(Long projectId, StageStatus stage, ApplicantStatus status){
@@ -36,7 +38,14 @@ public class ResultService {
         }
 
         // 3. 통계 데이터 계산
-        long totalCount = applicantRepository.countByProjectId(projectId);
+        long totalCount;
+        if (stage == StageStatus.DOCUMENT) {
+            // 서류 단계: 전체 지원자 수
+            totalCount = applicantRepository.countByProjectId(projectId);
+        } else {
+            // 면접 단계: 서류 합격자 수만 (서류 탈락자는 제외)
+            totalCount = applicantRepository.countByProjectIdAndDocumentStatus(projectId, ApplicantStatus.PASS);
+        }
         long currentPassCount = applicants.size(); // 현재 리스트 개수 (PASS라고 가정)
 
         // 경쟁률 (전체 / 현재합격자) - 0으로 나누기 방지
@@ -53,15 +62,28 @@ public class ResultService {
                 .map(t->t.getTemplateContent(stage,status))
                 .orElse("");
 
-        // 5. DTO 변환 및 반환
+        // 5. DTO 변환 및 반환 (개인화된 메시지 포함)
         List<ResultListResponse.ApplicantSummary> applicantSummaries = applicants.stream()
-                .map(app -> ResultListResponse.ApplicantSummary.builder()
-                        .applicantId(app.getId())
-                        .name(app.getName())
-                        .school(app.getSchool())
-                        .major(app.getMajor())
-                        .position(app.getPosition())
-                        .build())
+                .map(app -> {
+                    // 각 지원자별로 개인화된 메시지 생성 (@이름, @포지션 치환)
+                    String personalizedMessage = messageGenerator.generateMessage(
+                            projectId,
+                            stage,
+                            status,
+                            app.getName(),
+                            app.getPosition() != null ? app.getPosition() : "-"
+                    );
+                    
+                    return ResultListResponse.ApplicantSummary.builder()
+                            .applicantId(app.getId())
+                            .name(app.getName())
+                            .school(app.getSchool())
+                            .major(app.getMajor())
+                            .position(app.getPosition())
+                            .phoneNumber(app.getPhone())
+                            .personalizedMessage(personalizedMessage != null ? personalizedMessage : "")
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ResultListResponse.builder()
@@ -78,18 +100,42 @@ public class ResultService {
                 .build();
     }
 
-    // 성비 계산 메서드
+    // 성비 계산 메서드 (남성, 여성, 기타)
     private ResultListResponse.GenderRatio calculateGenderRatio(List<Applicant> applicants) {
-        if (applicants.isEmpty()) return ResultListResponse.GenderRatio.builder().malePercent(0).femalePercent(0).build();
+        if (applicants.isEmpty()) {
+            return ResultListResponse.GenderRatio.builder()
+                    .malePercent(0)
+                    .femalePercent(0)
+                    .otherPercent(0)
+                    .build();
+        }
 
+        int totalCount = applicants.size();
+        
         long maleCount = applicants.stream()
-                .filter(a -> "남".equals(a.getGender()) || "Male".equalsIgnoreCase(a.getGender()))
+                .filter(a -> {
+                    String gender = a.getGender();
+                    return gender != null && ("남".equals(gender) || "Male".equalsIgnoreCase(gender)|| "남자".equals(gender)|| "남성".equals(gender));
+                })
                 .count();
 
-        int malePercent = (int) ((maleCount * 100) / applicants.size());
+        long femaleCount = applicants.stream()
+                .filter(a -> {
+                    String gender = a.getGender();
+                    return gender != null && ("여".equals(gender) || "Female".equalsIgnoreCase(gender) || "여성".equals(gender)|| "여자".equals(gender));
+                })
+                .count();
+
+        long otherCount = totalCount - maleCount - femaleCount;
+
+        int malePercent = (int) ((maleCount * 100) / totalCount);
+        int femalePercent = (int) ((femaleCount * 100) / totalCount);
+        int otherPercent = 100 - malePercent - femalePercent; // 나머지 비율
+
         return ResultListResponse.GenderRatio.builder()
                 .malePercent(malePercent)
-                .femalePercent(100 - malePercent)
+                .femalePercent(femalePercent)
+                .otherPercent(otherPercent)
                 .build();
     }
 

@@ -10,4 +10,5 @@ import lombok.Getter;
 public class CommentCreateResponse {
     @Schema(description = "생성된 댓글 ID", example = "101")
     private Long commentId;
+    private Long parentId;
 }

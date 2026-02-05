@@ -15,5 +15,7 @@ public class CommentRequest {
     @Schema(description = "댓글 내용", example = "이 지원자는 꼭 뽑아야 합니다.")
     @NotBlank(message = "댓글 내용은 필수입니다.")
     private String content;
+    // parentId가 있으면 대댓글, null이면 루트 댓글
+    private Long parentId;
 }
 

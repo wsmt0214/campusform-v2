@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Value("${app.oauth2.redirect-uri}")
+    @Value("${app.oauth2.login-redirect-uri}")
     private String redirectUri;
 
     @Override
