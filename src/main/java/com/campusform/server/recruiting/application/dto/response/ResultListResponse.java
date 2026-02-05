@@ -45,7 +45,7 @@ public class ResultListResponse {
     public static class GenderRatio {
         @Schema(description = "남성 비율 (%)", example = "60")
         private int malePercent;
-        @Schema(description = "여성 비율 (%)", example = "40")
+        @Schema(description = "여성 비율 (%)", example = "35")
         private int femalePercent;
         @Schema(description = "기타 비율 (%)", example = "5")
         private int otherPercent;

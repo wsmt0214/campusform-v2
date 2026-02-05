@@ -139,19 +139,6 @@ public class ResultService {
                 .build();
     }
 
-    // 템플릿 내용 조회 헬퍼 메서드
-//    private String getTemplateContent(Long projectId, String stage, ApplicantStatus status) {
-//        return templateRepository.findById(projectId)
-//                .map(t -> {
-//                    if ("DOCUMENT".equalsIgnoreCase(stage)) {
-//                        return status == ApplicantStatus.PASS ? t.getTemplateDocumentPass() : t.getTemplateDocumentFail();
-//                    } else {
-//                        return status == ApplicantStatus.PASS ? t.getTemplateInterviewPass() : t.getTemplateInterviewFail();
-//                    }
-//                })
-//                .orElse("");
-//    }
-
     @Transactional
     public void announceResults(Long projectId, ResultAnnouncementRequest request){
         // 1. 대상 지원자 조회

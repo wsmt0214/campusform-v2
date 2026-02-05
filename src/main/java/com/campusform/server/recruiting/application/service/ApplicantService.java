@@ -53,8 +53,8 @@ public class ApplicantService {
                 case "name_desc": // 2. 이름 내림차순 (하파타순)
                     applicants = applicantRepository.findByProjectIdOrderByNameDesc(projectId);
                     break;
-                case "bookmark": // 3. 찜한 순 (찜한거 위로, 나머지는 최신순)
-                    applicants = applicantRepository.findByProjectIdOrderByBookmarkedDescIdDesc(projectId);
+                case "bookmark": // 3. 찜한 순 (찜한거 위로, 나머지는 가나다순)
+                    applicants = applicantRepository.findByProjectIdOrderByBookmarkedDescNameAsc(projectId);
                     break;
                 default: // 1. 이름 오름차순 (가나다순)
                     applicants = applicantRepository.findByProjectIdOrderByNameAsc(projectId);
@@ -125,15 +125,39 @@ public class ApplicantService {
                 : applicant.getInterviewStatus();
 
         // 3. [수정] 답변 리스트 변환 로직을 Service 내부로 가져옴
-        // (DTO의 from 메서드 대신 여기서 직접 Builder로 변환)
+        // 시트 헤더 순서대로 정렬 (orderIndex 기준, null인 경우는 맨 뒤로)
         List<ApplicantDetailResponse.AnswerDto> answerDtos = applicant.getExtraAnswers().stream()
+                .sorted((a1, a2) -> {
+                    Integer idx1 = a1.getOrderIndex();
+                    Integer idx2 = a2.getOrderIndex();
+                    // null인 경우는 Integer.MAX_VALUE로 처리하여 맨 뒤로
+                    int order1 = idx1 != null ? idx1 : Integer.MAX_VALUE;
+                    int order2 = idx2 != null ? idx2 : Integer.MAX_VALUE;
+                    return Integer.compare(order1, order2);
+                })
                 .map(answer -> ApplicantDetailResponse.AnswerDto.builder()
                         .question(answer.getQuestionText())
                         .answer(answer.getAnswerText())
                         .build())
                 .toList();
 
-        // 4. 응답 DTO 빌드
+        // 4. 지원동기 추출 (지원동기 관련 질문을 찾아서 답변 추출)
+        String motivation = applicant.getExtraAnswers().stream()
+                .filter(answer -> {
+                    String question = answer.getQuestionText();
+                    if (question == null) return false;
+                    // 지원동기 관련 키워드로 필터링
+                    String lowerQuestion = question.toLowerCase().trim();
+                    return lowerQuestion.contains("지원동기") 
+                        || lowerQuestion.contains("지원 이유")
+                        || lowerQuestion.contains("참여하고 싶은 이유")
+                        || lowerQuestion.contains("동기");
+                })
+                .findFirst()
+                .map(answer -> answer.getAnswerText())
+                .orElse(null);
+
+        // 5. 응답 DTO 빌드
         return ApplicantDetailResponse.builder()
                 .applicantId(applicant.getId())
                 .name(applicant.getName())
@@ -145,7 +169,8 @@ public class ApplicantService {
                 .email(applicant.getEmail())
                 .status(currentStatus.name())
                 .isFavorite(applicant.getBookmarked())
-                .answers(answerDtos) // 위에서 만든 리스트를 넣어줌
+                .motivation(motivation) // 지원동기 추가
+                .answers(answerDtos) // 모든 질문/답변 목록
                 .build();
     }
 }

@@ -44,15 +44,25 @@ public class ApplicantExtraAnswer {
     @Column(name = "answer_text", columnDefinition = "TEXT")
     private String answerText;
 
+    /**
+     * 시트 헤더의 순서(인덱스)를 저장하여 질문-답변 매칭 순서 보장
+     * 
+     * 기존 데이터 호환성을 위해 nullable로 설정.
+     * null인 경우는 기존 데이터로 간주하여 정렬 시 맨 뒤로 배치됩니다.
+     */
+    @Column(name = "order_index")
+    private Integer orderIndex;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public static ApplicantExtraAnswer create(Applicant applicant, String questionText, String answerText) {
+    public static ApplicantExtraAnswer create(Applicant applicant, String questionText, String answerText, Integer orderIndex) {
         ApplicantExtraAnswer extraAnswer = new ApplicantExtraAnswer();
         extraAnswer.applicant = applicant;
         extraAnswer.questionText = questionText;
         extraAnswer.answerText = answerText;
+        extraAnswer.orderIndex = orderIndex;
         return extraAnswer;
     }
 }

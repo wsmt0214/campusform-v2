@@ -45,26 +45,25 @@ public class SmsService {
 
     /**
      * 개인별 문자메시지 미리보기
-     * stage와 status를 입력받아 동적으로 템플릿 선택, 변수 치환 로직을 엔티티에 위임한다.
+     * 지원자의 현재 상태를 DB에서 조회하여 해당 템플릿을 사용합니다.
      */
     @Transactional(readOnly = true)
-    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, StageStatus stageStr, ApplicantStatus statusStr) {
-
-        // 2. 지원자 조회
+    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, StageStatus stage) {
+        // 1. 지원자 조회
         Applicant applicant = applicantRepository.findById(applicantId)
                 .filter(a -> a.getProjectId().equals(projectId))
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
 
-        // 3. 템플릿 조회
-//        MessageTemplate templateContent = templateRepository.findByProjectId(projectId)
-//                .orElse(MessageTemplate.createEmpty(projectId));
+        // 2. 지원자의 현재 상태 조회 (DB에서 가져옴)
+        ApplicantStatus currentStatus = (stage == StageStatus.DOCUMENT)
+                ? applicant.getDocumentStatus()
+                : applicant.getInterviewStatus();
 
-        //4. 메시지 생성 로직을 엔티티에게 위임 -> DDD 형태!!!
-        // 변수 바꾸기를 엔티티에서 알아서 할거임
+        // 3. 메시지 생성 (지원자의 현재 상태를 사용)
         String finalContent = messageGenerator.generateMessage(
                 projectId,
-                stageStr,
-                statusStr,
+                stage,
+                currentStatus,
                 applicant.getName(),
                 applicant.getPosition() != null ? applicant.getPosition() : "-"
         );
@@ -82,6 +81,20 @@ public class SmsService {
                 .count(1)
                 .messages(List.of(message))
                 .build();
+    }
+
+    /**
+     * 저장된 템플릿 조회
+     * @param projectId 프로젝트 ID
+     * @param stage 모집 단계
+     * @param status 지원자 상태
+     * @return 템플릿 내용 (없으면 빈 문자열)
+     */
+    @Transactional(readOnly = true)
+    public String getTemplate(Long projectId, StageStatus stage, ApplicantStatus status) {
+        return templateRepository.findByProjectId(projectId)
+                .map(t -> t.getTemplateContent(stage, status))
+                .orElse("");
     }
 
     // 미리보기용 정보 문자열 생성 ("학교 / 전공 / 지원분야")

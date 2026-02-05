@@ -74,8 +74,8 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     }
 
     @Override
-    public List<Applicant> findByProjectIdOrderByBookmarkedDescIdDesc(Long projectId) {
-        return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescIdDesc(projectId);
+    public List<Applicant> findByProjectIdOrderByBookmarkedDescNameAsc(Long projectId) {
+        return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescNameAsc(projectId);
     }
 
     @Override
