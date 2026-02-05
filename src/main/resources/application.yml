@@ -24,11 +24,17 @@ spring:
 # AWS S3
 aws:
   s3:
-    bucket: ${AWS_S3_BUCKET}
+    bucket: ${AWS_S3_BUCKET:dummy-bucket}
     region: ${AWS_S3_REGION:ap-northeast-2}
   credentials:
-    access-key: ${AWS_ACCESS_KEY}
-    secret-key: ${AWS_SECRET_KEY}
+    access-key: ${AWS_ACCESS_KEY:dummy-access-key}
+    secret-key: ${AWS_SECRET_KEY:dummy-secret-key}
+
+# OAuth2 Redirect URI (공통 기본값)
+app:
+  oauth2:
+    login-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/auth/callback
+    sheets-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/oauth/google/callback
 
 ---
 # 로컬 개발용
@@ -47,10 +53,12 @@ spring:
     hibernate:
       ddl-auto: create
 
-app:
-  oauth2:
-    login-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/auth/callback
-    sheets-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/oauth/google/callback
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: none
+        secure: true
 
 ---
 # 운영용
@@ -76,8 +84,5 @@ server:
         domain: .campus-form-server.kro.kr
         same-site: none
         secure: true
-
-app:
-  oauth2:
-    login-redirect-uri: ${FRONTEND_URL}/auth/callback
-    sheets-redirect-uri: ${FRONTEND_URL}/oauth/google/callback
+        http-only: true
+  forward-headers-strategy: native
