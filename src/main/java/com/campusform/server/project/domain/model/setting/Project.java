@@ -137,6 +137,30 @@ public class Project {
         admins.add(ProjectAdmin.create(this, adminId));
     }
 
+    /**
+     * 관리자 제거 연관관계 편의메서드
+     * 
+     * @param adminId 제거할 관리자 ID
+     * @throws IllegalArgumentException 관리자가 존재하지 않는 경우
+     */
+    public void removeAdmin(Long adminId) {
+        if (adminId == null) {
+            throw new IllegalArgumentException("adminId가 필요합니다.");
+        }
+
+        // OWNER는 제거할 수 없음
+        if (this.ownerId.equals(adminId)) {
+            throw new IllegalArgumentException("프로젝트 OWNER는 관리자에서 제거할 수 없습니다.");
+        }
+
+        // 관리자 목록에서 제거
+        boolean removed = admins.removeIf(admin -> admin.getAdminId().equals(adminId));
+
+        if (!removed) {
+            throw new IllegalArgumentException("해당 사용자는 프로젝트 관리자가 아닙니다. adminId=" + adminId);
+        }
+    }
+
     /** 필수 필드 매핑 정보 설정 연관관계 편의메서드 */
     public void addMapping(RequiredFieldMapping mappingValue) {
         this.mapping = ProjectRequiredMapping.create(this, mappingValue);

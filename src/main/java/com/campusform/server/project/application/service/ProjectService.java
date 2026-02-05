@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.global.event.AdminAddedEvent;
+import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
+import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
+import com.campusform.server.project.application.dto.response.AddAdminResponse;
+import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
@@ -103,7 +107,7 @@ public class ProjectService {
      * 프로젝트 삭제 (OWNER만 가능)
      *
      * @param projectId 프로젝트 ID
-     * @param userId 사용자 ID (OWNER 권한 확인)
+     * @param userId    사용자 ID (OWNER 권한 확인)
      */
     @Transactional
     public void deleteProject(Long projectId, Long userId) {
@@ -115,6 +119,90 @@ public class ProjectService {
 
         // 프로젝트 삭제 (CASCADE로 관련된 ProjectAdmin도 자동 삭제됨)
         projectRepository.delete(project);
+    }
+
+    /**
+     * 관리자 추가 (OWNER만 가능)
+     */
+    @Transactional
+    public AddAdminResponse addAdmin(Long projectId, Long ownerId, AddAdminRequest request) {
+        // 프로젝트 조회
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        // OWNER 권한 검증
+        project.validateOwnerAccess(ownerId);
+
+        // 이메일로 사용자 존재 여부 확인
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 가입된 사용자가 없습니다. email=" + request.getEmail()));
+
+        Long adminId = user.getId();
+
+        // OWNER와 중복 체크
+        if (project.getOwnerId().equals(adminId)) {
+            throw new IllegalArgumentException("프로젝트 OWNER는 관리자로 추가할 수 없습니다.");
+        }
+
+        // 이미 관리자인지 확인 (Project.addAdmin에서도 체크하지만, 명확한 에러 메시지를 위해 먼저 체크)
+        if (project.getAdmins().stream().anyMatch(admin -> admin.getAdminId().equals(adminId))) {
+            throw new IllegalArgumentException("이미 프로젝트 관리자로 등록된 사용자입니다.");
+        }
+
+        // 관리자 추가
+        project.addAdmin(adminId);
+        projectRepository.save(project);
+
+        return new AddAdminResponse(adminId, user.getNickname(), user.getEmail(), user.getProfileImageUrl());
+    }
+
+    /**
+     * 관리자 제거 (OWNER만 가능)
+     */
+    @Transactional
+    public void removeAdmin(Long projectId, Long ownerId, Long adminId) {
+        // 프로젝트 조회
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        // OWNER 권한 검증
+        project.validateOwnerAccess(ownerId);
+
+        // 관리자 제거 (도메인 로직에서 OWNER 체크 및 존재 여부 확인)
+        project.removeAdmin(adminId);
+        projectRepository.save(project);
+    }
+
+    /**
+     * 관리자 목록 조회 (관리자만 가능)
+     * 
+     * OWNER는 제외하고 ADMIN만 반환합니다.
+     */
+    @Transactional(readOnly = true)
+    public AdminListResponse getAdmins(Long projectId, Long userId) {
+        // 프로젝트 조회
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        // 관리자 권한 검증 (OWNER 또는 ADMIN)
+        project.validateAdminAccess(userId);
+
+        // ADMIN 목록 조회 및 정보 추가 (OWNER 제외)
+        List<AdminListResponse.AdminInfo> adminList = project.getAdmins().stream()
+                .map(admin -> {
+                    User adminUser = userRepository.findById(admin.getAdminId())
+                            .orElseThrow(() -> new IllegalStateException(
+                                    "관리자 정보를 찾을 수 없습니다. adminId=" + admin.getAdminId()));
+                    return new AdminListResponse.AdminInfo(
+                            adminUser.getId(),
+                            adminUser.getNickname(),
+                            adminUser.getEmail(),
+                            adminUser.getProfileImageUrl(),
+                            "ADMIN");
+                })
+                .collect(Collectors.toList());
+
+        return new AdminListResponse(adminList);
     }
 
     private void validateCreateProjectRequest(CreateProjectRequest request) {

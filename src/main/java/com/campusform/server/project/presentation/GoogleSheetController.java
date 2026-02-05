@@ -48,12 +48,8 @@ public class GoogleSheetController {
 
         Long userId = authService.extractUserId(authentication);
 
-        Project project = projectRepository.findBySheetUrl(sheetUrl)
-                .orElseThrow(() -> new IllegalArgumentException("sheetUrl에 해당하는 프로젝트가 존재하지 않습니다."));
-        project.validateAdminAccess(userId);
-
         // 시트 헤더 조회 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
-        List<SpreadsheetColumnResponse> headers = spreadsheetService.getSheetHeaders(sheetUrl, project.getOwnerId());
+        List<SpreadsheetColumnResponse> headers = spreadsheetService.getSheetHeaders(sheetUrl, userId);
         return ResponseEntity.ok(headers);
     }
 
@@ -76,8 +72,8 @@ public class GoogleSheetController {
 
         // 시트 동기화 실행 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
         try {
-            int syncedCount = spreadsheetService.syncSheet(projectId);
-            return ResponseEntity.ok(SheetSyncResponse.success(syncedCount));
+            SheetSyncResponse response = spreadsheetService.syncSheet(projectId);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(SheetSyncResponse.failure("시트 동기화 중 오류가 발생했습니다: " + e.getMessage()));

@@ -10,12 +10,26 @@ import java.util.List;
  *
  * @param projectId  프로젝트 ID
  * @param adminIds   알림 수신자 목록 (OWNER + ADMIN)
- * @param syncedCount 동기화된 지원자 수
- * @param success    성공 여부
+ * @param statistics 동기화 통계 정보
+ * @param changes    변경사항 목록 (null 가능 - 변경사항이 없을 경우)
  */
 public record SheetSyncCompletedEvent(
-        Long projectId,
-        List<Long> adminIds,
-        int syncedCount,
-        boolean success
-) {}
+                Long projectId,
+                List<Long> adminIds,
+                SheetSyncStatistics statistics,
+                List<SheetSyncChangeInfo> changes) {
+        /**
+         * 동기화 성공 여부
+         * 통계 정보가 있으면 성공으로 간주
+         */
+        public boolean isSuccess() {
+                return statistics != null;
+        }
+
+        /**
+         * 하위 호환성을 위한 생성자 (통계 정보만으로 생성)
+         */
+        public SheetSyncCompletedEvent(Long projectId, List<Long> adminIds, SheetSyncStatistics statistics) {
+                this(projectId, adminIds, statistics, null);
+        }
+}

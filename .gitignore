@@ -43,3 +43,6 @@ db_data/
 
 ### Documentation ###
 docs/
+
+### Cursor Rules ###
+.cursor/rules/campusform-rule.mdc

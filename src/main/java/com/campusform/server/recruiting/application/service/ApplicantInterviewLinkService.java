@@ -22,7 +22,7 @@ import com.campusform.server.recruiting.domain.service.InterviewSlotGenerator;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 지원자 면접 가능 시간 조사 링크 관리 서비스 (Owner용)
+ * 지원자 면접 가능 시간 조사 링크 관리 서비스 (관리자용)
  */
 @Service
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ public class ApplicantInterviewLinkService {
      */
     public ApplicantInterviewLinkResponse getApplicantLink(Long projectId, Long userId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         InterviewAvailabilityInvestigationLink link = setting.getInvestigationLink();
@@ -54,7 +54,7 @@ public class ApplicantInterviewLinkService {
      */
     public ApplicantInterviewLinkConfigResponse getApplicantLinkConfig(Long projectId, Long userId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         InterviewAvailabilityInvestigationLink link = setting.getInvestigationLink();
@@ -72,7 +72,7 @@ public class ApplicantInterviewLinkService {
     public ApplicantInterviewLinkConfigResponse updateApplicantLinkConfig(
             Long projectId, Long userId, UpdateApplicantLinkConfigRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         InterviewAvailabilityInvestigationLink link = setting.getInvestigationLink();
