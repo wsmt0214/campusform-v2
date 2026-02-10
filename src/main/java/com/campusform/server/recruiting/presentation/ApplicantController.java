@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.request.ApplicantStatusUpdateRequest;
 import com.campusform.server.recruiting.application.dto.response.ApplicantDetailResponse;
 import com.campusform.server.recruiting.application.dto.response.ApplicantListResponse;
