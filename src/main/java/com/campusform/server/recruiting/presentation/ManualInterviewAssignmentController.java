@@ -20,6 +20,7 @@ import com.campusform.server.recruiting.application.dto.response.ManualInterview
 import com.campusform.server.recruiting.application.service.ManualInterviewAssignmentService;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,6 +58,7 @@ public class ManualInterviewAssignmentController {
         return ResponseEntity.ok(ManualInterviewAssignmentResponse.from(assignment.orElseThrow()));
     }
 
+    @Hidden
     @Operation(summary = "지원자의 수동 배정 정보 조회", description = "특정 지원자에게 수동으로 배정된 면접 시간 정보를 조회합니다.")
     @GetMapping("/applicants/{applicantId}")
     public ResponseEntity<ManualInterviewAssignmentResponse> getAssignment(
@@ -73,6 +75,7 @@ public class ManualInterviewAssignmentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Hidden
     @Operation(summary = "프로젝트의 모든 수동 배정 정보 조회", description = "해당 프로젝트에 수동으로 배정된 모든 면접 시간 정보를 조회합니다.")
     @GetMapping
     public ResponseEntity<List<ManualInterviewAssignmentResponse>> getAllAssignments(

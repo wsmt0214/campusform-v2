@@ -1,26 +1,28 @@
 package com.campusform.server.recruiting.application.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.message.MessageTemplate;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.repository.MessageTemplateRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class SmsService {
-    //문자 메시지 내용, 템플릿, 발송 서비스
+    // 문자 메시지 내용, 템플릿, 발송 서비스
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
     private final MessageGenerator messageGenerator;
@@ -41,7 +43,7 @@ public class SmsService {
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
         validateStageActive(project, stage);
 
-        ApplicantStatus applicantStatus = request.getStatus();
+        ScreeningResult applicantStatus = request.getStatus();
         // 1. 없으면 생성, 있으면 가져오기
         MessageTemplate template = templateRepository.findByProjectId(projectId)
                 .orElseGet(() -> templateRepository.save(MessageTemplate.createEmpty(projectId)));
@@ -63,7 +65,7 @@ public class SmsService {
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
 
         // 2. 지원자의 현재 상태 조회 (DB에서 가져옴)
-        ApplicantStatus currentStatus = (stage == RecruitmentStage.DOCUMENT)
+        ScreeningResult currentStatus = (stage == RecruitmentStage.DOCUMENT)
                 ? applicant.getDocumentStatus()
                 : applicant.getInterviewStatus();
 
@@ -73,8 +75,7 @@ public class SmsService {
                 stage,
                 currentStatus,
                 applicant.getName(),
-                applicant.getPosition() != null ? applicant.getPosition() : "-"
-        );
+                applicant.getPosition() != null ? applicant.getPosition() : "-");
 
         // 5. 응답 DTO 생성
         SmsPreviewResponse.PreviewMessage message = SmsPreviewResponse.PreviewMessage.builder()
@@ -93,13 +94,14 @@ public class SmsService {
 
     /**
      * 저장된 템플릿 조회
+     * 
      * @param projectId 프로젝트 ID
-     * @param stage 모집 단계
-     * @param status 지원자 상태
+     * @param stage     모집 단계
+     * @param status    지원자 상태
      * @return 템플릿 내용 (없으면 빈 문자열)
      */
     @Transactional(readOnly = true)
-    public String getTemplate(Long projectId, RecruitmentStage stage, ApplicantStatus status) {
+    public String getTemplate(Long projectId, RecruitmentStage stage, ScreeningResult status) {
         return templateRepository.findByProjectId(projectId)
                 .map(t -> t.getTemplateContent(stage, status))
                 .orElse("");
@@ -110,8 +112,7 @@ public class SmsService {
         return String.format("%s / %s / %s",
                 applicant.getSchool() != null ? applicant.getSchool() : "-",
                 applicant.getMajor() != null ? applicant.getMajor() : "-",
-                applicant.getPosition() != null ? applicant.getPosition() : "-"
-        );
+                applicant.getPosition() != null ? applicant.getPosition() : "-");
     }
 
     /**

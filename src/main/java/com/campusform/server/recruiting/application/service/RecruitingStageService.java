@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,7 @@ public class RecruitingStageService {
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
 
         // HOLD 상태 지원자 검증
-        long holdCount = applicantRepository.countByProjectIdAndDocumentStatus(projectId, ApplicantStatus.HOLD);
+        long holdCount = applicantRepository.countByProjectIdAndDocumentStatus(projectId, ScreeningResult.HOLD);
         if (holdCount > 0) {
             throw new IllegalStateException(
                     "서류 단계를 종료할 수 없습니다. 서류 심사가 보류(HOLD)인 지원자가 " + holdCount + "명 있습니다. 모두 합격/불합격 처리 후 종료해 주세요.");
@@ -67,7 +67,7 @@ public class RecruitingStageService {
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
 
         // HOLD 상태 지원자 검증
-        long holdCount = applicantRepository.countByProjectIdAndInterviewStatus(projectId, ApplicantStatus.HOLD);
+        long holdCount = applicantRepository.countByProjectIdAndInterviewStatus(projectId, ScreeningResult.HOLD);
         if (holdCount > 0) {
             throw new IllegalStateException(
                     "면접 단계를 종료할 수 없습니다. 면접 결과가 보류(HOLD)인 지원자가 " + holdCount + "명 있습니다. 모두 합격/불합격 처리 후 종료해 주세요.");

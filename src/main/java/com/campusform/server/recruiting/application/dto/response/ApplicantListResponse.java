@@ -1,7 +1,5 @@
 package com.campusform.server.recruiting.application.dto.response;
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,8 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicantListResponse {
-    @Schema(description = "지원자 현황 통계")
-    private ApplicantStatus status;
+    @Schema(description = "지원자 현황 통계 (전체/보류/합격/불합격 수)")
+    private ApplicantStatistics status;
     @Schema(description = "지원자 목록")
     private List<ApplicantResponse> applicants;
 
@@ -26,7 +24,7 @@ public class ApplicantListResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ApplicantStatus {
+    public static class ApplicantStatistics {
         @Schema(description = "전체 지원자 수", example = "100")
         private long totalCount;
         @Schema(description = "보류중인 지원자 수", example = "10")

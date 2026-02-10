@@ -2,7 +2,7 @@ package com.campusform.server.recruiting.application.eventhandler;
 
 import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.port.SmsSender;
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 import com.campusform.server.recruiting.domain.model.message.MessageTemplate;
@@ -48,7 +48,7 @@ public class ApplicantEventHandler {
 //        // 상태에 따라 다른 문구 생성
 //        String message = null;
 //        if (event.stage() == RecruitmentStage.DOCUMENT) {
-//            if (event.status() == ApplicantStatus.PASS) {
+//            if (event.status() == ScreeningResult.PASS) {
 //                // 이름(%s), 포지션(%s) 치환해서 문구 완성
 //                message = String.format(DOCUMENT_PASS_TEMPLATE, event.applicantName());
 //            }else{

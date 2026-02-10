@@ -17,6 +17,7 @@ import com.campusform.server.identity.application.dto.response.UpdateNicknameRes
 import com.campusform.server.identity.application.dto.response.UpdateProfileImageResponse;
 import com.campusform.server.identity.application.service.UserService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
  *
  * 프로덕션 배포 시 이 파일은 삭제하거나 @Profile("temporary")로 제한됩니다.
  */
+@Hidden
 @Profile("!local")
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController

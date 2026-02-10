@@ -1,22 +1,26 @@
 package com.campusform.server.recruiting.presentation;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.campusform.server.recruiting.application.service.ResultService;
-import com.campusform.server.recruiting.application.service.SmsService;
-import com.campusform.server.recruiting.application.dto.request.ResultAnnouncementRequest;
 import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.application.service.ResultService;
+import com.campusform.server.recruiting.application.service.SmsService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
-import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "합불 결과", description = "합격/불합격자 조회, 문자 템플릿 및 결과 통보 API")
 @RestController
@@ -31,9 +35,8 @@ public class ResultController {
     public ResponseEntity<ResultListResponse> getResultList(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
-            @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ApplicantStatus status
-    ){
-        ResultListResponse response=resultService.getResults(projectId,stage,status);
+            @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ScreeningResult status) {
+        ResultListResponse response = resultService.getResults(projectId, stage, status);
         return ResponseEntity.ok(response);
     }
 
@@ -42,8 +45,7 @@ public class ResultController {
     public ResponseEntity<Void> saveSmsTemplate(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "저장할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage,
-            @RequestBody SmsTemplateSaveRequest request
-    ) {
+            @RequestBody SmsTemplateSaveRequest request) {
         smsService.saveTemplate(projectId, stage, request);
         return ResponseEntity.ok().build();
     }
@@ -53,27 +55,8 @@ public class ResultController {
     public ResponseEntity<SmsPreviewResponse> getSmsPreview(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "미리보기할 지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage
-    ) {
+            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage) {
         SmsPreviewResponse response = smsService.getPreview(projectId, applicantId, stage);
         return ResponseEntity.ok(response);
     }
-
-    // @Operation(summary = "결과 최종 통보", description = "선택된 지원자들에게 저장된 템플릿을 사용하여 합격/불합격 결과를 SMS로 최종 통보합니다.")
-    // @PostMapping("/announce")
-    // public ResponseEntity<Void> announceResult(
-    //         @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-    //         @RequestBody ResultAnnouncementRequest request){
-    //     // 1. 만약 요청 데이터가 이상하면 여기서 컷! (Validation)
-    //     if (request.applicantIds() == null || request.applicantIds().isEmpty()) {
-    //         return ResponseEntity.badRequest().build();
-    //     }
-
-    //     // 2. 서비스 호출
-    //     resultService.announceResults(projectId,request);
-
-    //     // 3. 클라이언트에게 HTTP 상태 코드(200)로 응답
-    //     return ResponseEntity.ok().build();
-
-    // }
 }

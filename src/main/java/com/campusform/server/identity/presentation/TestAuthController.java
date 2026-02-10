@@ -20,6 +20,7 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 테스트용 인증 컨트롤러
  */
+@Hidden
 @Profile("local")
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController

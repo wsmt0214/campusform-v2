@@ -1,8 +1,7 @@
 package com.campusform.server.recruiting.infrastructure.persistence;
 
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,18 +20,18 @@ import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
     // JPA가 이름만 보고 자동으로 쿼리를 만들어줌.
     long countByProjectId(Long projectId);
-    //long countByProjectIdAndStatus(Long projectId, ApplicantStatus applicantStatus);
-    List<Applicant> findByProjectIdOrderByNameDesc(Long projectId);
+    //long countByProjectIdAndStatus(Long projectId, ScreeningResult applicantStatus);
 
-    List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus documentStatus);
-    List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ApplicantStatus interviewStatus);
+    List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ScreeningResult documentStatus);
+    List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ScreeningResult interviewStatus);
 
     // JPA가 알아서 쿼리를 만들어줍니다.
-    long countByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus status);
-    long countByProjectIdAndInterviewStatus(Long projectId, ApplicantStatus status);
+    long countByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
+    long countByProjectIdAndInterviewStatus(Long projectId, ScreeningResult status);
 
-    List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage);
-  
+    long countByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId, ScreeningResult documentStatus,
+            ScreeningResult interviewStatus);
+
     /**
      * 프로젝트의 전체 지원자 목록 조회
      */

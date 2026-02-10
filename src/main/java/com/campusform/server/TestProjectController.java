@@ -13,6 +13,7 @@ import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
  * 프로젝트 상태를 직접 설정할 수 있는 테스트용 API를 제공합니다.
  * 프로덕션 환경에서는 비활성화하거나 삭제해야 합니다.
  */
+@Hidden
 @Profile("local") // API 테스트 환경에서만 활성화
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController

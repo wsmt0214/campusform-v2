@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 
 /**
  * 도메인 계층의 Repository 인터페이스
@@ -33,26 +32,24 @@ public interface ApplicantRepository {
     long countByProjectId(Long projectId);
 
     // 서류 단계 상태로 조회
-    List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus status);
+    List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
 
     // 면접 단계 상태로 조회
-    List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ApplicantStatus status);
+    List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ScreeningResult status);
 
     // 서류(Document) 카운트
-    long countByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus status);
+    long countByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
 
     // 면접(Interview) 카운트
-    long countByProjectIdAndInterviewStatus(Long projectId, ApplicantStatus status);
+    long countByProjectIdAndInterviewStatus(Long projectId, ScreeningResult status);
+
+    /**
+     * 서류 합격 + 면접 상태 조건 카운트 (면접 탭 통계용: 서류 PASS인 지원자만 대상)
+     */
+    long countByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId, ScreeningResult documentStatus,
+            ScreeningResult interviewStatus);
 
     boolean existsById(Long applicantId);
-
-    // 1. 이름 오름차순
-    List<Applicant> findByProjectIdOrderByNameAsc(Long projectId);
-
-    // 2. 이름 내림차순
-    List<Applicant> findByProjectIdOrderByNameDesc(Long projectId);
-
-    List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage);
 
     /**
      * 프로젝트의 전체 지원자 목록 조회

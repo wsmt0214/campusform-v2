@@ -1,6 +1,6 @@
 package com.campusform.server.recruiting.application.dto.request;
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ApplicantStatusUpdateRequest {
     @Schema(description = "변경할 상태", example = "PASS")
-    private ApplicantStatus status;
+    private ScreeningResult status;
 }

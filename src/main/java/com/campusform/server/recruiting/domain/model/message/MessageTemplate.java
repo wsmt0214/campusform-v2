@@ -1,6 +1,6 @@
 package com.campusform.server.recruiting.domain.model.message;
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -64,14 +64,14 @@ public class MessageTemplate{
     }
 
     // 업데이트 로직
-    public void updateTemplate(RecruitmentStage stage, ApplicantStatus status, String content) {
+    public void updateTemplate(RecruitmentStage stage, ScreeningResult status, String content) {
         if (content == null) content = "";
 
         if (stage == RecruitmentStage.DOCUMENT) {
-            if (status == ApplicantStatus.PASS) this.templateDocumentPass = content;
+            if (status == ScreeningResult.PASS) this.templateDocumentPass = content;
             else this.templateDocumentFail = content;
         } else {
-            if (status == ApplicantStatus.PASS) this.templateInterviewPass = content;
+            if (status == ScreeningResult.PASS) this.templateInterviewPass = content;
             else this.templateInterviewFail = content;
         }
     }
@@ -84,7 +84,7 @@ public class MessageTemplate{
 //     * @param applicantName 지원자 이름
 //     * @param positionName 지원 포지션 (없을 경우 "-" 으로 표시)
 //     */
-//    public String generateMessage(RecruitmentStage stage, ApplicantStatus status, String applicantName, String positionName){
+//    public String generateMessage(RecruitmentStage stage, ScreeningResult status, String applicantName, String positionName){
 //        // 조건에 맞는 메시지를 설정해서 보내야햄 -> 조건에 맞는 메시지를 불러와야함.
 //        String rTemplate=getTemplateContent(stage,status);
 //
@@ -96,13 +96,13 @@ public class MessageTemplate{
 //                .replace("@포지션",positionName!=null?positionName:" - ");
 //    }
 //
-    public String getTemplateContent(RecruitmentStage stage, ApplicantStatus status) {
+    public String getTemplateContent(RecruitmentStage stage, ScreeningResult status) {
         if(stage==RecruitmentStage.DOCUMENT){
-            return status == ApplicantStatus.PASS
+            return status == ScreeningResult.PASS
                     ? templateDocumentPass
                     : templateDocumentFail;
         }else if(stage==RecruitmentStage.INTERVIEW){
-            return status == ApplicantStatus.PASS
+            return status == ScreeningResult.PASS
                     ? templateInterviewPass
                     : templateInterviewFail;
         }
