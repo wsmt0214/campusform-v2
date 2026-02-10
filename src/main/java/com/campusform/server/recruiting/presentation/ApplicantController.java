@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class ApplicantController {
 
     private final ApplicantService applicantService;
+    private final AuthService authService;
 
     /**
      * 프로젝트의 지원자 목록을 모집 단계에 따라 조회
