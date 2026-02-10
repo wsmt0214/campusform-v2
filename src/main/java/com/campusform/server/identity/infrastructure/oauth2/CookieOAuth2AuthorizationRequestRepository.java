@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * OAuth2 인증 요청을 쿠키에 저장하는 저장소
@@ -23,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * 세션 대신 쿠키에 인증 요청을 저장하여 api.campus-form-server.kro.kr와
  * web.campus-form-server.kro.kr 간 공유 가능
  */
+@Slf4j
 @Component
 public class CookieOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
@@ -37,13 +39,19 @@ public class CookieOAuth2AuthorizationRequestRepository
     @Value("${COOKIE_SECURE:true}")
     private boolean cookieSecure;
 
+    @Value("${COOKIE_SAME_SITE:none}")
+    private String cookieSameSite;
+
     /**
      * 쿠키에서 OAuth2 인증 요청 로드
      */
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
-        return getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)
-                .map(cookie -> deserialize(cookie, OAuth2AuthorizationRequest.class))
+        java.util.Optional<Cookie> cookie = getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME);
+        log.info("[OAuth2 Cookie] 로드 - 쿠키 존재: {}, 전체 쿠키 수: {}",
+                cookie.isPresent(), request.getCookies() != null ? request.getCookies().length : 0);
+        return cookie
+                .map(c -> deserialize(c, OAuth2AuthorizationRequest.class))
                 .orElse(null);
     }
 
@@ -61,11 +69,15 @@ public class CookieOAuth2AuthorizationRequestRepository
         }
 
         // 인증 요청을 쿠키에 저장
+        String serialized = serialize(authorizationRequest);
+        log.info("[OAuth2 Cookie] 저장 - 쿠키 크기: {} bytes, secure: {}, sameSite: {}, domain: '{}'",
+                serialized.length(), cookieSecure, cookieSameSite, cookieDomain);
         addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
-                serialize(authorizationRequest), COOKIE_EXPIRE_SECONDS);
+                serialized, COOKIE_EXPIRE_SECONDS);
 
         // 리다이렉트 URI도 쿠키에 저장 (필요한 경우)
         String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
+        log.info("[OAuth2 Cookie] redirect_uri 파라미터: '{}'", redirectUriAfterLogin);
         if (redirectUriAfterLogin != null && !redirectUriAfterLogin.isEmpty()) {
             addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin,
                     COOKIE_EXPIRE_SECONDS);
@@ -86,6 +98,23 @@ public class CookieOAuth2AuthorizationRequestRepository
     }
 
     /**
+     * redirect_uri 쿠키 값 조회
+     */
+    public java.util.Optional<String> getRedirectUriCookieValue(HttpServletRequest request) {
+        java.util.Optional<String> value = getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
+                .map(Cookie::getValue);
+        log.info("[OAuth2 Cookie] redirect_uri 쿠키 조회: {}", value.orElse("없음"));
+        return value;
+    }
+
+    /**
+     * redirect_uri 쿠키 삭제
+     */
+    public void removeRedirectUriCookie(HttpServletRequest request, HttpServletResponse response) {
+        deleteCookie(request, response, REDIRECT_URI_PARAM_COOKIE_NAME);
+    }
+
+    /**
      * 쿠키 추가
      */
     private void addCookie(HttpServletResponse response, String name, String value,
@@ -95,7 +124,9 @@ public class CookieOAuth2AuthorizationRequestRepository
         cookie.setHttpOnly(true);
         cookie.setMaxAge(maxAge);
         cookie.setSecure(cookieSecure);
-        cookie.setAttribute("SameSite", cookieSecure ? "none" : "Lax");
+        cookie.setAttribute("SameSite", cookieSameSite);
+        // 쿠키 도메인 설정: 서브도메인 간 공유를 위해 점(.)으로 시작
+        // api.campus-form-server.kro.kr와 web.campus-form-server.kro.kr 간 공유
         if (cookieDomain != null && !cookieDomain.isEmpty()) {
             cookie.setDomain(cookieDomain);
         }
@@ -116,7 +147,8 @@ public class CookieOAuth2AuthorizationRequestRepository
                     cookie.setMaxAge(0);
                     cookie.setHttpOnly(true);
                     cookie.setSecure(cookieSecure);
-                    cookie.setAttribute("SameSite", cookieSecure ? "none" : "Lax");
+                    cookie.setAttribute("SameSite", cookieSameSite);
+                    // 도메인도 일치시켜야 삭제됨
                     if (cookieDomain != null && !cookieDomain.isEmpty()) {
                         cookie.setDomain(cookieDomain);
                     }

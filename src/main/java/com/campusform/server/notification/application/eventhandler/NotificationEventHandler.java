@@ -8,6 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import com.campusform.server.global.event.AdminAddedEvent;
 import com.campusform.server.global.event.CommentCreatedEvent;
 import com.campusform.server.global.event.NewApplicantEvent;
+import com.campusform.server.global.event.SheetSyncCompletedEvent;
 import com.campusform.server.notification.application.service.NotificationService;
 import com.campusform.server.notification.domain.model.value.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,6 +30,28 @@ public class NotificationEventHandler {
 
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 시트 동기화 완료 이벤트 처리
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async
+    public void handleSheetSyncCompleted(SheetSyncCompletedEvent event) {
+        log.info("시트 동기화 완료 이벤트 수신 - projectId: {}, syncedCount: {}, success: {}",
+                event.projectId(), event.syncedCount(), event.success());
+
+        String payload = createSheetSyncPayload(event);
+        for (Long adminId : event.adminIds()) {
+            try {
+                notificationService.createNotification(
+                        adminId, event.projectId(),
+                        NotificationType.SHEET_SYNC_RESULT, payload);
+            } catch (Exception e) {
+                log.error("시트 동기화 알림 생성 실패 - adminId: {}, projectId: {}",
+                        adminId, event.projectId(), e);
+            }
+        }
+    }
 
     /**
      * 관리자 추가 이벤트 처리
@@ -96,6 +119,9 @@ public class NotificationEventHandler {
 
     // ============ Payload Records ============
 
+    private record SheetSyncPayload(String message, int syncedCount) {
+    }
+
     private record AdminAddedPayload(String message, String projectTitle) {
     }
 
@@ -106,6 +132,17 @@ public class NotificationEventHandler {
     }
 
     // ============ Payload Creation Methods ============
+
+    private String createSheetSyncPayload(SheetSyncCompletedEvent event) {
+        SheetSyncPayload payload;
+        if (event.success()) {
+            String message = String.format("스프레드시트 동기화가 완료되었습니다. %d명의 지원자가 동기화되었습니다.", event.syncedCount());
+            payload = new SheetSyncPayload(message, event.syncedCount());
+        } else {
+            payload = new SheetSyncPayload("스프레드시트 동기화에 실패했습니다. 시트 URL을 확인해주세요.", 0);
+        }
+        return toJson(payload);
+    }
 
     private String createAdminAddedPayload(AdminAddedEvent event) {
         String message = String.format("'%s' 프로젝트의 관리자로 추가되었습니다.", event.projectTitle());
