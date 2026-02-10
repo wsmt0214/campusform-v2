@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
  *
  * 프로덕션 배포 시 이 파일은 삭제하거나 @Profile("temporary")로 제한됩니다.
  */
-@Profile("temporary1")
+@Profile("!local")
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test")

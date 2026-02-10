@@ -4,14 +4,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
-import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
-import com.campusform.server.recruiting.domain.exception.StatusChangeNotAllowedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.campusform.server.recruiting.domain.exception.StatusChangeNotAllowedException;
+import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
+import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -57,7 +58,7 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     @Column(nullable = false)
     private String email;
     private String position;
-    private StageStatus stage;
+    private RecruitmentStage stage;
     /**
      * 서류 단계 심사 상태
      */
@@ -113,22 +114,21 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
      * 
      * 면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다.
      */
-    public void updateApplicantStatus(StageStatus stage, ApplicantStatus status) {
+    public void updateApplicantStatus(RecruitmentStage stage, ApplicantStatus status) {
         if (status == null) {
             throw new IllegalArgumentException("Status must not be null");
         }
-        if (stage == StageStatus.DOCUMENT) {
+        if (stage == RecruitmentStage.DOCUMENT) {
             if (this.documentStatus == status) {
                 return;
             }
             this.documentStatus = status;
         } else {
-            if (stage == StageStatus.INTERVIEW) {
+            if (stage == RecruitmentStage.INTERVIEW) {
                 // 면접 단계로 진행하려면 서류 단계에서 합격해야 함
                 if (this.documentStatus != ApplicantStatus.PASS) {
                     throw new StatusChangeNotAllowedException(
-                        "면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다. 현재 서류 상태: " + this.documentStatus
-                    );
+                            "면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다. 현재 서류 상태: " + this.documentStatus);
                 }
                 if (this.interviewStatus == status) {
                     return;

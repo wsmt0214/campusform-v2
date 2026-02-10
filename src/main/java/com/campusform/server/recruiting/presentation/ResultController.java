@@ -8,7 +8,7 @@ import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveR
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +30,7 @@ public class ResultController {
     @GetMapping("/results")
     public ResponseEntity<ResultListResponse> getResultList(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            @Parameter(description = "조회할 모집 단계") @RequestParam StageStatus stage,
+            @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
             @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ApplicantStatus status
     ){
         ResultListResponse response=resultService.getResults(projectId,stage,status);
@@ -41,7 +41,7 @@ public class ResultController {
     @PostMapping("/sms/templates")
     public ResponseEntity<Void> saveSmsTemplate(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            @Parameter(description = "저장할 템플릿의 모집 단계") @RequestParam StageStatus stage,
+            @Parameter(description = "저장할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage,
             @RequestBody SmsTemplateSaveRequest request
     ) {
         smsService.saveTemplate(projectId, stage, request);
@@ -53,7 +53,7 @@ public class ResultController {
     public ResponseEntity<SmsPreviewResponse> getSmsPreview(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "미리보기할 지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam StageStatus stage
+            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage
     ) {
         SmsPreviewResponse response = smsService.getPreview(projectId, applicantId, stage);
         return ResponseEntity.ok(response);

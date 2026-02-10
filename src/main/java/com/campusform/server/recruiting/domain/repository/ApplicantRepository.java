@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 /**
  * 도메인 계층의 Repository 인터페이스
  * 
@@ -52,7 +52,7 @@ public interface ApplicantRepository{
     // 3. 찜한 순 (북마크된 것 위로, 나머지는 가나다순)
     List<Applicant> findByProjectIdOrderByBookmarkedDescNameAsc(Long projectId);
 
-    List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage);
+    List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage);
 
     /**
      * 프로젝트의 전체 지원자 목록 조회

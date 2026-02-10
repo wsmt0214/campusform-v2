@@ -1,5 +1,6 @@
 package com.campusform.server.project.application.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,9 +15,11 @@ import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
+import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
+import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.infrastructure.persistence.ApplicantJpaRepository;
 
@@ -64,7 +67,13 @@ public class ProjectService {
             project.addMapping(request.getRequiredMappings().toDomainValue());
         }
 
-        // 부모 엔티티로 한 번에 저장
+        // 포지션 값 치환 규칙 (선택): 시트 원시값 → 저장용 값
+        if (request.getValueMappings() != null) {
+            request.getValueMappings().forEach(
+                    item -> project.addValueMapping(item.getFromValue(), item.getToValue()));
+        }
+
+        // 부모 엔티티로 한 번에 저장 (valueMappings는 cascade로 함께 persist)
         projectRepository.save(project);
 
         // 관리자 추가 알림 이벤트 발행 (중복 제거)
@@ -203,6 +212,34 @@ public class ProjectService {
                 .collect(Collectors.toList());
 
         return new AdminListResponse(adminList);
+    }
+
+    /**
+     * 프로젝트 상세 정보 내보내기 (관리자만 가능)
+     */
+    @Transactional(readOnly = true)
+    public ProjectDetailExportResponse getProjectDetailForExport(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        project.validateAdminAccess(userId);
+
+        long applicantCount = applicantJpaRepository.countByProjectId(project.getId());
+
+        // OWNER + ADMIN 목록 (OWNER 먼저, 그 다음 ADMIN)
+        List<ProjectDetailExportResponse.AdminExport> admins = new ArrayList<>();
+        User owner = userRepository.findById(project.getOwnerId())
+                .orElseThrow(() -> new IllegalStateException("소유자 정보를 찾을 수 없습니다. ownerId=" + project.getOwnerId()));
+        admins.add(new ProjectDetailExportResponse.AdminExport(
+                owner.getId(), owner.getNickname(), owner.getEmail(), "OWNER"));
+        for (ProjectAdmin admin : project.getAdmins()) {
+            User adminUser = userRepository.findById(admin.getAdminId())
+                    .orElseThrow(() -> new IllegalStateException("관리자 정보를 찾을 수 없습니다. adminId=" + admin.getAdminId()));
+            admins.add(new ProjectDetailExportResponse.AdminExport(
+                    adminUser.getId(), adminUser.getNickname(), adminUser.getEmail(), "ADMIN"));
+        }
+
+        return ProjectDetailExportResponse.from(project, applicantCount, admins);
     }
 
     private void validateCreateProjectRequest(CreateProjectRequest request) {

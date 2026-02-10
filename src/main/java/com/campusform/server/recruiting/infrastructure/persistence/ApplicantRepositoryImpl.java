@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -89,7 +89,7 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     }
 
     @Override
-    public List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage) {
+    public List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage) {
         return applicantJpaRepository.findByProjectIdAndStage(projectId, stage);
     }
 

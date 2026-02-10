@@ -19,11 +19,13 @@ import lombok.RequiredArgsConstructor;
 /**
  * 모집(Recruiting) 컨텍스트의 "단계 종료" API
  *
- * 왜 Recruiting에 있나?
- * - "서류/면접 단계 마감 및 프로젝트 종료"는 모집 프로세스의 일부입니다.
- * - Project 컨텍스트는 프로젝트(모집 공고)의 설정/기본 정보에 집중합니다.
+ * 프로젝트 상태 흐름:
+ * DOCUMENT → DOCUMENT_COMPLETE (면접 없이 종료)
+ * DOCUMENT → INTERVIEW → INTERVIEW_COMPLETE (면접까지 진행 후 종료)
+ *
+ * 참고: DOCUMENT → INTERVIEW 전환은 면접 설정 저장 시 내부적으로 수행됩니다.
  */
-@Tag(name = "모집 단계", description = "서류/면접 단계 마감 및 프로젝트 종료 API")
+@Tag(name = "모집 단계", description = "서류/면접 단계 종료 API")
 @RestController
 @RequestMapping("/api/recruiting/projects")
 @RequiredArgsConstructor
@@ -32,7 +34,7 @@ public class RecruitingStageController {
     private final RecruitingStageService recruitingStageService;
     private final AuthService authService;
 
-    @Operation(summary = "서류 단계 마감", description = "서류 단계를 마감하고 프로젝트 상태를 '서류 완료'로 변경합니다. (소유자만 가능)")
+    @Operation(summary = "서류 단계 종료", description = "서류 단계를 종료하고 프로젝트를 완료합니다. 면접 없이 종료 시 사용합니다. DOCUMENT → DOCUMENT_COMPLETE (소유자만 가능)")
     @PatchMapping("/{projectId}/complete-document")
     public ResponseEntity<ProjectResponse> completeDocument(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
@@ -42,7 +44,7 @@ public class RecruitingStageController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "면접 단계 마감 (프로젝트 전체 종료)", description = "면접 단계를 마감하고 프로젝트 전체를 종료합니다. (소유자만 가능)")
+    @Operation(summary = "면접 단계 종료 (프로젝트 전체 종료)", description = "면접 단계를 종료하고 프로젝트 전체를 완료합니다. INTERVIEW → INTERVIEW_COMPLETE (소유자만 가능)")
     @PatchMapping("/{projectId}/complete-all")
     public ResponseEntity<ProjectResponse> completeAll(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,

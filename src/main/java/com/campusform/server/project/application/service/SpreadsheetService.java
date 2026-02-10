@@ -20,6 +20,7 @@ import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectRequiredMapping;
+import com.campusform.server.project.domain.model.setting.ProjectValueMapping;
 import com.campusform.server.project.domain.model.setting.value.SyncStatus;
 import com.campusform.server.project.domain.model.sheet.SpreadsheetColumn;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -56,6 +57,28 @@ public class SpreadsheetService {
     }
 
     /**
+     * 포지션 컬럼 고유값 목록 조회 (편집하기용)
+     */
+    @Transactional(readOnly = true)
+    public List<String> getDistinctPositionValues(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        Integer positionIdx = project.getMapping().getPositionIdx();
+        if (positionIdx == null || positionIdx < 0) {
+            return List.of();
+        }
+
+        List<String[]> dataRows = googleSheetsReader.readAllLines(project.getSheetUrl(), project.getOwnerId());
+        return dataRows.stream()
+                .map(columns -> getColumnValue(columns, positionIdx))
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    /**
      * 스프레드시트 동기화 -> 지원자의 응답 저장
      */
     @Transactional
@@ -82,6 +105,11 @@ public class SpreadsheetService {
             List<SpreadsheetColumn> headers = googleSheetsReader.readHeader(sheetUrl, ownerId);
             List<String[]> dataRows = googleSheetsReader.readAllLines(sheetUrl, ownerId);
 
+            // 포지션 값 치환 규칙: 시트 원시값 → 저장용 값 (동기화 시 적용)
+            Map<String, String> positionMapping = project.getValueMappings().stream()
+                    .collect(Collectors.toMap(ProjectValueMapping::getFromValue, ProjectValueMapping::getToValue,
+                            (existing, replacement) -> existing));
+
             // 변경사항 추적을 위한 리스트 (이벤트용)
             List<SheetSyncChangeInfo> eventChanges = new ArrayList<>();
             // 응답 DTO용 변경사항 리스트
@@ -97,7 +125,9 @@ public class SpreadsheetService {
                 String gender = getColumnValue(columns, mapping.getGenderIdx());
                 String school = getColumnValue(columns, mapping.getSchoolIdx());
                 String major = getColumnValue(columns, mapping.getMajorIdx());
-                String position = getColumnValue(columns, mapping.getPositionIdx());
+                String positionRaw = getColumnValue(columns, mapping.getPositionIdx());
+                // 포지션 치환 규칙
+                String position = applyPositionMapping(positionRaw, positionMapping);
 
                 // 필수 필드 검증
                 if (name == null || name.isEmpty() || email == null || email.isEmpty()) {
@@ -111,7 +141,7 @@ public class SpreadsheetService {
 
                 if (applicant != null) { // 기존 응답 존재
                     List<String> changedFields = detectChangedFields(
-                            applicant, columns, headers, mapping, requiredIndices);
+                            applicant, columns, headers, mapping, requiredIndices, position);
 
                     if (!changedFields.isEmpty()) { // UPDATE 감지됨
                         // 필수 항목 UPDATE
@@ -123,7 +153,7 @@ public class SpreadsheetService {
                                 continue;
                             String questionText = headers.get(i).getName();
                             String answerText = getColumnValue(columns, i);
-                            applicant.addExtraAnswer(questionText, answerText);
+                            applicant.addExtraAnswer(questionText, answerText, i);
                         }
 
                         applicantRepository.save(applicant); // Upsert로 동작
@@ -148,15 +178,15 @@ public class SpreadsheetService {
                     applicant = Applicant.create(
                             project.getId(), name, email, phone, gender, school, major, position);
 
-                // 매핑되지 않은 컬럼을 추가 질문으로 저장 (시트 헤더 순서 기준)
-                for (int i = 0; i < columns.length && i < headers.size(); i++) {
-                    if (requiredIndices.contains(i))
-                        continue;
-                    String questionText = headers.get(i).getName();
-                    String answerText = getColumnValue(columns, i);
-                    // 시트 헤더의 인덱스를 순서로 저장하여 질문-답변 매칭 보장
-                    applicant.addExtraAnswer(questionText, answerText, i);
-                }
+                    // 매핑되지 않은 컬럼을 추가 질문으로 저장 (시트 헤더 순서 기준)
+                    for (int i = 0; i < columns.length && i < headers.size(); i++) {
+                        if (requiredIndices.contains(i))
+                            continue;
+                        String questionText = headers.get(i).getName();
+                        String answerText = getColumnValue(columns, i);
+                        // 시트 헤더의 인덱스를 순서로 저장하여 질문-답변 매칭 보장
+                        applicant.addExtraAnswer(questionText, answerText, i);
+                    }
 
                     // 변경사항 기록 (이벤트용)
                     eventChanges.add(new SheetSyncChangeInfo(
@@ -213,21 +243,24 @@ public class SpreadsheetService {
     }
 
     /**
+     * 포지션 치환 규칙 적용: 시트 원시값이 규칙에 있으면 저장용 값으로 치환
+     */
+    private String applyPositionMapping(String raw, Map<String, String> positionMapping) {
+        if (raw == null)
+            return null;
+        return positionMapping.getOrDefault(raw, raw);
+    }
+
+    /**
      * 기존 지원자와 시트 데이터를 비교하여 변경된 필드를 감지합니다.
-     * 
-     * @param applicant       기존 지원자 엔티티
-     * @param columns         시트의 컬럼 데이터
-     * @param headers         시트의 헤더 정보
-     * @param mapping         필수 필드 매핑 정보
-     * @param requiredIndices 필수 필드 인덱스 집합
-     * @return 변경된 필드의 헤더 텍스트 리스트
      */
     private List<String> detectChangedFields(
             Applicant applicant,
             String[] columns,
             List<SpreadsheetColumn> headers,
             ProjectRequiredMapping mapping,
-            Set<Integer> requiredIndices) {
+            Set<Integer> requiredIndices,
+            String appliedPosition) {
 
         List<String> changedFields = new ArrayList<>();
 
@@ -264,8 +297,7 @@ public class SpreadsheetService {
             }
         }
 
-        String newPosition = getColumnValue(columns, mapping.getPositionIdx());
-        if (!Objects.equals(applicant.getPosition(), newPosition)) {
+        if (!Objects.equals(applicant.getPosition(), appliedPosition)) {
             String headerName = getHeaderName(headers, mapping.getPositionIdx());
             if (headerName != null) {
                 changedFields.add(headerName);

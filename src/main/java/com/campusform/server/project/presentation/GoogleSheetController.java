@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
+import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.application.service.SpreadsheetService;
 import com.campusform.server.project.domain.model.setting.Project;
@@ -51,6 +52,26 @@ public class GoogleSheetController {
         // 시트 헤더 조회 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
         List<SpreadsheetColumnResponse> headers = spreadsheetService.getSheetHeaders(sheetUrl, userId);
         return ResponseEntity.ok(headers);
+    }
+
+    /**
+     * 포지션 컬럼 고유값 목록 조회 (편집하기용)
+     */
+    @Operation(summary = "포지션 컬럼 고유값 목록 조회", description = "프로젝트에 매핑된 포지션 컬럼에 등장하는 모든 고유값을 반환합니다. 편집하기 시 치환 규칙 설정에 사용합니다.")
+    @GetMapping("/{projectId}/mapping-column-values")
+    public ResponseEntity<PositionValuesResponse> getPositionValues(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            Authentication authentication) {
+
+        Long userId = authService.extractUserId(authentication);
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        project.validateOwnerAccess(userId);
+
+        List<String> values = spreadsheetService.getDistinctPositionValues(projectId);
+        return ResponseEntity.ok(PositionValuesResponse.from(values));
     }
 
     /**

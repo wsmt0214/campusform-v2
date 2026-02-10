@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 사용자 정보 수정 서비스
  */
-@Profile("!temporary")
+@Profile("!local")
 @Slf4j
 @Service
 @RequiredArgsConstructor

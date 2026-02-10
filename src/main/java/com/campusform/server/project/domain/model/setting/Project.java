@@ -57,7 +57,7 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProjectState state = ProjectState.DOCUMENT_OPEN;
+    private ProjectState state = ProjectState.DOCUMENT;
 
     @Column(name = "sheet_url", nullable = false)
     private String sheetUrl;
@@ -88,6 +88,10 @@ public class Project {
 
     @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private ProjectRequiredMapping mapping = new ProjectRequiredMapping();
+
+    /** 값 치환 규칙. 동기화 시 적용됨 */
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectValueMapping> valueMappings = new ArrayList<>();
 
     /**
      * 사용자가 프로젝트의 Owner인지 검증
@@ -167,46 +171,78 @@ public class Project {
     }
 
     /**
-     * 서류 단계 종료 및 프로젝트 종료
-     * 
-     * 전제:
-     * - DOCUMENT_LOCKED 상태에서만 호출 가능합니다.
-     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
+     * 포지션 값 치환 규칙 추가
      */
-    public void completeDocument(Long userId) {
-        // 상태 검증: DOCUMENT_LOCKED 상태에서만 가능
-        if (state != ProjectState.DOCUMENT_LOCKED) {
-            throw new ProjectAccessDeniedException("서류 단계 종료는 DOCUMENT_LOCKED 상태에서만 가능합니다.");
-        }
+    public void addValueMapping(String fromValue, String toValue) {
+        valueMappings.add(ProjectValueMapping.create(this, fromValue, toValue));
+    }
 
-        // OWNER 검증: 프로젝트의 ownerId와 요청한 사용자 ID가 일치해야 함
-        if (!this.ownerId.equals(userId)) {
-            // 권한 문제는 400이 아니라 403으로 내려가야 하므로 도메인 예외로 분리합니다.
-            throw new ProjectAccessDeniedException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
-        }
+    // ── 상태 검증 도메인 메서드 ──
 
-        this.state = ProjectState.DOCUMENT_DONE;
+    /** 프로젝트가 종료 상태인지 확인 */
+    public boolean isCompleted() {
+        return state == ProjectState.DOCUMENT_COMPLETE || state == ProjectState.INTERVIEW_COMPLETE;
+    }
+
+    /** 프로젝트가 종료됐으면 예외 발생 */
+    public void validateNotCompleted() {
+        if (isCompleted()) {
+            throw new IllegalStateException("이미 종료된 프로젝트입니다. 현재 상태: " + state);
+        }
+    }
+
+    /** 서류 단계(DOCUMENT)에서만 가능한 작업에 대한 검증 */
+    public void validateDocumentStage() {
+        if (state != ProjectState.DOCUMENT) {
+            throw new IllegalStateException("서류 단계(DOCUMENT)에서만 가능합니다. 현재 상태: " + state);
+        }
+    }
+
+    /** 면접 단계(INTERVIEW)에서만 가능한 작업에 대한 검증 */
+    public void validateInterviewStage() {
+        if (state != ProjectState.INTERVIEW) {
+            throw new IllegalStateException("면접 단계(INTERVIEW)에서만 가능합니다. 현재 상태: " + state);
+        }
+    }
+
+    // ── 상태 전환 메서드 ──
+
+    /**
+     * 면접 단계로 전환: DOCUMENT → INTERVIEW
+     * 
+     * 면접 설정이 처음 저장될 때 내부적으로 호출됩니다.
+     */
+    public void startInterview() {
+        if (state != ProjectState.DOCUMENT) {
+            throw new IllegalStateException("면접 단계 전환은 서류 단계(DOCUMENT)에서만 가능합니다. 현재 상태: " + state);
+        }
+        this.state = ProjectState.INTERVIEW;
     }
 
     /**
-     * 면접 단계 종료 및 프로젝트 종료
-     * 
-     * 전제:
-     * - INTERVIEW_LOCKED 상태에서만 호출 가능합니다.
-     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
+     * 서류 단계 종료 (면접 없이 프로젝트 종료): DOCUMENT → DOCUMENT_COMPLETE
+     *
+     * OWNER만 가능합니다.
+     */
+    public void completeDocument(Long userId) {
+        validateOwnerAccess(userId);
+        if (state != ProjectState.DOCUMENT) {
+            throw new IllegalStateException("서류 단계 종료는 DOCUMENT 상태에서만 가능합니다. 현재 상태: " + state);
+        }
+        this.state = ProjectState.DOCUMENT_COMPLETE;
+    }
+
+    /**
+     * 면접 단계 종료 (프로젝트 전체 종료): INTERVIEW → INTERVIEW_COMPLETE
+     *
+     * OWNER만 가능합니다.
      */
     public void completeAll(Long userId) {
-        // 상태 검증: INTERVIEW_LOCKED 상태에서만 가능
-        if (state != ProjectState.INTERVIEW_LOCKED) {
-            throw new ProjectAccessDeniedException("전체 종료는 INTERVIEW_LOCKED 상태에서만 가능합니다.");
+        validateOwnerAccess(userId);
+        if (state != ProjectState.INTERVIEW) {
+            throw new IllegalStateException("면접 종료는 INTERVIEW 상태에서만 가능합니다. 현재 상태: " + state);
         }
-
-        // OWNER 검증: 프로젝트의 ownerId와 요청한 사용자 ID가 일치해야 함
-        if (!this.ownerId.equals(userId)) {
-            throw new ProjectAccessDeniedException("프로젝트 OWNER만 단계를 종료할 수 있습니다.");
-        }
-
-        this.state = ProjectState.ALL_COMPLETE;
+        this.state = ProjectState.INTERVIEW_COMPLETE;
     }
 
     /**
@@ -246,7 +282,7 @@ public class Project {
         return List.copyOf(adminIds);
     }
 
-    /** 관리자 중복 여부 확인인 */
+    /** 관리자 중복 여부 확인 */
     private boolean hasAdmin(Long adminId) {
         return admins.stream().anyMatch(admin -> adminId.equals(admin.getAdminId()));
     }

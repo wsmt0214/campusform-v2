@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  *
  * 모든 컨텍스트에서 공유하는 파일 업로드 인프라 서비스
  */
-@Profile("!temporary")
+@Profile("!local")
 @Slf4j
 @Service
 @RequiredArgsConstructor

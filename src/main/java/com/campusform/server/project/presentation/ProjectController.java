@@ -18,11 +18,9 @@ import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
+import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
-import com.campusform.server.project.application.service.GoogleOAuthTokenService;
 import com.campusform.server.project.application.service.ProjectService;
-import com.campusform.server.project.application.service.SpreadsheetService;
-import com.campusform.server.project.domain.repository.ProjectRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,10 +35,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectController {
 
     private final ProjectService projectService;
-    private final SpreadsheetService spreadsheetService;
-    private final ProjectRepository projectRepository;
     private final AuthService authService;
-    private final GoogleOAuthTokenService tokenService;
 
     /**
      * 사용자가 속한 프로젝트 목록 조회
@@ -78,6 +73,19 @@ public class ProjectController {
         Long userId = authService.extractUserId(authentication);
         projectService.deleteProject(projectId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 프로젝트 상세 정보 내보내기 (관리자만 가능)
+     */
+    @Operation(summary = "프로젝트 상세 정보 내보내기", description = "프로젝트 상세 정보를를 JSON으로 반환합니다.")
+    @GetMapping("/{projectId}/export")
+    public ResponseEntity<ProjectDetailExportResponse> exportProjectDetail(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        ProjectDetailExportResponse response = projectService.getProjectDetailForExport(projectId, userId);
+        return ResponseEntity.ok(response);
     }
 
     /**

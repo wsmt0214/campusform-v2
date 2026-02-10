@@ -27,7 +27,7 @@ public class ProjectResponse {
     private String title;
     @Schema(description = "프로젝트 소유자 ID", example = "1")
     private Long ownerId;
-    @Schema(description = "프로젝트 진행 상태", example = "DOCUMENT_OPEN")
+    @Schema(description = "프로젝트 진행 상태", example = "DOCUMENT")
     private String state;
     @Schema(description = "연동된 Google Sheet URL", example = "https://docs.google.com/spreadsheets/d/...")
     private String sheetUrl;

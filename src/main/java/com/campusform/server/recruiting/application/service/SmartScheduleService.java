@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
+import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse;
 import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse.ApplicantInfo;
 import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse.DaySummary;
@@ -68,7 +69,12 @@ public class SmartScheduleService {
      */
     @Transactional
     public SmartScheduleResponse generateAndSaveSchedule(Long projectId, Long userId) {
-        contextLoader.loadContext(projectId).project().validateOwnerAccess(userId);
+        Project project = contextLoader.loadContext(projectId).project();
+        project.validateOwnerAccess(userId);
+
+        // 스마트 시간표 생성/저장은 면접 단계(INTERVIEW)에서만 가능
+        project.validateInterviewStage();
+
         // 시간표 생성
         SmartScheduleResponse response = generateScheduleInternal(projectId);
 

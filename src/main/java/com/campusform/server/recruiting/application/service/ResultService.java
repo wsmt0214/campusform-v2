@@ -1,19 +1,21 @@
 package com.campusform.server.recruiting.application.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.request.ResultAnnouncementRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.repository.MessageTemplateRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -24,13 +26,13 @@ public class ResultService {
     private final MessageGenerator messageGenerator;
 
     // 합,불 명단/ 통계 조회
-    public ResultListResponse getResults(Long projectId, StageStatus stage, ApplicantStatus status){
+    public ResultListResponse getResults(Long projectId, RecruitmentStage stage, ApplicantStatus status) {
 
-        //1. Enum으로 변환
+        // 1. Enum으로 변환
         List<Applicant> applicants;
 
         // 2. 단계(Stage)에 따라 데이터 조회 분기 처리
-        if (stage==StageStatus.DOCUMENT) {
+        if (stage == RecruitmentStage.DOCUMENT) {
             applicants = applicantRepository.findByProjectIdAndDocumentStatus(projectId, status);
         } else {
             // INTERVIEW
@@ -39,7 +41,7 @@ public class ResultService {
 
         // 3. 통계 데이터 계산
         long totalCount;
-        if (stage == StageStatus.DOCUMENT) {
+        if (stage == RecruitmentStage.DOCUMENT) {
             // 서류 단계: 전체 지원자 수
             totalCount = applicantRepository.countByProjectId(projectId);
         } else {
@@ -57,9 +59,9 @@ public class ResultService {
         ResultListResponse.GenderRatio genderRatio = calculateGenderRatio(applicants);
 
         // 4. 저장된 템플릿 가져오기 (없으면 빈 문자열)
-        //String templateContent = getTemplateContent(projectId, stage, status);
-        String templateContent=templateRepository.findByProjectId(projectId)
-                .map(t->t.getTemplateContent(stage,status))
+        // String templateContent = getTemplateContent(projectId, stage, status);
+        String templateContent = templateRepository.findByProjectId(projectId)
+                .map(t -> t.getTemplateContent(stage, status))
                 .orElse("");
 
         // 5. DTO 변환 및 반환 (개인화된 메시지 포함)
@@ -71,9 +73,8 @@ public class ResultService {
                             stage,
                             status,
                             app.getName(),
-                            app.getPosition() != null ? app.getPosition() : "-"
-                    );
-                    
+                            app.getPosition() != null ? app.getPosition() : "-");
+
                     return ResultListResponse.ApplicantSummary.builder()
                             .applicantId(app.getId())
                             .name(app.getName())
@@ -111,18 +112,20 @@ public class ResultService {
         }
 
         int totalCount = applicants.size();
-        
+
         long maleCount = applicants.stream()
                 .filter(a -> {
                     String gender = a.getGender();
-                    return gender != null && ("남".equals(gender) || "Male".equalsIgnoreCase(gender)|| "남자".equals(gender)|| "남성".equals(gender));
+                    return gender != null && ("남".equals(gender) || "Male".equalsIgnoreCase(gender)
+                            || "남자".equals(gender) || "남성".equals(gender));
                 })
                 .count();
 
         long femaleCount = applicants.stream()
                 .filter(a -> {
                     String gender = a.getGender();
-                    return gender != null && ("여".equals(gender) || "Female".equalsIgnoreCase(gender) || "여성".equals(gender)|| "여자".equals(gender));
+                    return gender != null && ("여".equals(gender) || "Female".equalsIgnoreCase(gender)
+                            || "여성".equals(gender) || "여자".equals(gender));
                 })
                 .count();
 
@@ -140,7 +143,7 @@ public class ResultService {
     }
 
     @Transactional
-    public void announceResults(Long projectId, ResultAnnouncementRequest request){
+    public void announceResults(Long projectId, ResultAnnouncementRequest request) {
         // 1. 대상 지원자 조회
         List<Applicant> applicants = applicantRepository.findAllById(request.applicantIds());
 
@@ -151,13 +154,13 @@ public class ResultService {
             throw new IllegalArgumentException("해당 프로젝트에 속하지 않는 지원자가 포함되어 있습니다.");
         }
 
-        StageStatus stage = StageStatus.valueOf(request.stage().toUpperCase());
-        //2. 상태 변경 (도메인 로직 실행)
-        for (Applicant applicant : applicants){
-            applicant.updateApplicantStatus(stage,request.status());
+        RecruitmentStage stage = RecruitmentStage.valueOf(request.stage().toUpperCase());
+        // 2. 상태 변경 (도메인 로직 실행)
+        for (Applicant applicant : applicants) {
+            applicant.updateApplicantStatus(stage, request.status());
         }
 
-        //3. 저장 ( 이때 update 쿼리가 나가고 registerEvent 했던 이벤트들이 발행 )
+        // 3. 저장 ( 이때 update 쿼리가 나가고 registerEvent 했던 이벤트들이 발행 )
         applicantRepository.saveAll(applicants);
     }
 

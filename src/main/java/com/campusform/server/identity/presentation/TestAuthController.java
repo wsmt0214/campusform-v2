@@ -29,16 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테스트용 인증 컨트롤러
- * 
- * Postman 등으로 API 테스트 시 세션을 미리 생성하기 위한 엔드포인트입니다.
- * temporary 프로필에서만 활성화됩니다.
- * 
- * 사용법:
- * 1. POST /api/test/auth/session?userId=1 호출
- * 2. 응답으로 받은 JSESSIONID 쿠키를 Postman에 저장
- * 3. 이후 모든 API 요청에 해당 쿠키 포함
  */
-@Profile("temporary")
+@Profile("local")
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test/auth")

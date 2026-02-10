@@ -35,10 +35,7 @@ public class ApplicantDetailResponse {
     @Schema(description = "찜하기(즐겨찾기) 여부", example = "true")
     private boolean isFavorite;
 
-    @Schema(description = "지원동기 (지원동기 질문에 대한 답변)", example = "요리에 관심이 많아서...")
-    private String motivation;
-
-    @Schema(description = "Google Sheet의 질문/답변 목록 (지원동기 포함 모든 질문/답변)")
+    @Schema(description = "Google Sheet의 질문/답변 목록")
     private List<AnswerDto> answers;
 
     @Schema(description = "질문/답변")

@@ -93,6 +93,10 @@ public class IntervieweeAvailabilityService {
     public void submitSlots(String token, SubmitSlotsRequest request) {
         // 토큰으로 프로젝트와 면접 설정 조회
         InterviewContext ctx = contextLoader.loadContextByToken(token);
+
+        // 지원자 면접 가능 시간 제출은 면접 단계(INTERVIEW)에서만 가능
+        ctx.project().validateInterviewStage();
+
         Long projectId = ctx.project().getId();
         InterviewSetting setting = ctx.setting();
 

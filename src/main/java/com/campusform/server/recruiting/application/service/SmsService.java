@@ -1,11 +1,13 @@
 package com.campusform.server.recruiting.application.service;
 
+import com.campusform.server.project.domain.model.setting.Project;
+import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.message.MessageTemplate;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.repository.MessageTemplateRepository;
@@ -22,6 +24,7 @@ public class SmsService {
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
     private final MessageGenerator messageGenerator;
+    private final ProjectRepository projectRepository;
 
     /**
      * 문자 관련 로직만
@@ -32,7 +35,12 @@ public class SmsService {
      * @param request   수정사항 문자열을 Enum으로 변환하여 Type Safety를 확보함
      */
     @Transactional
-    public void saveTemplate(Long projectId, StageStatus stage, SmsTemplateSaveRequest request) {
+    public void saveTemplate(Long projectId, RecruitmentStage stage, SmsTemplateSaveRequest request) {
+        // 프로젝트 상태 검증: 해당 단계가 활성 상태인지 확인
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+        validateStageActive(project, stage);
+
         ApplicantStatus applicantStatus = request.getStatus();
         // 1. 없으면 생성, 있으면 가져오기
         MessageTemplate template = templateRepository.findByProjectId(projectId)
@@ -48,14 +56,14 @@ public class SmsService {
      * 지원자의 현재 상태를 DB에서 조회하여 해당 템플릿을 사용합니다.
      */
     @Transactional(readOnly = true)
-    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, StageStatus stage) {
+    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, RecruitmentStage stage) {
         // 1. 지원자 조회
         Applicant applicant = applicantRepository.findById(applicantId)
                 .filter(a -> a.getProjectId().equals(projectId))
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
 
         // 2. 지원자의 현재 상태 조회 (DB에서 가져옴)
-        ApplicantStatus currentStatus = (stage == StageStatus.DOCUMENT)
+        ApplicantStatus currentStatus = (stage == RecruitmentStage.DOCUMENT)
                 ? applicant.getDocumentStatus()
                 : applicant.getInterviewStatus();
 
@@ -91,7 +99,7 @@ public class SmsService {
      * @return 템플릿 내용 (없으면 빈 문자열)
      */
     @Transactional(readOnly = true)
-    public String getTemplate(Long projectId, StageStatus stage, ApplicantStatus status) {
+    public String getTemplate(Long projectId, RecruitmentStage stage, ApplicantStatus status) {
         return templateRepository.findByProjectId(projectId)
                 .map(t -> t.getTemplateContent(stage, status))
                 .orElse("");
@@ -104,5 +112,16 @@ public class SmsService {
                 applicant.getMajor() != null ? applicant.getMajor() : "-",
                 applicant.getPosition() != null ? applicant.getPosition() : "-"
         );
+    }
+
+    /**
+     * 요청한 모집 단계(stage)에 해당하는 프로젝트 상태인지 검증
+     */
+    private void validateStageActive(Project project, RecruitmentStage stage) {
+        if (stage == RecruitmentStage.DOCUMENT) {
+            project.validateDocumentStage();
+        } else if (stage == RecruitmentStage.INTERVIEW) {
+            project.validateInterviewStage();
+        }
     }
 }

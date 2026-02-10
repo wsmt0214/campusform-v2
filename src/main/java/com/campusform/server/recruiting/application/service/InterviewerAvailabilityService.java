@@ -116,6 +116,9 @@ public class InterviewerAvailabilityService {
         Project project = ctx.project();
         project.validateOwnerAccess(userId);
         project.validateAdminAccess(adminId);
+
+        // 면접관 가능 시간 설정은 면접 단계(INTERVIEW)에서만 가능
+        project.validateInterviewStage();
         InterviewSetting setting = ctx.setting();
 
         // 면접 정보 설정 기반으로 날짜 매핑 생성 (LocalDate -> InterviewDay)

@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Profile("!temporary")
+@Profile("!local")
 @Tag(name = "사용자", description = "사용자 정보 조회 및 설정 API")
 @RestController
 @RequestMapping("/api/users")

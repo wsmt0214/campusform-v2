@@ -6,6 +6,7 @@ import java.util.List;
 import com.campusform.server.project.domain.model.setting.value.RequiredFieldMapping;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -43,6 +44,11 @@ public class CreateProjectRequest {
     // 스프레드시트 컬럼과 필수 필드 매핑 정보
     @NotNull(message = "필수 필드 매핑 정보는 필수입니다.")
     private RequiredFieldMappingRequest requiredMappings;
+
+    @Schema(description = "포지션 값 치환 규칙", example = "[{\"fromValue\": \"서버 1\", \"toValue\": \"서버\"}]")
+    // 리스트에 값이 있을 경우, 각 개별 필드 제약 조건이 검증
+    @Valid
+    private List<PositionValueMappingRequest> valueMappings;
 
     @Schema(description = "필수 필드 매핑 정보")
     @Getter
@@ -82,5 +88,21 @@ public class CreateProjectRequest {
         public RequiredFieldMapping toDomainValue() {
             return new RequiredFieldMapping(nameIdx, schoolIdx, majorIdx, genderIdx, phoneIdx, emailIdx, positionIdx);
         }
+    }
+
+    /**
+     * 포지션 값 치환 규칙 한 건
+     */
+    @Schema(description = "포지션 값 치환 규칙")
+    @Getter
+    @NoArgsConstructor
+    public static class PositionValueMappingRequest {
+        @Schema(description = "시트에서 들어오는 포지션 원시값", example = "서버 1")
+        @NotBlank(message = "fromValue는 필수입니다.")
+        private String fromValue;
+
+        @Schema(description = "DB에 저장할 치환값", example = "서버")
+        @NotBlank(message = "toValue는 필수입니다.")
+        private String toValue;
     }
 }

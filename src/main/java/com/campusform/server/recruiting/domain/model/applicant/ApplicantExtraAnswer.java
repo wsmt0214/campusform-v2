@@ -57,7 +57,8 @@ public class ApplicantExtraAnswer {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public static ApplicantExtraAnswer create(Applicant applicant, String questionText, String answerText, Integer orderIndex) {
+    public static ApplicantExtraAnswer create(Applicant applicant, String questionText, String answerText,
+            Integer orderIndex) {
         ApplicantExtraAnswer extraAnswer = new ApplicantExtraAnswer();
         extraAnswer.applicant = applicant;
         extraAnswer.questionText = questionText;

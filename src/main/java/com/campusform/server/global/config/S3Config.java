@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 /**
  * AWS S3 클라이언트 설정
  */
-@Profile("!temporary")
+@Profile("!local")
 @Configuration
 public class S3Config {
 

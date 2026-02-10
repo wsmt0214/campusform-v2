@@ -1,7 +1,7 @@
 package com.campusform.server.recruiting.application.component;
 
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.repository.MessageTemplateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class MessageGenerator {
      * 2. 없으면 기본 템플릿 사용
      * 3. 변수 치환 (@지원자이름, @포지션)
      */
-    public String generateMessage(Long projectId,StageStatus stage, ApplicantStatus status, String applicantName, String positionName) {
+    public String generateMessage(Long projectId,RecruitmentStage stage, ApplicantStatus status, String applicantName, String positionName) {
         // 1. 템플릿 내용 가져오기
         String template = getTemplateContent(projectId, stage, status);
 
@@ -48,7 +48,7 @@ public class MessageGenerator {
      * @param status
      * @return
      */
-    private String getTemplateContent(Long projectId, StageStatus stage, ApplicantStatus status) {
+    private String getTemplateContent(Long projectId, RecruitmentStage stage, ApplicantStatus status) {
         String dbTemplate = messageTemplateRepository.findByProjectId(projectId)
                 .map(t->t.getTemplateContent(stage, status))
                 .orElse(null);
@@ -58,7 +58,7 @@ public class MessageGenerator {
         return getDefaultTemplate(stage,status);
     }
 
-    private String getDefaultTemplate(StageStatus stage, ApplicantStatus status) {
+    private String getDefaultTemplate(RecruitmentStage stage, ApplicantStatus status) {
         String key = stage.name() +"_"+status.name();
         return DEFAULT_TEMPLATES.get(key);
     }

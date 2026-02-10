@@ -2,6 +2,9 @@ spring:
   application:
     name: CampusFormServer
 
+  profiles:
+    active: local
+
   # 공통 JPA 설정
   jpa:
     show-sql: true
@@ -20,6 +23,15 @@ spring:
             scope:
               - email
               - profile
+
+server:
+  forward-headers-strategy: framework
+  tomcat:
+    remote-ip-header: x-forwarded-for
+    protocol-header: x-forwarded-proto
+  servlet:
+    session:
+      tracking-modes: cookie
 
 # AWS S3
 aws:
@@ -51,7 +63,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
 server:
   servlet:
@@ -59,6 +71,10 @@ server:
       cookie:
         same-site: none
         secure: true
+
+# OAuth2 인증 요청 쿠키: local은 http이므로 Secure=false, Domain 비움
+COOKIE_SECURE: false
+COOKIE_DOMAIN: ""
 
 ---
 # 운영용
@@ -78,11 +94,16 @@ spring:
       ddl-auto: update
 
 server:
+  forward-headers-strategy: framework
+  tomcat:
+    internal-proxies: ".*"
+    remote-ip-header: x-forwarded-for
+    protocol-header: x-forwarded-proto
+
   servlet:
     session:
       cookie:
-        domain: .campus-form-server.kro.kr
+        domain: campus-form-server.kro.kr
         same-site: none
         secure: true
         http-only: true
-  forward-headers-strategy: native

@@ -1,7 +1,7 @@
 package com.campusform.server.recruiting.application.dto.request;
 
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class SmsTemplateSaveRequest {
     @Schema(description = "템플릿을 적용할 모집 단계 (DOCUMENT 또는 INTERVIEW)", example = "DOCUMENT")
     @NotNull(message = "단계는 필수입니다.")
-    private StageStatus stage;   // "DOCUMENT", "INTERVIEW"
+    private RecruitmentStage stage;   // "DOCUMENT", "INTERVIEW"
 
     @Schema(description = "템플릿을 적용할 지원자 상태 (PASS 또는 FAIL)", example = "PASS")
     @NotNull(message="상태값은 필수입니다.")

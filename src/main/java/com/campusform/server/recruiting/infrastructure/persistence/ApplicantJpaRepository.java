@@ -2,7 +2,7 @@ package com.campusform.server.recruiting.infrastructure.persistence;
 
 
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
-import com.campusform.server.recruiting.domain.model.applicant.value.StageStatus;
+import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +32,7 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
     long countByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus status);
     long countByProjectIdAndInterviewStatus(Long projectId, ApplicantStatus status);
 
-    List<Applicant> findByProjectIdAndStage(Long projectId, StageStatus stage);
+    List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage);
   
     /**
      * 프로젝트의 전체 지원자 목록 조회
