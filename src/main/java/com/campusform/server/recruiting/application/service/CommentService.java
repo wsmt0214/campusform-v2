@@ -69,8 +69,10 @@ public class CommentService {
 
         // 저장 후 반환 (parent_comment_id는 JPA가 자동으로 저장)
         Comment savedComment = commentRepository.save(comment);
-        return new CommentCreateResponse(savedComment.getId(),
-                savedComment.getParent() != null ? savedComment.getParent().getId() : null);
+        return new CommentCreateResponse(
+                savedComment.getId(),
+                savedComment.getParent() != null ? savedComment.getParent().getId() : null,
+                savedComment.getCreatedAt());
     }
 
     // 3. 댓글 수정
@@ -103,7 +105,8 @@ public class CommentService {
 
     /**
      * 댓글 삭제 (작성자 본인만 가능).
-     * 부모 댓글 삭제 시 해당 댓글의 모든 대댓글(직접·간접)은 엔티티의 cascade = ALL + orphanRemoval = true 로 DB에서 함께 삭제된다.
+     * 부모 댓글 삭제 시 해당 댓글의 모든 대댓글(직접·간접)은 엔티티의 cascade = ALL + orphanRemoval = true 로
+     * DB에서 함께 삭제된다.
      */
     public void deleteComment(Long commentId, Long authorId, RecruitmentStage stage) {
         Comment comment = commentRepository.findById(commentId)

@@ -57,7 +57,8 @@ public class TestAuthController {
                 // OAuth2User와 동일한 구조의 attributes 생성
                 Map<String, Object> attributes = new HashMap<>();
                 attributes.put("email", user.getEmail());
-                attributes.put("name", user.getNickname());
+                // nickname이 null일 수 있으므로(최초 가입 시) 테스트 세션 name은 안전한 값으로 채움
+                attributes.put("name", user.getNickname() != null ? user.getNickname() : "사용자");
                 attributes.put("picture", user.getProfileImageUrl());
                 attributes.put("userId", user.getId()); // CustomOAuth2UserService에서 추가하는 것과 동일
 

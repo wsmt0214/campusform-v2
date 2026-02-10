@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -59,7 +58,6 @@ import lombok.RequiredArgsConstructor;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * <pre>
@@ -88,15 +86,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         Map<String, Object> attributes = oAuth2User.getAttributes();
         String email = (String) attributes.get("email");
-        String name = (String) attributes.get("name");
         String picture = (String) attributes.get("picture");
 
-        /**
-         * 닉네임 정규화
-         * - Google name에서 한글/영어만 추출
-         * - 최대 12자로 제한
-         */
-        String nickname = normalizeNickname(name);
+        // 최초 가입 시 닉네임은 저장하지 않음 (프론트에서 온보딩으로 직접 설정하도록 유도)
+        // nickname이 null이면 "첫 로그인"으로 판단 가능
+        String nickname = null;
 
         /**
          * 기존 사용자 조회 또는 신규 사용자 생성
@@ -135,29 +129,5 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = User.create(email, nickname, profileImageUrl);
         userRepository.save(user);
         return user;
-    }
-
-    /**
-     * OAuth name에서 유효한 닉네임 추출
-     * 한글/영어만 필터링, 1~12자 제한
-     *
-     * @param name Google OAuth name 필드
-     * @return 검증 규칙에 맞는 닉네임
-     */
-    private String normalizeNickname(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return "사용자";
-        }
-
-        // 한글, 영어만 추출 (공백, 숫자, 특수문자 제거)
-        String filtered = name.trim().replaceAll("[^가-힣a-zA-Z]", "");
-
-        // 필터링 후 비어있으면 기본값
-        if (filtered.isEmpty()) {
-            return "사용자";
-        }
-
-        // 12자 초과 시 잘라내기
-        return filtered.length() > 12 ? filtered.substring(0, 12) : filtered;
     }
 }

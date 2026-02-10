@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ApplicantStatus;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
+
 /**
  * 도메인 계층의 Repository 인터페이스
  * 
@@ -14,7 +15,7 @@ import com.campusform.server.recruiting.domain.model.applicant.value.Recruitment
  * 이 코드는 "도메인 영역의 요청"을 받아서 "스프링 JPA(DB)"에게 토스해주는 역할을 완벽하게 수행합니다.
  * 도메인 영역이므로 ApplicantJpaRepository에 의존 X
  */
-public interface ApplicantRepository{
+public interface ApplicantRepository {
 
     // 1. 저장 및 수정
     Applicant save(Applicant applicant);
@@ -47,10 +48,9 @@ public interface ApplicantRepository{
 
     // 1. 이름 오름차순
     List<Applicant> findByProjectIdOrderByNameAsc(Long projectId);
+
     // 2. 이름 내림차순
     List<Applicant> findByProjectIdOrderByNameDesc(Long projectId);
-    // 3. 찜한 순 (북마크된 것 위로, 나머지는 가나다순)
-    List<Applicant> findByProjectIdOrderByBookmarkedDescNameAsc(Long projectId);
 
     List<Applicant> findByProjectIdAndStage(Long projectId, RecruitmentStage stage);
 

@@ -22,7 +22,6 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
     // JPA가 이름만 보고 자동으로 쿼리를 만들어줌.
     long countByProjectId(Long projectId);
     //long countByProjectIdAndStatus(Long projectId, ApplicantStatus applicantStatus);
-    List<Applicant> findByProjectIdOrderByBookmarkedDescNameAsc(Long projectId);
     List<Applicant> findByProjectIdOrderByNameDesc(Long projectId);
 
     List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ApplicantStatus documentStatus);

@@ -31,98 +31,81 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 public class InterviewAssignmentQueryService {
 
-    private final InterviewContextLoader contextLoader;
-    private final ApplicantRepository applicantRepository;
-    private final ManualInterviewAssignmentRepository manualAssignmentRepository;
-    private final InterviewScheduledSlotRepository scheduledSlotRepository;
-
-    /**
-     * 프로젝트 내 전체 지원자의 최종 면접시간 조회
-     */
-    public List<InterviewAssignedTimeResponse> getAssignedTimes(Long projectId, Long userId) {
-        InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateAdminAccess(userId);
-
-        int slotDurationMin = ctx.setting().getSlotDurationMin();
-
-        List<Applicant> applicants = applicantRepository.findByProjectId(projectId);
+        private final InterviewContextLoader contextLoader;
+        private final ApplicantRepository applicantRepository;
+        private final ManualInterviewAssignmentRepository manualAssignmentRepository;
+        private final InterviewScheduledSlotRepository scheduledSlotRepository;
 
         /**
-         * 면접 시간 수동 설정 가져오기
-         * Map: applicantId -> 수동 설정 정보
+         * 프로젝트 내 전체 지원자의 최종 면접시간 조회
          */
-        Map<Long, ManualInterviewAssignment> manualMap = manualAssignmentRepository.findByProjectId(projectId).stream()
-                .collect(Collectors.toMap(ManualInterviewAssignment::getApplicantId, a -> a));
+        public List<InterviewAssignedTimeResponse> getAssignedTimes(Long projectId, Long userId) {
+                InterviewContext ctx = contextLoader.loadContext(projectId);
+                ctx.project().validateAdminAccess(userId);
 
-        // Map: applicantId -> (date, startTime)
-        Map<Long, AutoTime> autoMap = scheduledSlotRepository.findByProjectIdWithApplicants(projectId).stream()
-                .sorted(Comparator.comparing(InterviewScheduledSlot::getDate)
-                        .thenComparing(InterviewScheduledSlot::getStartTime))
-                .flatMap(slot -> slot.getApplicants().stream()
-                        .map(a -> new AutoTime(a.getApplicantId(), slot.getDate(), slot.getStartTime())))
-                .collect(Collectors.toMap(AutoTime::applicantId, t -> t));
+                List<Applicant> applicants = applicantRepository.findByProjectId(projectId);
 
-        // 최종 구성
-        return applicants.stream()
-                .map(applicant -> {
-                    Long applicantId = applicant.getId();
+                /**
+                 * 면접 시간 수동 설정 가져오기
+                 * Map: applicantId -> 수동 설정 정보
+                 */
+                Map<Long, ManualInterviewAssignment> manualMap = manualAssignmentRepository.findByProjectId(projectId)
+                                .stream()
+                                .collect(Collectors.toMap(ManualInterviewAssignment::getApplicantId, a -> a));
 
-                    // 수동 설정 우선
-                    ManualInterviewAssignment manual = manualMap.get(applicantId);
-                    if (manual != null) {
-                        LocalDate date = manual.getInterviewDate();
-                        LocalTime start = manual.getStartTime();
-                        LocalTime end = (start == null) ? null : start.plusMinutes(slotDurationMin);
+                // Map: applicantId -> (date, startTime)
+                Map<Long, AutoTime> autoMap = scheduledSlotRepository.findByProjectIdWithApplicants(projectId).stream()
+                                .sorted(Comparator.comparing(InterviewScheduledSlot::getDate)
+                                                .thenComparing(InterviewScheduledSlot::getStartTime))
+                                .flatMap(slot -> slot.getApplicants().stream()
+                                                .map(a -> new AutoTime(a.getApplicantId(), slot.getDate(),
+                                                                slot.getStartTime())))
+                                .collect(Collectors.toMap(AutoTime::applicantId, t -> t));
 
-                        return InterviewAssignedTimeResponse.of(
-                                applicantId,
-                                applicant.getName(),
-                                applicant.getSchool(),
-                                applicant.getMajor(),
-                                applicant.getPosition(),
-                                date,
-                                start,
-                                end,
-                                InterviewTimeSource.MANUAL);
-                    }
+                // 최종 구성
+                return applicants.stream()
+                                .map(applicant -> {
+                                        Long applicantId = applicant.getId();
 
-                    // 알고리즘 결과과
-                    AutoTime auto = autoMap.get(applicantId);
-                    if (auto != null) {
-                        LocalDate date = auto.date();
-                        LocalTime start = auto.startTime();
-                        LocalTime end = start.plusMinutes(slotDurationMin);
+                                        // 수동 설정 우선
+                                        ManualInterviewAssignment manual = manualMap.get(applicantId);
+                                        if (manual != null) {
+                                                LocalDate date = manual.getInterviewDate();
+                                                LocalTime start = manual.getStartTime();
 
-                        return InterviewAssignedTimeResponse.of(
-                                applicantId,
-                                applicant.getName(),
-                                applicant.getSchool(),
-                                applicant.getMajor(),
-                                applicant.getPosition(),
-                                date,
-                                start,
-                                end,
-                                InterviewTimeSource.AUTO);
-                    }
+                                                return InterviewAssignedTimeResponse.of(
+                                                                applicantId,
+                                                                date,
+                                                                start,
+                                                                InterviewTimeSource.MANUAL);
+                                        }
 
-                    // 설정 안됨
-                    return InterviewAssignedTimeResponse.of(
-                            applicantId,
-                            applicant.getName(),
-                            applicant.getSchool(),
-                            applicant.getMajor(),
-                            applicant.getPosition(),
-                            null,
-                            null,
-                            null,
-                            InterviewTimeSource.NONE);
-                })
-                .toList();
-    }
+                                        // 알고리즘 결과과
+                                        AutoTime auto = autoMap.get(applicantId);
+                                        if (auto != null) {
+                                                LocalDate date = auto.date();
+                                                LocalTime start = auto.startTime();
 
-    /**
-     * AUTO 배정 결과를 applicantId 기준으로 매핑하기 위한 내부 record
-     */
-    private record AutoTime(Long applicantId, LocalDate date, LocalTime startTime) {
-    }
+                                                return InterviewAssignedTimeResponse.of(
+                                                                applicantId,
+                                                                date,
+                                                                start,
+                                                                InterviewTimeSource.AUTO);
+                                        }
+
+                                        // 설정 안됨
+                                        return InterviewAssignedTimeResponse.of(
+                                                        applicantId,
+                                                        null,
+                                                        null,
+                                                        InterviewTimeSource.NONE);
+                                })
+                                .toList();
+        }
+
+        /**
+         * AUTO 배정 결과를 applicantId 기준으로 매핑하기 위한 내부 record
+         */
+        private record AutoTime(Long applicantId, LocalDate date, LocalTime startTime) {
+        }
 }

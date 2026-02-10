@@ -74,13 +74,9 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     }
 
     @Override
-    public List<Applicant> findByProjectIdOrderByBookmarkedDescNameAsc(Long projectId) {
-        return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescNameAsc(projectId);
-    }
-
-    @Override
     public List<Applicant> findByProjectIdOrderByNameAsc(Long projectId) {
-        return applicantJpaRepository.findByProjectIdOrderByBookmarkedDescNameAsc(projectId);
+        // 현재 코드베이스에서는 in-memory 정렬을 사용하고 있어 JPA 정렬 메서드를 제공하지 않습니다.
+        throw new UnsupportedOperationException("이름 오름차순 정렬은 ApplicantService에서 in-memory 정렬로 처리합니다.");
     }
 
     @Override

@@ -32,7 +32,7 @@ public class InterviewAssignedTimeController {
     private final InterviewAssignmentQueryService queryService;
     private final AuthService authService;
 
-    @Operation(summary = "전체 지원자 최종 면접시간 조회", description = "프로젝트의 모든 지원자에게 배정된 최종 면접 시간을 조회합니다. 수동 배정이 스마트 시간표(자동)보다 우선됩니다.")
+    @Operation(summary = "전체 지원자 최종 면접시간 조회", description = "프로젝트의 모든 지원자에게 배정된 최종 면접 시간을 조회합니다. 서류 지원자 관리 페이지에서 사용합니다.")
     @GetMapping
     public ResponseEntity<List<InterviewAssignedTimeResponse>> getAssignedTimes(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
@@ -42,4 +42,3 @@ public class InterviewAssignedTimeController {
         return ResponseEntity.ok(responses);
     }
 }
-

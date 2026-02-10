@@ -33,7 +33,11 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    /**
+     * 닉네임
+     * 최초 OAuth 가입 시에는 null로 저장하고, 사용자가 직접 설정(수정)하면 값이 채워집니다.
+     */
+    @Column(nullable = true)
     private String nickname;
 
     @Column(name = "profile_image_url")

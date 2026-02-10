@@ -72,8 +72,17 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     @Column(name = "interview_status")
     private ApplicantStatus interviewStatus = ApplicantStatus.HOLD;
 
-    @Column(nullable = false)
-    private Boolean bookmarked = false;
+    /**
+     * 서류 단계 즐겨찾기 여부
+     */
+    @Column(name = "document_bookmarked", nullable = false)
+    private Boolean documentBookmarked = false;
+
+    /**
+     * 면접 단계 즐겨찾기 여부
+     */
+    @Column(name = "interview_bookmarked", nullable = false)
+    private Boolean interviewBookmarked = false;
 
     @OneToMany(mappedBy = "applicant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ApplicantExtraAnswer> extraAnswers = new ArrayList<>();
@@ -85,11 +94,6 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    // 누르면 true <-> false 바뀜
-    public void Bookmark() {
-        this.bookmarked = !this.bookmarked;
-    }
 
     public static Applicant create(Long projectId, String name, String email, String phone, String gender,
             String school, String major, String position) {
@@ -161,5 +165,35 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
         this.position = position;
         // extraAnswers는 orphanRemoval=true이므로 리스트를 비우면 자동 삭제됨
         this.extraAnswers.clear();
+    }
+
+    /**
+     * 단계별 즐겨찾기 여부 반환
+     * 
+     * 서류(Document)/면접(Interview) 단계에 따라 서로 다른 즐겨찾기 필드를 사용합니다.
+     */
+    public boolean isBookmarkedFor(RecruitmentStage stage) {
+        if (stage == RecruitmentStage.DOCUMENT) {
+            return Boolean.TRUE.equals(documentBookmarked);
+        }
+        if (stage == RecruitmentStage.INTERVIEW) {
+            return Boolean.TRUE.equals(interviewBookmarked);
+        }
+        return false;
+    }
+
+    /**
+     * 단계별 즐겨찾기 토글
+     * 
+     * 서류/면접 탭에서 각각 독립적으로 즐겨찾기를 관리하기 위해 단계에 맞는 필드를 뒤집습니다.
+     */
+    public void toggleBookmark(RecruitmentStage stage) {
+        if (stage == RecruitmentStage.DOCUMENT) {
+            this.documentBookmarked = !Boolean.TRUE.equals(this.documentBookmarked);
+            return;
+        }
+        if (stage == RecruitmentStage.INTERVIEW) {
+            this.interviewBookmarked = !Boolean.TRUE.equals(this.interviewBookmarked);
+        }
     }
 }

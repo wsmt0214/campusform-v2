@@ -17,44 +17,25 @@ public class InterviewAssignedTimeResponse {
 
     @Schema(description = "지원자 ID", example = "1")
     private final Long applicantId;
-    @Schema(description = "지원자 이름", example = "홍길동")
-    private final String name;
-    @Schema(description = "지원자 학교", example = "캠퍼스대학교")
-    private final String school;
-    @Schema(description = "지원자 전공", example = "컴퓨터공학과")
-    private final String major;
-    @Schema(description = "지원 포지션", example = "백엔드")
-    private final String position;
 
     @Schema(description = "배정된 면접 날짜", example = "2024-07-01")
     private final LocalDate interviewDate;
     @Schema(description = "배정된 면접 시작 시간", example = "10:00")
     private final LocalTime startTime;
-    @Schema(description = "배정된 면접 종료 시간", example = "10:20")
-    private final LocalTime endTime;
+    // 종료 시간은 클라이언트에서 slotDuration 등 설정값으로 계산 가능하므로 응답에서 제외합니다.
 
     @Schema(description = "면접 시간 출처 (MANUAL: 수동 배정, AUTO: 자동 배정, NONE: 미배정)")
     private final InterviewTimeSource source;
 
     public static InterviewAssignedTimeResponse of(
             Long applicantId,
-            String name,
-            String school,
-            String major,
-            String position,
             LocalDate interviewDate,
             LocalTime startTime,
-            LocalTime endTime,
             InterviewTimeSource source) {
         return new InterviewAssignedTimeResponse(
                 applicantId,
-                name,
-                school,
-                major,
-                position,
                 interviewDate,
                 startTime,
-                endTime,
                 source);
     }
 }
