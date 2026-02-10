@@ -217,7 +217,7 @@ public class SpreadsheetService {
             List<Long> adminIds = project.getAdminIds();
             List<SheetSyncChangeInfo> finalChanges = eventChanges.isEmpty() ? null : eventChanges;
             eventPublisher.publishEvent(new SheetSyncCompletedEvent(
-                    project.getId(), adminIds, syncedCount, true));
+                    project.getId(), adminIds, statistics, finalChanges));
 
             project.updateSyncStatus(SyncStatus.OK);
             projectRepository.save(project);
