@@ -2,9 +2,6 @@ spring:
   application:
     name: CampusFormServer
 
-  profiles:
-    active: local
-
   # 공통 JPA 설정
   jpa:
     show-sql: true
@@ -47,6 +44,7 @@ app:
   oauth2:
     login-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/auth/callback
     sheets-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/oauth/google/callback
+    allowed-redirect-uris: http://localhost:3000,https://web.campus-form-server.kro.kr
 
 ---
 # 로컬 개발용
@@ -65,16 +63,16 @@ spring:
     hibernate:
       ddl-auto: update
 
+COOKIE_DOMAIN: ""
+COOKIE_SECURE: false
+COOKIE_SAME_SITE: lax
+
 server:
   servlet:
     session:
       cookie:
-        same-site: none
-        secure: true
-
-# OAuth2 인증 요청 쿠키: local은 http이므로 Secure=false, Domain 비움
-COOKIE_SECURE: false
-COOKIE_DOMAIN: ""
+        same-site: lax
+        secure: false
 
 ---
 # 운영용
