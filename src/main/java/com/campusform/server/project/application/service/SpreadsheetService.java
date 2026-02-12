@@ -48,30 +48,40 @@ public class SpreadsheetService {
 
     /**
      * 스프레드시트 헤더 조회 -> 칼럼 매핑 위함
+     * 0번 인덱스이면서 헤더 이름이 'timestamp' 또는 '타임스탬프'인 컬럼은 응답에서 제외 (구글 폼 기본 컬럼)
      */
     public List<SpreadsheetColumnResponse> getSheetHeaders(String sheetUrl, Long ownerId) {
         return googleSheetsReader.readHeader(sheetUrl, ownerId).stream()
                 .filter(Objects::nonNull)
+                .filter(column -> !isTimestampHeader(column))
                 .map(column -> new SpreadsheetColumnResponse(column.getName(), column.getIndex()))
                 .toList();
     }
 
     /**
-     * 포지션 컬럼 고유값 목록 조회 (편집하기용)
+     * 0번 인덱스이고 이름이 timestamp/타임스탬프인 헤더인지 여부 (응답 제외 대상)
+     */
+    private static boolean isTimestampHeader(SpreadsheetColumn column) {
+        if (column.getIndex() != 0) {
+            return false;
+        }
+        String name = column.getName() != null ? column.getName().trim() : "";
+        String lower = name.toLowerCase();
+        return "timestamp".equals(lower) || "타임스탬프".equals(name);
+    }
+
+    /**
+     * 시트 URL 기준 포지션 컬럼 고유값 목록 조회 (프로젝트 생성 전 호출 가능)
      */
     @Transactional(readOnly = true)
-    public List<String> getDistinctPositionValues(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
-
-        Integer positionIdx = project.getMapping().getPositionIdx();
-        if (positionIdx == null || positionIdx < 0) {
+    public List<String> getDistinctPositionValues(String sheetUrl, Long ownerId, Integer positionColumnIndex) {
+        // -1 또는 미지정 시 포지션 미선택으로 간주 → 빈 목록 반환
+        if (positionColumnIndex == null || positionColumnIndex < 0) {
             return List.of();
         }
-
-        List<String[]> dataRows = googleSheetsReader.readAllLines(project.getSheetUrl(), project.getOwnerId());
+        List<String[]> dataRows = googleSheetsReader.readAllLines(sheetUrl, ownerId);
         return dataRows.stream()
-                .map(columns -> getColumnValue(columns, positionIdx))
+                .map(columns -> getColumnValue(columns, positionColumnIndex))
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()

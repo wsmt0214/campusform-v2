@@ -35,7 +35,8 @@ public class AuthService {
         String email = oAuth2User.getAttribute("email");
 
         return userRepository.findByEmail(email)
-                .map(user -> AuthMeResponse.authenticated(user.getId(), user.getEmail(), user.getNickname()))
+                .map(user -> AuthMeResponse.authenticated(
+                        user.getId(), user.getEmail(), user.getNickname(), user.getProfileImageUrl()))
                 .orElseGet(AuthMeResponse::unauthenticated);
     }
 
