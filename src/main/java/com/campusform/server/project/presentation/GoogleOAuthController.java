@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
@@ -77,19 +78,16 @@ public class GoogleOAuthController {
      * [호출 시점]
      * - 구글 시트 접근 시 권한이 필요한 경우 (예: 사용자가 구글 시트 연동 버튼 클릭 시)
      * - 사용자를 구글 권한 승인 페이지로 리다이렉트 하기 전 URL 받기 위해 사용
+     *
+     * [useLocalhost] true면 콜백을 http://localhost:3000/oauth/google/callback 로 사용 (로컬
+     * 테스트용).
+     * false 또는 생략이면 app.oauth2.sheets-redirect-uri 사용.
      */
-    @Operation(summary = "Google 권한 요청 URL 생성", description = "Google Sheets API 접근 권한을 얻기 위한 동의 화면 URL을 생성하여 반환합니다.", security = {})
+    @Operation(summary = "Google 권한 요청 URL 생성", description = "Google Sheets API 접근 권한을 얻기 위한 동의 화면 URL을 생성하여 반환합니다. useLocalhost=true 시 로컬(localhost:3000) 콜백으로 분기합니다.", security = {})
     @GetMapping("/authorize-url")
-    public ResponseEntity<Map<String, String>> getAuthorizeUrl() {
-        // 구글 Scope(시트 권한) 요청 URL 생성
-        String authorizeUrl = tokenService.buildAuthorizeUrl();
-
-        /**
-         * 이 링크를 토대로 프론트엔드가 리다이렉트
-         * 
-         * 왜 굳이 백엔드가 리다이렉트 안 시키고 프론트엔드가 리다이렉트 시키는가
-         * 프론트가 직접 흐름을 제어해야 OAuth 완료 후 명확히 context를 관리할 수 있음
-         */
+    public ResponseEntity<Map<String, String>> getAuthorizeUrl(
+            @RequestParam(required = false, defaultValue = "false") boolean useLocalhost) {
+        String authorizeUrl = tokenService.buildAuthorizeUrl(useLocalhost);
         return ResponseEntity.ok(Map.of("authorizeUrl", authorizeUrl));
     }
 }

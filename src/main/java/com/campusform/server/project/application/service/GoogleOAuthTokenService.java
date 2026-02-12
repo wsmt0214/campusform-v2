@@ -171,17 +171,21 @@ public class GoogleOAuthTokenService {
 
     /**
      * Google Sheets 권한 요청 URL 생성
+     *
+     * @param useLocalhost true면 http://localhost:3000/oauth/google/callback 로 콜백 분기
+     *                     false면 기본값(sheets-redirect-uri) 사용
+     * @return 구글 동의 화면 URL
      */
-    public String buildAuthorizeUrl() {
-        /**
-         * URL 파라미터 준비
-         * 요청 권한(scope): 스트레드 접근
-         * redirect_uri: 권한 승인 후 리다이렉트될 URI
-         */
+    public String buildAuthorizeUrl(boolean useLocalhost) {
+        String redirectUri = useLocalhost ? "http://localhost:3000/oauth/google/callback" : defaultRedirectUri;
+        return buildAuthorizeUrlWithRedirectUri(redirectUri);
+    }
+
+    private String buildAuthorizeUrlWithRedirectUri(String redirectUri) {
         String scope = "https://www.googleapis.com/auth/spreadsheets";
         // URL 인코딩 -> 한글, 특수문자 등 올바르게 처리 보장
         String encodedScope = URLEncoder.encode(scope, StandardCharsets.UTF_8);
-        String encodedRedirectUri = URLEncoder.encode(defaultRedirectUri, StandardCharsets.UTF_8);
+        String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
 
         // 최종 구글 권한 요청 URL 생성
         return String.format(
