@@ -144,20 +144,23 @@ public class CommentService {
         List<Comment> allComments = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(applicantId,
                 stage);
 
-        // 작성자 ID 목록으로 닉네임 조회 (Identity 컨텍스트)
+        // 작성자 ID 목록으로 닉네임·프로필 이미지 조회 (Identity 컨텍스트)
         List<Long> authorIds = allComments.stream()
                 .map(Comment::getAuthorId)
                 .distinct()
                 .toList();
-        Map<Long, String> authorIdToNickname = userRepository.findByIds(authorIds).stream()
+        List<User> authors = userRepository.findByIds(authorIds);
+        Map<Long, String> authorIdToNickname = authors.stream()
                 .collect(Collectors.toMap(User::getId, u -> u.getNickname() != null ? u.getNickname() : ""));
+        Map<Long, String> authorIdToProfileImageUrl = authors.stream()
+                .collect(Collectors.toMap(User::getId, u -> u.getProfileImageUrl(), (a, b) -> a));
 
-        return buildCommentHierarchy(allComments, authorIdToNickname);
+        return buildCommentHierarchy(allComments, authorIdToNickname, authorIdToProfileImageUrl);
     }
 
     // 공통: 댓글 계층 구조 구성 메서드
     private List<CommentResponse> buildCommentHierarchy(List<Comment> allComments,
-            Map<Long, String> authorIdToNickname) {
+            Map<Long, String> authorIdToNickname, Map<Long, String> authorIdToProfileImageUrl) {
         // 루트 댓글만 필터링
         List<Comment> rootComments = allComments.stream()
                 .filter(comment -> comment.getParent() == null)
@@ -172,6 +175,7 @@ public class CommentService {
                                 comment.getId(),
                                 comment.getAuthorId(),
                                 authorIdToNickname.getOrDefault(comment.getAuthorId(), ""),
+                                authorIdToProfileImageUrl.get(comment.getAuthorId()),
                                 comment.getParent() != null ? comment.getParent().getId() : null,
                                 comment.getContent(),
                                 comment.getCreatedAt(),
