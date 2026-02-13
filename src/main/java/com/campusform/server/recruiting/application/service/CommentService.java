@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.identity.domain.model.User;
+import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.dto.request.CommentRequest;
 import com.campusform.server.recruiting.application.dto.response.CommentCreateResponse;
@@ -28,6 +30,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final ApplicantRepository applicantRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
     /**
      * 댓글 작성 (parentId가 있으면 대댓글, 없으면 루트 댓글)
@@ -141,11 +144,20 @@ public class CommentService {
         List<Comment> allComments = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(applicantId,
                 stage);
 
-        return buildCommentHierarchy(allComments);
+        // 작성자 ID 목록으로 닉네임 조회 (Identity 컨텍스트)
+        List<Long> authorIds = allComments.stream()
+                .map(Comment::getAuthorId)
+                .distinct()
+                .toList();
+        Map<Long, String> authorIdToNickname = userRepository.findByIds(authorIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u.getNickname() != null ? u.getNickname() : ""));
+
+        return buildCommentHierarchy(allComments, authorIdToNickname);
     }
 
     // 공통: 댓글 계층 구조 구성 메서드
-    private List<CommentResponse> buildCommentHierarchy(List<Comment> allComments) {
+    private List<CommentResponse> buildCommentHierarchy(List<Comment> allComments,
+            Map<Long, String> authorIdToNickname) {
         // 루트 댓글만 필터링
         List<Comment> rootComments = allComments.stream()
                 .filter(comment -> comment.getParent() == null)
@@ -159,6 +171,7 @@ public class CommentService {
                         comment -> new CommentResponse(
                                 comment.getId(),
                                 comment.getAuthorId(),
+                                authorIdToNickname.getOrDefault(comment.getAuthorId(), ""),
                                 comment.getParent() != null ? comment.getParent().getId() : null,
                                 comment.getContent(),
                                 comment.getCreatedAt(),
