@@ -56,21 +56,17 @@ public class GoogleSheetController {
 
     /**
      * 포지션 컬럼 고유값 목록 조회 (편집하기용)
+     * 시트 URL 기준으로 동작하여 프로젝트 생성 전에도 호출 가능 (sheet-headers로 컬럼 인덱스 확인 후 사용)
      */
-    @Operation(summary = "포지션 컬럼 고유값 목록 조회", description = "프로젝트에 매핑된 포지션 컬럼에 등장하는 모든 고유값을 반환합니다. 편집하기 시 치환 규칙 설정에 사용합니다.")
-    @GetMapping("/{projectId}/mapping-column-values")
+    @Operation(summary = "포지션 컬럼 고유값 목록 조회", description = "지정한 시트의 지정 컬럼 인덱스에 등장하는 모든 고유값을 반환합니다. ")
+    @GetMapping("/mapping-column-values")
     public ResponseEntity<PositionValuesResponse> getPositionValues(
-            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            @Parameter(description = "시트 URL", required = true) @RequestParam String sheetUrl,
+            @Parameter(description = "포지션 컬럼의 인덱스 (-1, 즉 미매핑 시 빈 List를 반환)", required = true) @RequestParam Integer positionColumnIndex,
             Authentication authentication) {
 
         Long userId = authService.extractUserId(authentication);
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
-
-        project.validateOwnerAccess(userId);
-
-        List<String> values = spreadsheetService.getDistinctPositionValues(projectId);
+        List<String> values = spreadsheetService.getDistinctPositionValues(sheetUrl, userId, positionColumnIndex);
         return ResponseEntity.ok(PositionValuesResponse.from(values));
     }
 

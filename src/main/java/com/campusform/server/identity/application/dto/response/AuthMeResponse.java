@@ -16,14 +16,15 @@ public record AuthMeResponse(
     public record UserInfo(
             @Schema(description = "사용자 ID", example = "1") Long userId,
             @Schema(description = "이메일", example = "user@example.com") String email,
-            @Schema(description = "닉네임", example = "캠퍼스폼") String nickname) {
+            @Schema(description = "닉네임", example = "캠퍼스폼") String nickname,
+            @Schema(description = "프로필 이미지 URL (없으면 null)", example = "https://example.com/profile.jpg") String profileImageUrl) {
     }
 
     /**
      * 인증된 사용자 응답 생성
      */
-    public static AuthMeResponse authenticated(Long userId, String email, String nickname) {
-        return new AuthMeResponse(true, new UserInfo(userId, email, nickname));
+    public static AuthMeResponse authenticated(Long userId, String email, String nickname, String profileImageUrl) {
+        return new AuthMeResponse(true, new UserInfo(userId, email, nickname, profileImageUrl));
     }
 
     /**
