@@ -19,6 +19,10 @@ public class ApplicantResponse {
     private Long id;
     @Schema(description = "이름", example = "홍길동")
     private String name;
+    @Schema(description = "학교", example = "캠퍼스대학교")
+    private String school;
+    @Schema(description = "포지션", example = "백엔드")
+    private String position;
     @Schema(description = "전공", example = "컴퓨터공학과")
     private String major;
     @Schema(description = "찜하기 여부", example = "true")

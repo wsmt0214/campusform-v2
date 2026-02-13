@@ -152,6 +152,8 @@ public class ApplicantService {
                     return ApplicantResponse.builder()
                             .id(applicant.getId())
                             .name(applicant.getName())
+                            .school(applicant.getSchool())
+                            .position(applicant.getPosition())
                             .major(applicant.getMajor()) // 학과
                             // 현재 단계 기준 즐겨찾기 여부
                             .bookmarked(applicant.isBookmarkedFor(stage))
