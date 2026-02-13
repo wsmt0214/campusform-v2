@@ -89,7 +89,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
 server:
   forward-headers-strategy: framework
@@ -100,6 +100,7 @@ server:
 
   servlet:
     session:
+      timeout: 24h
       cookie:
         domain: campus-form-server.kro.kr
         same-site: none
