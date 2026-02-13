@@ -188,6 +188,10 @@ public class SpreadsheetService {
                         applicant.addExtraAnswer(questionText, answerText, i);
                     }
 
+                    // 새 지원자를 DB에 저장 (영속성 컨텍스트에 등록)
+                    applicant = applicantRepository.save(applicant);
+                    syncedCount++;
+
                     // 변경사항 기록 (이벤트용)
                     eventChanges.add(new SheetSyncChangeInfo(
                             applicant.getId(),
