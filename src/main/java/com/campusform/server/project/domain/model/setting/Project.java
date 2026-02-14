@@ -209,8 +209,7 @@ public class Project {
 
     /**
      * 면접 단계로 전환: DOCUMENT → INTERVIEW
-     * 
-     * 면접 설정이 처음 저장될 때 내부적으로 호출됩니다.
+     * (별도 API PATCH /api/recruiting/projects/{projectId}/start-interview 로 호출)
      */
     public void startInterview() {
         if (state != ProjectState.DOCUMENT) {

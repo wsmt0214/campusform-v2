@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.recruiting.application.dto.request.UpsertInterviewSettingRequest;
 import com.campusform.server.recruiting.application.dto.response.InterviewSettingResponse;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
@@ -55,12 +54,7 @@ public class InterviewSettingService {
         Project project = contextLoader.loadProjectOrThrow(projectId);
         project.validateOwnerAccess(userId);
 
-        // 서류 단계(DOCUMENT)에서 면접 설정이 처음 저장되면 → 면접 단계(INTERVIEW)로 자동 전환
-        if (project.getState() == ProjectState.DOCUMENT) {
-            project.startInterview();
-        }
-
-        // 면접 단계(INTERVIEW) 검증 (종료된 프로젝트에서는 설정 불가)
+        // 면접 단계(INTERVIEW)에서만 면접 정보 설정 저장/수정 가능
         project.validateInterviewStage();
 
         // 값 객체 생성 -> 도메인 규칙 검증은 값 객체에서 수행
