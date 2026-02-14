@@ -33,12 +33,10 @@ public class InterviewSettingController {
 
     /**
      * 면접 정보 설정 조회
-     * 
      * 응답 예시:
      * {
      * "configured": true,
-     * "startDate": "2024-08-01",
-     * "endDate": "2024-08-05",
+     * "interviewDates": ["2024-08-16", "2024-08-18"],
      * "startTime": "10:00",
      * "endTime": "18:00",
      * "maxApplicantsPerSlot": 3,
@@ -46,7 +44,7 @@ public class InterviewSettingController {
      * "maxInterviewersPerSlot": 3,
      * "slotDurationMin": 20,
      * "slotBreakMin": 5,
-     * "investigationLinkToken": "공개 링크 토큰"
+     * "investigationLinkToken": "abc1cdef-2345-6789-xxxx-yyyyzzzztttr"
      * }
      */
     @Operation(summary = "면접 정보 설정 조회", description = "프로젝트의 면접 기본 정보(기간, 시간, 슬롯 당 인원 등)를 조회합니다.")
@@ -61,11 +59,9 @@ public class InterviewSettingController {
 
     /**
      * 면접 정보 설정 저장/수정 ("설정하기" 버튼)
-     *
-     * 요청 예시
+     * 요청 예시:
      * {
-     * "startDate": "2024-08-01",
-     * "endDate": "2024-08-05",
+     * "interviewDates": ["2024-08-16", "2024-08-18"],
      * "startTime": "10:00",
      * "endTime": "18:00",
      * "maxApplicantsPerSlot": 3,

@@ -2,6 +2,7 @@ package com.campusform.server.recruiting.application.dto.request;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -20,10 +21,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpsertInterviewSettingRequest {
 
-    @Schema(description = "면접 시작 날짜", example = "2024-08-01")
-    private LocalDate startDate;
-    @Schema(description = "면접 종료 날짜", example = "2024-08-05")
-    private LocalDate endDate;
+    /** 면접을 진행할 날짜 목록 (연속일 필요 없음, 예: 16일·18일만 선택 가능) */
+    @Schema(description = "면접을 진행할 날짜 목록", example = "[\"2024-08-16\", \"2024-08-18\"]")
+    private List<LocalDate> interviewDates;
     @Schema(description = "하루 면접 시작 시간", example = "10:00")
     private LocalTime startTime;
     @Schema(description = "하루 면접 종료 시간", example = "18:00")
