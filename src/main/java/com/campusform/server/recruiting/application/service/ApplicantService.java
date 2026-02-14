@@ -247,13 +247,6 @@ public class ApplicantService {
                         .answer(answer.getAnswerText())
                         .build())
                 .toList();
-        long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
-                applicantId, stage).size();
-
-        // 4. 해당 단계에서의 댓글 개수 조회
-        long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
-                applicantId, stage).size();
-
 
         // 4. 해당 단계에서의 댓글 개수 조회
         long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(

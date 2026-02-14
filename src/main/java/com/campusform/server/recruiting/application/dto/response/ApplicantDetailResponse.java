@@ -36,10 +36,6 @@ public class ApplicantDetailResponse {
     private boolean isFavorite;
     @Schema(description = "해당 단계에서 이 지원자에게 달린 댓글 개수", example = "3")
     private long commentCount;
-<<<<<<< HEAD
-
-=======
->>>>>>> c1d058c ([fix] 중복제거)
     @Schema(description = "Google Sheet의 질문/답변 목록")
     private List<AnswerDto> answers;
 
