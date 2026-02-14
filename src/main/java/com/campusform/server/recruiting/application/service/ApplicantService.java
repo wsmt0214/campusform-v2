@@ -254,6 +254,11 @@ public class ApplicantService {
         long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
                 applicantId, stage).size();
 
+
+        // 4. 해당 단계에서의 댓글 개수 조회
+        long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
+                applicantId, stage).size();
+
         return ApplicantDetailResponse.builder()
                 .applicantId(applicant.getId())
                 .name(applicant.getName())
