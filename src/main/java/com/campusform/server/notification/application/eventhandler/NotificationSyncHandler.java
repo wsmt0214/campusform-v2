@@ -13,7 +13,6 @@ import com.campusform.server.global.event.SheetSyncChangeInfo;
 import com.campusform.server.global.event.SheetSyncCompletedEvent;
 import com.campusform.server.global.event.SheetSyncStatistics;
 import com.campusform.server.notification.application.service.NotificationService;
-import com.campusform.server.notification.domain.model.value.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -51,18 +50,19 @@ public class NotificationSyncHandler {
                 statistics.newApplicantCount(),
                 statistics.updatedApplicantCount());
 
-        String payload = createSheetSyncPayload(event);
-        for (Long adminId : event.adminIds()) {
-            try {
-                // 각 관리자(adminId)에게 시트 동기화 결과 알림(NotificationType.SHEET_SYNC_RESULT)을 생성
-                notificationService.createNotification(
-                        adminId, event.projectId(),
-                        NotificationType.SHEET_SYNC_RESULT, payload);
-            } catch (Exception e) {
-                log.error("시트 동기화 알림 생성 실패 - adminId: {}, projectId: {}",
-                        adminId, event.projectId(), e);
-            }
-        }
+        // SHEET_SYNC_RESULT 주석 처리로 인해 알림 생성 비활성화
+        // String payload = createSheetSyncPayload(event);
+        // for (Long adminId : event.adminIds()) {
+        // try {
+        // // 각 관리자(adminId)에게 시트 동기화 결과 알림(NotificationType.SHEET_SYNC_RESULT)을 생성
+        // notificationService.createNotification(
+        // adminId, event.projectId(),
+        // NotificationType.SHEET_SYNC_RESULT, payload);
+        // } catch (Exception e) {
+        // log.error("시트 동기화 알림 생성 실패 - adminId: {}, projectId: {}",
+        // adminId, event.projectId(), e);
+        // }
+        // }
     }
 
     private record SheetSyncPayload(String message, int syncedCount) {
