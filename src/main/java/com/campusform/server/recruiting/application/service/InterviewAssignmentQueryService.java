@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.recruiting.application.dto.response.InterviewAssignedTimeResponse;
 import com.campusform.server.recruiting.application.dto.response.InterviewTimeSource;
-import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.interview.schedule.InterviewScheduledSlot;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
@@ -38,10 +38,13 @@ public class InterviewAssignmentQueryService {
 
         /**
          * 프로젝트 내 전체 지원자의 최종 면접시간 조회
+         * 
+         * 면접 설정이 없어도 동작하도록 수정 (면접 정보는 null로 반환)
          */
         public List<InterviewAssignedTimeResponse> getAssignedTimes(Long projectId, Long userId) {
-                InterviewContext ctx = contextLoader.loadContext(projectId);
-                ctx.project().validateAdminAccess(userId);
+                // 프로젝트만 조회 (면접 설정은 Optional로 처리)
+                Project project = contextLoader.loadProjectOrThrow(projectId);
+                project.validateAdminAccess(userId);
 
                 List<Applicant> applicants = applicantRepository.findByProjectId(projectId);
 
