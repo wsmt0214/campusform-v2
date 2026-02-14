@@ -287,6 +287,18 @@ public class Project {
         return admins.stream().anyMatch(admin -> adminId.equals(admin.getAdminId()));
     }
 
+    /**
+     * 프로젝트 제목(이름) 수정
+     *
+     * @param newTitle 새로운 제목 (공백만으로 구성될 수 없음)
+     */
+    public void updateTitle(String newTitle) {
+        if (newTitle == null || newTitle.isBlank()) {
+            throw new IllegalArgumentException("프로젝트 제목은 필수이며, 공백만으로 구성될 수 없습니다.");
+        }
+        this.title = newTitle.trim();
+    }
+
     /** 프로젝트 생성 시 유효성 검사 */
     private static void validate(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
         if (title.isBlank())
