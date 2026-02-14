@@ -28,6 +28,25 @@ public class RecruitingStageService {
     private final ApplicantRepository applicantRepository;
 
     /**
+     * 면접 단계 시작: DOCUMENT → INTERVIEW
+     *
+     * 전제:
+     * - Project 엔티티의 상태가 DOCUMENT 여야 합니다.
+     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
+     */
+    @Transactional
+    public ProjectResponse startInterview(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        project.validateOwnerAccess(userId);
+        project.startInterview();
+        projectRepository.save(project);
+
+        return ProjectResponse.from(project);
+    }
+
+    /**
      * 서류 단계 종료 (면접 없이 프로젝트 종료): DOCUMENT → DOCUMENT_COMPLETE
      *
      * 전제:
