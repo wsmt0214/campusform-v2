@@ -29,10 +29,6 @@ public class RecruitingStageService {
 
     /**
      * 면접 단계 시작: DOCUMENT → INTERVIEW
-     *
-     * 전제:
-     * - Project 엔티티의 상태가 DOCUMENT 여야 합니다.
-     * - 요청한 사용자가 프로젝트의 OWNER여야 합니다.
      */
     @Transactional
     public ProjectResponse startInterview(Long projectId, Long userId) {
@@ -41,7 +37,6 @@ public class RecruitingStageService {
 
         project.validateOwnerAccess(userId);
         project.startInterview();
-        projectRepository.save(project);
 
         return ProjectResponse.from(project);
     }
