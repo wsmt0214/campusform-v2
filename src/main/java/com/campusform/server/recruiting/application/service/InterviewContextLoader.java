@@ -44,11 +44,24 @@ public class InterviewContextLoader {
      * 프로젝트와 면접 설정을 함께 조회
      * 
      * 대부분의 면접 관련 API에서 두 정보가 모두 필요하므로 편의 메서드 제공
+     * 면접 설정이 없으면 예외를 던집니다.
      */
     public InterviewContext loadContext(Long projectId) {
         Project project = loadProjectOrThrow(projectId);
         InterviewSetting setting = loadSettingOrThrow(projectId);
         return new InterviewContext(project, setting);
+    }
+
+    /**
+     * 프로젝트와 면접 설정을 함께 조회 (면접 설정이 없어도 가능)
+     * 
+     * 면접 설정이 선택적인 경우에 사용합니다.
+     * 면접 설정이 없으면 Optional.empty()를 반환합니다.
+     */
+    public java.util.Optional<InterviewContext> loadContextOptional(Long projectId) {
+        Project project = loadProjectOrThrow(projectId);
+        return interviewSettingRepository.findByProjectId(projectId)
+                .map(setting -> new InterviewContext(project, setting));
     }
 
     /**
