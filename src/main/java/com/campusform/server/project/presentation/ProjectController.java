@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
+import com.campusform.server.project.application.dto.request.UpdateProjectNameRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
@@ -60,6 +62,20 @@ public class ProjectController {
         Long ownerId = authService.extractUserId(authentication);
         ProjectResponse response = projectService.createProject(ownerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 프로젝트 이름(제목) 수정 (OWNER만 가능)
+     */
+    @Operation(summary = "프로젝트 이름 수정", description = "프로젝트의 제목(이름)을 수정합니다. OWNER만 수정 가능합니다.")
+    @PatchMapping("/{projectId}/name")
+    public ResponseEntity<ProjectResponse> updateProjectName(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            @Valid @RequestBody UpdateProjectNameRequest request,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        ProjectResponse response = projectService.updateProjectName(projectId, userId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**

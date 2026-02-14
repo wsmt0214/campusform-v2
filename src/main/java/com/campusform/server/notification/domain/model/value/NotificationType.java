@@ -8,8 +8,8 @@ package com.campusform.server.notification.domain.model.value;
  * 향후 수정 필요
  */
 public enum NotificationType {
-    /** 시트 동기화 결과 */
-    SHEET_SYNC_RESULT,
+    // /** 시트 동기화 결과 */
+    // SHEET_SYNC_RESULT,
 
     /** 새 지원자 유입 */
     NEW_APPLICANT,

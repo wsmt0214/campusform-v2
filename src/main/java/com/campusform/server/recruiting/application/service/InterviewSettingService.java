@@ -1,8 +1,8 @@
 package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +12,6 @@ import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.recruiting.application.dto.request.UpsertInterviewSettingRequest;
 import com.campusform.server.recruiting.application.dto.response.InterviewSettingResponse;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
-import com.campusform.server.recruiting.domain.model.interview.setup.value.DateRange;
 import com.campusform.server.recruiting.domain.model.interview.setup.value.SlotConfiguration;
 import com.campusform.server.recruiting.domain.model.interview.setup.value.TimeRange;
 import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
@@ -73,18 +72,23 @@ public class InterviewSettingService {
                         request.getMaxApplicantsPerSlot(),
                         request.getMinInterviewersPerSlot(),
                         request.getMaxInterviewersPerSlot());
-        DateRange dateRange = DateRange.of(request.getStartDate(), request.getEndDate());
+
+        // 날짜 목록: null이면 빈 리스트, 중복 제거 후 정렬
+        List<LocalDate> interviewDates = Stream.ofNullable(request.getInterviewDates())
+                .flatMap(List::stream)
+                .distinct()
+                .sorted()
+                .toList();
 
         InterviewSetting setting = interviewSettingRepository.findByProjectId(projectId)
                 .orElse(null);
-        // 현재 파라미터는 도메인 규칙을 통해 검증된 상태
 
         // Upsert
         if (setting == null) {
-            setting = InterviewSetting.create(projectId, timeRange, slotConfig, dateRange);
+            setting = InterviewSetting.create(projectId, timeRange, slotConfig, interviewDates);
             interviewSettingRepository.save(setting);
         } else {
-            setting.update(timeRange, slotConfig, dateRange);
+            setting.update(timeRange, slotConfig, interviewDates);
         }
 
         return convertToResponse(setting);
@@ -94,20 +98,15 @@ public class InterviewSettingService {
      * InterviewSetting 엔티티를 InterviewSettingResponse DTO로 변환
      */
     private InterviewSettingResponse convertToResponse(InterviewSetting setting) {
-        List<LocalDate> dates = setting.getDays().stream()
+        List<LocalDate> interviewDates = setting.getDays().stream()
                 .map(d -> d.getInterviewDate())
                 .distinct()
                 .sorted()
                 .toList();
 
-        LocalDate startDate = dates.stream().min(Comparator.naturalOrder()).orElse(null);
-        LocalDate endDate = dates.stream().max(Comparator.naturalOrder()).orElse(null);
-
         return new InterviewSettingResponse(
                 true,
-                startDate,
-                endDate,
-                dates,
+                interviewDates,
                 setting.getStartTime(),
                 setting.getEndTime(),
                 setting.getMaxApplicantsPerSlot(),
