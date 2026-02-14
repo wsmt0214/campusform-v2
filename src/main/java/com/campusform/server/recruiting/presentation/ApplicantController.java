@@ -99,6 +99,7 @@ public class ApplicantController {
      *   "email": "applicant@example.com",
      *   "status": "PASS",
      *   "isFavorite": true,
+     *   "commentCount": 3,
      *   "answers": [
      *     {
      *       "question": "자기소개를 해주세요.",
