@@ -241,6 +241,10 @@ public class ApplicantService {
                         .build())
                 .toList();
 
+        // 4. 해당 단계에서의 댓글 개수 조회
+        long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
+                applicantId, stage).size();
+
         return ApplicantDetailResponse.builder()
                 .applicantId(applicant.getId())
                 .name(applicant.getName())
@@ -253,6 +257,7 @@ public class ApplicantService {
                 .status(currentStatus.name())
                 // 상세 조회도 단계별 즐겨찾기 여부를 사용
                 .isFavorite(applicant.isBookmarkedFor(stage))
+                .commentCount(commentCount)
                 .answers(answerDtos)
                 .build();
     }
