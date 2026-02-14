@@ -30,6 +30,7 @@ server:
     session:
       tracking-modes: cookie
 
+
 # AWS S3
 aws:
   s3:
@@ -89,7 +90,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
 
 server:
   forward-headers-strategy: framework
