@@ -105,7 +105,8 @@ public class NotificationEventHandler {
     private record NewApplicantPayload(String message, String applicantName) {
     }
 
-    private record CommentCreatedPayload(String title, String message, Long applicantId, Long commenterId) {
+    private record CommentCreatedPayload(String projectTitle, String title, String message, Long applicantId,
+            Long commenterId) {
     }
 
     // ============ Payload Creation Methods ============
@@ -121,9 +122,11 @@ public class NotificationEventHandler {
     }
 
     private String createCommentPayload(CommentCreatedEvent event) {
+        String projectTitle = event.projectTitle() != null ? event.projectTitle().trim() : null;
         String title = String.format("%s 님의 지원서", event.applicantName());
         String message = String.format("%s 님이 댓글을 작성했습니다.", event.commenterName());
         return toJson(new CommentCreatedPayload(
+                projectTitle,
                 title,
                 message,
                 event.applicantId(),

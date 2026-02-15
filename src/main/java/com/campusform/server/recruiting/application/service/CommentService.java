@@ -111,8 +111,10 @@ public class CommentService {
                 ? commenter.getNickname()
                 : (commenter != null && commenter.getEmail() != null ? commenter.getEmail() : "알 수 없음");
 
+        String projectTitle = project.getTitle() != null ? project.getTitle().trim() : null;
         eventPublisher.publishEvent(new CommentCreatedEvent(
                 project.getId(),
+                projectTitle,
                 applicantId,
                 applicant.getName() != null ? applicant.getName() : "지원자",
                 commenterId,

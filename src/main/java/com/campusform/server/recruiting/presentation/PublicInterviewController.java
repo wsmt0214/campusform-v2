@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.recruiting.application.dto.request.SubmitSlotsRequest;
 import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.response.PublicInterviewConfigResponse;
 import com.campusform.server.recruiting.application.dto.response.SubmitSlotsResponse;
 import com.campusform.server.recruiting.application.service.IntervieweeAvailabilityService;
 
@@ -31,6 +32,14 @@ import lombok.RequiredArgsConstructor;
 public class PublicInterviewController {
 
     private final IntervieweeAvailabilityService intervieweeAvailabilityService;
+
+    @Operation(summary = "면접 공개 페이지 설정 조회 (공개)", description = "토큰으로 프로젝트 제목·안내 문구 등 면접 공개 페이지 설정을 조회합니다.", security = {})
+    @GetMapping("/config")
+    public ResponseEntity<PublicInterviewConfigResponse> getConfig(
+            @Parameter(description = "프로젝트의 지원자 링크 생성 시 발급된 고유 토큰", required = true) @RequestParam String token) {
+        PublicInterviewConfigResponse response = intervieweeAvailabilityService.getConfigByToken(token);
+        return ResponseEntity.ok(response);
+    }
 
     @Operation(summary = "제출 가능한 면접 슬롯 목록 조회 (공개)", description = "지원자가 고유 토큰을 사용하여 제출 가능한 전체 면접 슬롯 목록을 조회합니다.", security = {})
     @GetMapping("/slots")

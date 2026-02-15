@@ -14,11 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.recruiting.application.dto.request.SubmitSlotsRequest;
 import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.response.PublicInterviewConfigResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.interview.availability.IntervieweeAvailabilitySlot;
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
+import com.campusform.server.recruiting.domain.model.interview.setup.InterviewAvailabilityInvestigationLink;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -43,6 +45,18 @@ public class IntervieweeAvailabilityService {
     private final ApplicantRepository applicantRepository;
     private final IntervieweeAvailabilitySlotRepository slotRepository;
     private final InterviewSlotGenerator slotGenerator = new InterviewSlotGenerator(); // 도메인 서비스
+
+    /**
+     * 토큰으로 면접 공개 페이지 설정 조회 (프로젝트 제목, 안내 문구)
+     * 공개 API에서 사용되며, 인증 없이 토큰만으로 접근 가능합니다.
+     */
+    public PublicInterviewConfigResponse getConfigByToken(String token) {
+        InterviewContext ctx = contextLoader.loadContextByToken(token);
+        String projectTitle = ctx.project().getTitle() != null ? ctx.project().getTitle() : "";
+        InterviewAvailabilityInvestigationLink link = ctx.setting().getInvestigationLink();
+        String guidanceText = link != null && link.getGuidanceText() != null ? link.getGuidanceText() : "";
+        return PublicInterviewConfigResponse.of(projectTitle, guidanceText);
+    }
 
     /**
      * 토큰으로 면접 슬롯 목록 조회
