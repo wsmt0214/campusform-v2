@@ -9,6 +9,7 @@ import java.util.List;
  * Notification Context에서 이 이벤트를 수신하여 다른 관리자들에게 알림을 생성합니다.
  *
  * @param projectId      프로젝트 ID
+ * @param projectTitle   프로젝트 제목 (알림 title 앞에 표시용)
  * @param applicantId    지원자 ID
  * @param applicantName  지원자 이름
  * @param commenterId    댓글 작성자 ID
@@ -17,6 +18,7 @@ import java.util.List;
  */
 public record CommentCreatedEvent(
         Long projectId,
+        String projectTitle,
         Long applicantId,
         String applicantName,
         Long commenterId,
