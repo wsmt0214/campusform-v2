@@ -37,6 +37,12 @@ public interface ApplicantRepository {
     // 면접 단계 상태로 조회
     List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ScreeningResult status);
 
+    /**
+     * 서류 합격 + 면접 상태 조건으로 지원자 목록 조회 (면접 탭: 서류 불합격자 제외)
+     */
+    List<Applicant> findByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId,
+            ScreeningResult documentStatus, ScreeningResult interviewStatus);
+
     // 서류(Document) 카운트
     long countByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
 

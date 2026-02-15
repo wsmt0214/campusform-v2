@@ -16,6 +16,7 @@ import com.campusform.server.recruiting.application.dto.request.SubmitSlotsReque
 import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.interview.availability.IntervieweeAvailabilitySlot;
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;
@@ -105,6 +106,11 @@ public class IntervieweeAvailabilityService {
                 request.getPhone())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "지원자 정보를 찾을 수 없습니다. 이름과 전화번호를 확인해주세요."));
+
+        // 서류 합격자만 면접 가능 시간 제출 가능 (서류 불합격자는 면접 대상이 아님)
+        if (applicant.getDocumentStatus() != ScreeningResult.PASS) {
+            throw new IllegalStateException("서류 합격자만 면접 가능 시간을 제출할 수 있습니다.");
+        }
 
         // 기존 제출 내역 삭제 <- 처음 제출이라면 삭제X
         slotRepository.deleteByApplicantId(applicant.getId());

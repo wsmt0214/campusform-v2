@@ -116,13 +116,13 @@ public class NotificationEventHandler {
     }
 
     private String createNewApplicantPayload(NewApplicantEvent event) {
-        String message = String.format("새로운 지원자 '%s'님이 지원했습니다.", event.applicantName());
+        String message = String.format("새로운 지원자 '%s' 님이 지원했습니다.", event.applicantName());
         return toJson(new NewApplicantPayload(message, event.applicantName()));
     }
 
     private String createCommentPayload(CommentCreatedEvent event) {
-        String title = String.format("%s님의 지원서", event.applicantName());
-        String message = String.format("%s님이 댓글을 작성했습니다.", event.commenterName());
+        String title = String.format("%s 님의 지원서", event.applicantName());
+        String message = String.format("%s 님이 댓글을 작성했습니다.", event.commenterName());
         return toJson(new CommentCreatedPayload(
                 title,
                 message,

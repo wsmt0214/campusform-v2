@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.global.event.CommentCreatedEvent;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -31,6 +33,7 @@ public class CommentService {
     private final ApplicantRepository applicantRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 댓글 작성 (parentId가 있으면 대댓글, 없으면 루트 댓글)
@@ -72,10 +75,49 @@ public class CommentService {
 
         // 저장 후 반환 (parent_comment_id는 JPA가 자동으로 저장)
         Comment savedComment = commentRepository.save(comment);
+
+        // 댓글 생성 알림: 해당 프로젝트의 모든 관리자(댓글 작성자 제외)에게 발송
+        publishCommentCreatedEvent(applicantId, authorId);
+
         return new CommentCreateResponse(
                 savedComment.getId(),
                 savedComment.getParent() != null ? savedComment.getParent().getId() : null,
                 savedComment.getCreatedAt());
+    }
+
+    /**
+     * 댓글 생성 이벤트 발행.
+     * 해당 프로젝트의 모든 관리자(OWNER + ADMIN)에게 알림이 가며, 댓글 작성자 본인에게는 발송하지 않습니다.
+     * NotificationEventHandler가 수신해 각 수신자별로 알림을 DB에 저장합니다.
+     */
+    private void publishCommentCreatedEvent(Long applicantId, Long commenterId) {
+        var applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
+        var project = projectRepository.findById(applicant.getProjectId())
+                .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."));
+        var commenter = userRepository.findById(commenterId)
+                .orElse(null);
+
+        // 수신자: 해당 프로젝트의 모든 관리자(OWNER + ADMIN) 중 댓글 작성자 본인만 제외
+        List<Long> recipientIds = project.getAdminIds().stream()
+                .filter(id -> !id.equals(commenterId))
+                .toList();
+
+        if (recipientIds.isEmpty()) {
+            return;
+        }
+
+        String commenterName = commenter != null && commenter.getNickname() != null && !commenter.getNickname().isBlank()
+                ? commenter.getNickname()
+                : (commenter != null && commenter.getEmail() != null ? commenter.getEmail() : "알 수 없음");
+
+        eventPublisher.publishEvent(new CommentCreatedEvent(
+                project.getId(),
+                applicantId,
+                applicant.getName() != null ? applicant.getName() : "지원자",
+                commenterId,
+                commenterName,
+                recipientIds));
     }
 
     // 3. 댓글 수정

@@ -20,6 +20,7 @@ import com.campusform.server.recruiting.application.dto.response.SmartScheduleRe
 import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse.SlotInfo;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.interview.availability.IntervieweeAvailabilitySlot;
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
 import com.campusform.server.recruiting.domain.model.interview.schedule.InterviewScheduleUnassignedApplicant;
@@ -180,7 +181,10 @@ public class SmartScheduleService {
                 .map(IntervieweeAvailabilitySlot::getApplicantId)
                 .collect(Collectors.toSet());
 
-        List<Applicant> applicants = applicantRepository.findByIds(applicantIds.stream().toList());
+        // 서류 합격(PASS)자만 스마트 시간표 대상에 포함 (서류 불합격자 제외)
+        List<Applicant> applicants = applicantRepository.findByIds(applicantIds.stream().toList()).stream()
+                .filter(a -> a.getDocumentStatus() == ScreeningResult.PASS)
+                .toList();
 
         return applicants.stream()
                 .collect(Collectors.toMap(

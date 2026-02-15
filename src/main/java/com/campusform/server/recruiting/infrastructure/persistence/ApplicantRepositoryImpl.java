@@ -67,6 +67,14 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
         return applicantJpaRepository.findByProjectIdAndInterviewStatus(projectId, status);
     }
 
+    // 8. 서류 합격 + 면접 상태로 조회 (면접 단계에서 서류 불합격자 제외)
+    @Override
+    public List<Applicant> findByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId,
+            ScreeningResult documentStatus, ScreeningResult interviewStatus) {
+        return applicantJpaRepository.findByProjectIdAndDocumentStatusAndInterviewStatus(projectId, documentStatus,
+                interviewStatus);
+    }
+
     @Override
     public boolean existsById(Long applicantId) {
         return applicantJpaRepository.existsById(applicantId);
