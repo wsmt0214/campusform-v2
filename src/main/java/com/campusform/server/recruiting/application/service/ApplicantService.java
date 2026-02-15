@@ -197,6 +197,9 @@ public class ApplicantService {
                 .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."));
         validateStageActive(project, stage);
 
+        // 면접 단계에서는 서류 합격자만 상태 변경 가능 (서류 불합격자는 면접 대상 아님)
+        validateDocumentPassForInterview(applicant, stage);
+
         // 3. 상태 변경 (도메인 로직 호출)
         applicant.updateScreeningResult(stage, status);
         // 3. 변경된 결과 응답 생성 , 현재 상태 확인!
@@ -216,6 +219,10 @@ public class ApplicantService {
     public void Bookmark(Long applicantId, RecruitmentStage stage) {
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 존재하지 않습니다."));
+
+        // 면접 단계에서는 서류 합격자만 즐겨찾기 가능
+        validateDocumentPassForInterview(applicant, stage);
+
         // 현재 탭(서류/면접)에 맞게 단계별 즐겨찾기 필드를 토글
         applicant.toggleBookmark(stage);
     }
@@ -225,6 +232,9 @@ public class ApplicantService {
         // 1. 지원자 조회 (없으면 예외 발생)
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));
+
+        // 면접 단계에서는 서류 합격자만 상세 조회 가능
+        validateDocumentPassForInterview(applicant, stage);
 
         // 2. 현재 단계(Stage)에 맞는 합격 상태(Status) 가져오기
         ScreeningResult currentStatus = (stage == RecruitmentStage.DOCUMENT)
@@ -279,6 +289,16 @@ public class ApplicantService {
             project.validateDocumentStage();
         } else if (stage == RecruitmentStage.INTERVIEW) {
             project.validateInterviewStage();
+        }
+    }
+
+    /**
+     * 면접 단계 작업 시 서류 합격(PASS) 여부 검증
+     * 서류 불합격(FAIL) 지원자는 면접 단계의 대상이 아니므로, 모든 면접 관련 개별 작업을 거부합니다.
+     */
+    private void validateDocumentPassForInterview(Applicant applicant, RecruitmentStage stage) {
+        if (stage == RecruitmentStage.INTERVIEW && applicant.getDocumentStatus() != ScreeningResult.PASS) {
+            throw new IllegalArgumentException("서류 합격자만 면접 단계의 대상이 됩니다. 현재 서류 상태: " + applicant.getDocumentStatus());
         }
     }
 }

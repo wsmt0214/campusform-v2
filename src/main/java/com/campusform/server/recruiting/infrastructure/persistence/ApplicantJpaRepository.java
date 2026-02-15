@@ -25,6 +25,10 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
     List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ScreeningResult documentStatus);
     List<Applicant> findByProjectIdAndInterviewStatus(Long projectId, ScreeningResult interviewStatus);
 
+    /** 서류 합격 + 면접 상태 조건으로 지원자 목록 조회 (면접 탭에서 서류 불합격자 제외) */
+    List<Applicant> findByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId,
+            ScreeningResult documentStatus, ScreeningResult interviewStatus);
+
     // JPA가 알아서 쿼리를 만들어줍니다.
     long countByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
     long countByProjectIdAndInterviewStatus(Long projectId, ScreeningResult status);

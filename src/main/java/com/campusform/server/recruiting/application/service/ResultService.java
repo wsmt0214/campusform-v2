@@ -35,8 +35,9 @@ public class ResultService {
                 if (stage == RecruitmentStage.DOCUMENT) {
                         applicants = applicantRepository.findByProjectIdAndDocumentStatus(projectId, status);
                 } else {
-                        // INTERVIEW
-                        applicants = applicantRepository.findByProjectIdAndInterviewStatus(projectId, status);
+                        // INTERVIEW: 서류 합격(PASS)자 중에서만 면접 상태로 조회 (서류 불합격자 제외)
+                        applicants = applicantRepository.findByProjectIdAndDocumentStatusAndInterviewStatus(
+                                        projectId, ScreeningResult.PASS, status);
                 }
 
                 // 3. 통계 데이터 계산
@@ -159,6 +160,17 @@ public class ResultService {
                 }
 
                 RecruitmentStage stage = RecruitmentStage.valueOf(request.stage().toUpperCase());
+
+                // 면접 단계인 경우, 서류 합격자만 결과 발표 대상 (서류 불합격자 제외)
+                if (stage == RecruitmentStage.INTERVIEW) {
+                        boolean hasDocFail = applicants.stream()
+                                        .anyMatch(a -> a.getDocumentStatus() != ScreeningResult.PASS);
+                        if (hasDocFail) {
+                                throw new IllegalArgumentException(
+                                                "면접 결과 발표 대상에 서류 불합격자가 포함되어 있습니다. 서류 합격자만 면접 결과 발표 대상이 됩니다.");
+                        }
+                }
+
                 // 2. 상태 변경 (도메인 로직 실행)
                 for (Applicant applicant : applicants) {
                         applicant.updateScreeningResult(stage, request.status());

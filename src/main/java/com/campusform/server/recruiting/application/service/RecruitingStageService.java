@@ -80,8 +80,9 @@ public class RecruitingStageService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
 
-        // HOLD 상태 지원자 검증
-        long holdCount = applicantRepository.countByProjectIdAndInterviewStatus(projectId, ScreeningResult.HOLD);
+        // 서류 합격(PASS)자 중 면접 HOLD 상태 지원자 검증 (서류 불합격자는 면접 대상이 아님)
+        long holdCount = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
+                projectId, ScreeningResult.PASS, ScreeningResult.HOLD);
         if (holdCount > 0) {
             throw new IllegalStateException(
                     "면접 단계를 종료할 수 없습니다. 면접 결과가 보류(HOLD)인 지원자가 " + holdCount + "명 있습니다. 모두 합격/불합격 처리 후 종료해 주세요.");

@@ -64,6 +64,11 @@ public class SmsService {
                 .filter(a -> a.getProjectId().equals(projectId))
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
 
+        // 면접 단계에서는 서류 합격자만 미리보기 가능 (서류 불합격자는 면접 대상 아님)
+        if (stage == RecruitmentStage.INTERVIEW && applicant.getDocumentStatus() != ScreeningResult.PASS) {
+            throw new IllegalArgumentException("서류 합격자만 면접 단계의 대상이 됩니다. 현재 서류 상태: " + applicant.getDocumentStatus());
+        }
+
         // 2. 지원자의 현재 상태 조회 (DB에서 가져옴)
         ScreeningResult currentStatus = (stage == RecruitmentStage.DOCUMENT)
                 ? applicant.getDocumentStatus()
