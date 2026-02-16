@@ -1,6 +1,8 @@
 package com.campusform.server.project.infrastructure.external.sheet;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,7 @@ public class GoogleSheetsReader implements SpreadsheetReader {
 
     private static final String HEADER_RANGE_TEMPLATE = "'%s'!A1:XFD1";
     private static final String DATA_RANGE_TEMPLATE = "'%s'!A2:XFD";
+    private static final String VALUES_GET_BASE = "https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s";
 
     private final GoogleSheetsServiceFactory serviceFactory;
 
@@ -110,8 +113,12 @@ public class GoogleSheetsReader implements SpreadsheetReader {
 
     /**
      * Google Sheets API에서 값을 가져옵니다.
+     * 요청 URL은 로그로 출력합니다.
      */
     private ValueRange fetchValues(Sheets sheetsService, String spreadsheetId, String range) throws IOException {
+        String encodedRange = URLEncoder.encode(range, StandardCharsets.UTF_8);
+        String requestUrl = String.format(VALUES_GET_BASE, spreadsheetId, encodedRange);
+        log.info("Google Sheets API 요청 URL: {}", requestUrl);
         return sheetsService.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute();
