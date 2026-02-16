@@ -51,10 +51,14 @@ public class GoogleSheetsReader implements SpreadsheetReader {
             ResponseParser<T> responseParser) {
 
         try {
+            log.info("Google Sheets 읽기 시작 sheetUrl={}", sheetUrl);
             // 시트에 접근하기 위한 컨텍스트(서비스, 스프레드시트 ID, 시트 이름) 준비
             SheetContext context = prepareSheetContext(sheetUrl, ownerId);
             // 데이터 읽기 범위 문자열 구성 (ex: '시트명'!A1:XFD1 혹은 '시트명'!A2:XFD)
             String range = rangeBuilder.build(context.sheetName());
+            String requestUrl = String.format(VALUES_GET_BASE, context.spreadsheetId(),
+                    URLEncoder.encode(range, StandardCharsets.UTF_8));
+            log.info("Google Sheets API 요청 URL: {}", requestUrl);
             // Google Sheets API를 통해 실제 데이터를 조회
             ValueRange response = fetchValues(context.sheetsService(), context.spreadsheetId(), range);
             // API의 응답을 도메인 객체 또는 배열 등으로 파싱
@@ -113,12 +117,8 @@ public class GoogleSheetsReader implements SpreadsheetReader {
 
     /**
      * Google Sheets API에서 값을 가져옵니다.
-     * 요청 URL은 로그로 출력합니다.
      */
     private ValueRange fetchValues(Sheets sheetsService, String spreadsheetId, String range) throws IOException {
-        String encodedRange = URLEncoder.encode(range, StandardCharsets.UTF_8);
-        String requestUrl = String.format(VALUES_GET_BASE, spreadsheetId, encodedRange);
-        log.info("Google Sheets API 요청 URL: {}", requestUrl);
         return sheetsService.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute();
