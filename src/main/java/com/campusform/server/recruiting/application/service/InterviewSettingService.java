@@ -52,7 +52,6 @@ public class InterviewSettingService {
     public InterviewSettingResponse saveOrUpdateSetting(Long projectId, Long userId,
             UpsertInterviewSettingRequest request) {
         Project project = contextLoader.loadProjectOrThrow(projectId);
-        project.validateOwnerAccess(userId);
 
         // 면접 단계(INTERVIEW)에서만 면접 정보 설정 저장/수정 가능
         project.validateInterviewStage();
