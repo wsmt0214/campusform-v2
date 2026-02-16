@@ -71,7 +71,6 @@ public class RequiredInterviewerService {
             Long projectId, Long userId, Long adminId, SetRequiredInterviewerRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         Project project = ctx.project();
-        project.validateOwnerAccess(userId);
         project.validateAdminAccess(adminId);
         InterviewSetting setting = ctx.setting();
 

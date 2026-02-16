@@ -33,7 +33,7 @@ public class InterviewerQueryService {
      */
     public InterviewerListResponse getInterviewerList(Long projectId, Long userId) {
         Project project = contextLoader.loadProjectOrThrow(projectId);
-        project.validateOwnerAccess(userId);
+        project.validateAdminAccess(userId);
 
         // 프로젝트의 모든 관리자 ID 목록 수집
         Set<Long> adminIds = collectAdminIds(project);

@@ -33,7 +33,6 @@ public class InterviewSettingService {
      */
     public InterviewSettingResponse getSetting(Long projectId, Long userId) {
         Project project = contextLoader.loadProjectOrThrow(projectId);
-        project.validateOwnerAccess(userId);
 
         /**
          * interviewSettingRepository.findByProjectId(projectId)는

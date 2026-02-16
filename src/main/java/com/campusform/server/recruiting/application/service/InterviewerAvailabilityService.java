@@ -42,7 +42,6 @@ public class InterviewerAvailabilityService {
      */
     public InterviewerAvailabilityResponse getInterviewerAvailability(Long projectId, Long userId, Long adminId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
         ctx.project().validateAdminAccess(adminId);
 
         InterviewSetting setting = ctx.setting();
@@ -80,11 +79,13 @@ public class InterviewerAvailabilityService {
                 .map(entry -> {
                     LocalDate date = entry.getValue(); // 날짜
                     Long dayId = entry.getKey(); // InterviewDay ID
-                    List<InterviewerAvailabilityBlock> dayBlocks = dayIdToBlocks.get(dayId); // 그날의 블록들
+                    List<InterviewerAvailabilityBlock> dayBlocks = dayIdToBlocks.get(dayId); // 그날의
+                                                                                             // 블록들
 
                     // 각 블록을 30분 단위 TimeBlock으로 변환 (시간순 정렬)
                     List<InterviewerAvailabilityResponse.TimeBlock> timeBlocks = dayBlocks.stream()
-                            .sorted(Comparator.comparing(InterviewerAvailabilityBlock::getStartTime))
+                            .sorted(Comparator.comparing(
+                                    InterviewerAvailabilityBlock::getStartTime))
                             .map(block -> InterviewerAvailabilityResponse.TimeBlock.of(
                                     block.getStartTime(),
                                     block.getStartTime().plusMinutes(30)))
@@ -114,7 +115,6 @@ public class InterviewerAvailabilityService {
             Long projectId, Long userId, Long adminId, UpsertInterviewerAvailabilityRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         Project project = ctx.project();
-        project.validateOwnerAccess(userId);
         project.validateAdminAccess(adminId);
 
         // 면접관 가능 시간 설정은 면접 단계(INTERVIEW)에서만 가능
@@ -147,14 +147,16 @@ public class InterviewerAvailabilityService {
             InterviewDay interviewDay = dateToDay.get(date);
 
             if (interviewDay == null) {
-                throw new IllegalArgumentException("날짜가 유효하지 않습니다. date=" + date + ", projectId=" + projectId);
+                throw new IllegalArgumentException(
+                        "날짜가 유효하지 않습니다. date=" + date + ", projectId=" + projectId);
             }
 
             for (LocalTime startTime : dayAvail.getStartTimes()) {
                 // 도메인 엔티티에서 검증 수행
                 setting.validateBlockStartTime(startTime);
                 setting.validateBlockWithinTimeRange(startTime);
-                blocksToSave.add(InterviewerAvailabilityBlock.create(adminId, interviewDay.getId(), startTime));
+                blocksToSave.add(InterviewerAvailabilityBlock.create(adminId, interviewDay.getId(),
+                        startTime));
             }
         }
 
@@ -171,7 +173,7 @@ public class InterviewerAvailabilityService {
      */
     public InterviewerAvailabilitySummaryResponse getAvailabilitySummary(Long projectId, Long userId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         // 면접 정보 설정 기반으로 날짜별 시간 블록 집계
@@ -213,7 +215,8 @@ public class InterviewerAvailabilityService {
                             blockStartTime.plusMinutes(30), // 블록은 30분 고정
                             count);
                 })
-                .filter(timeBlock -> timeBlock.getAvailableInterviewerCount() > 0) // count가 0보다 큰 경우만 필터링
+                .filter(timeBlock -> timeBlock.getAvailableInterviewerCount() > 0) // count가 0보다 큰 경우만
+                                                                                   // 필터링
                 .toList();
 
         return InterviewerAvailabilitySummaryResponse.DaySummary.of(date, timeBlocks);
