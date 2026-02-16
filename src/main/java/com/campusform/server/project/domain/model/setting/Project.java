@@ -2,6 +2,7 @@ package com.campusform.server.project.domain.model.setting;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,6 +45,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Project {
+
+    /**
+     * 프로젝트 제목 정책
+     * - 최대 40자
+     * - 한글/영문/특수문자/공백만 허용 (숫자/기타 문자 집합은 허용하지 않음)
+     */
+    private static final int MAX_TITLE_LENGTH = 40;
+    private static final Pattern TITLE_ALLOWED_PATTERN = Pattern.compile("^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z\\p{Punct}\\s]+$");
 
     @Id
     @GeneratedValue
@@ -123,7 +132,8 @@ public class Project {
     public static Project create(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
         validate(title, ownerId, sheetUrl, startAt, endAt);
         Project project = new Project();
-        project.title = title;
+        // 저장 시에는 trim을 적용하여 일관된 값을 저장합니다.
+        project.title = title.trim();
         project.ownerId = ownerId;
         project.sheetUrl = sheetUrl;
         project.startAt = startAt;
@@ -292,19 +302,36 @@ public class Project {
      * @param newTitle 새로운 제목 (공백만으로 구성될 수 없음)
      */
     public void updateTitle(String newTitle) {
-        if (newTitle == null || newTitle.isBlank()) {
-            throw new IllegalArgumentException("프로젝트 제목은 필수이며, 공백만으로 구성될 수 없습니다.");
-        }
+        validateTitle(newTitle);
         this.title = newTitle.trim();
     }
 
     /** 프로젝트 생성 시 유효성 검사 */
     private static void validate(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
-        if (title.isBlank())
-            throw new IllegalArgumentException("프로젝트명이 필요합니다.");
+        validateTitle(title);
         if (sheetUrl.isBlank())
             throw new IllegalArgumentException("sheetUrl가 필요합니다.");
         if (endAt.isBefore(startAt))
             throw new IllegalArgumentException("endAt은 startAt 이후여야 합니다.");
+    }
+
+    /**
+     * 프로젝트 제목 유효성 검증
+     * 생성/수정에서 동일한 정책을 적용합니다.
+     */
+    private static void validateTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("프로젝트 이름은 필수이며, 공백만으로 구성될 수 없습니다.");
+        }
+
+        String trimmed = title.trim();
+        if (trimmed.length() > MAX_TITLE_LENGTH) {
+            throw new IllegalArgumentException("프로젝트 이름은 최대 " + MAX_TITLE_LENGTH + "자까지 가능합니다.");
+        }
+
+        // 한글/영문/특수문자/공백만 허용 (숫자, 이모지, 기타 문자는 불가)
+        if (!TITLE_ALLOWED_PATTERN.matcher(trimmed).matches()) {
+            throw new IllegalArgumentException("프로젝트 이름은 한글, 영문, 특수문자, 공백만 입력할 수 있습니다.");
+        }
     }
 }
