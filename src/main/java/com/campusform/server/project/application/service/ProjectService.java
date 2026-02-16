@@ -200,8 +200,7 @@ public class ProjectService {
 
     /**
      * 관리자 목록 조회 (관리자만 가능)
-     * 
-     * OWNER는 제외하고 ADMIN만 반환합니다.
+     * OWNER는 owner 필드로, ADMIN은 admins 목록으로 반환합니다.
      */
     @Transactional(readOnly = true)
     public AdminListResponse getAdmins(Long projectId, Long userId) {
@@ -212,7 +211,18 @@ public class ProjectService {
         // 관리자 권한 검증 (OWNER 또는 ADMIN)
         project.validateAdminAccess(userId);
 
-        // ADMIN 목록 조회 및 정보 추가 (OWNER 제외)
+        // OWNER 정보 조회 (별도 필드로 포함)
+        User ownerUser = userRepository.findById(project.getOwnerId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "프로젝트 소유자 정보를 찾을 수 없습니다. ownerId=" + project.getOwnerId()));
+        AdminListResponse.AdminInfo ownerInfo = new AdminListResponse.AdminInfo(
+                ownerUser.getId(),
+                ownerUser.getNickname(),
+                ownerUser.getEmail(),
+                ownerUser.getProfileImageUrl(),
+                "OWNER");
+
+        // ADMIN 목록 조회 및 정보 추가
         List<AdminListResponse.AdminInfo> adminList = project.getAdmins().stream()
                 .map(admin -> {
                     User adminUser = userRepository.findById(admin.getAdminId())
@@ -227,7 +237,7 @@ public class ProjectService {
                 })
                 .collect(Collectors.toList());
 
-        return new AdminListResponse(adminList);
+        return new AdminListResponse(ownerInfo, adminList);
     }
 
     /**

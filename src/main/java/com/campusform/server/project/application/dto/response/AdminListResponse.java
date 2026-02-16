@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 관리자 목록 응답 DTO
+ * OWNER는 owner 필드로, ADMIN은 admins 목록으로 구분하여 내려줍니다.
  */
 @Schema(description = "관리자 목록 응답")
 @Getter
@@ -16,7 +17,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AdminListResponse {
 
-    @Schema(description = "관리자 목록")
+    @Schema(description = "프로젝트 소유자 (OWNER)")
+    private AdminInfo owner;
+
+    @Schema(description = "관리자 목록 (ADMIN)")
     private List<AdminInfo> admins;
 
     @Schema(description = "관리자 정보")
