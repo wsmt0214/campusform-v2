@@ -61,7 +61,6 @@ public class SmartScheduleService {
      */
     @Transactional(readOnly = true)
     public SmartScheduleResponse generateSchedule(Long projectId, Long userId) {
-        contextLoader.loadContext(projectId).project().validateOwnerAccess(userId);
         return generateScheduleInternal(projectId);
     }
 
