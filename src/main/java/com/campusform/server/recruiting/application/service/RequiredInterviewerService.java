@@ -29,7 +29,7 @@ public class RequiredInterviewerService {
      */
     public RequiredInterviewersResponse getRequiredInterviewers(Long projectId, Long userId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         List<Long> adminIds = setting.getRequiredInterviewerIds();
@@ -44,7 +44,7 @@ public class RequiredInterviewerService {
             Long projectId, Long userId, UpdateRequiredInterviewersRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         Project project = ctx.project();
-        project.validateOwnerAccess(userId);
+        project.validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         // 요청에 포함된 면접관 ID가 프로젝트 관리자인지 검증
