@@ -7,6 +7,7 @@ import com.campusform.server.project.domain.model.setting.value.RequiredFieldMap
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -70,8 +71,9 @@ public class CreateProjectRequest {
         @NotNull(message = "성별 인덱스는 필수입니다. (미매핑 시 -1)")
         private Integer genderIdx;
 
-        @Schema(description = "전화번호 컬럼 인덱스 (0부터 시작, 미매핑 시 -1)", example = "5")
-        @NotNull(message = "전화번호 인덱스는 필수입니다. (미매핑 시 -1)")
+        @Schema(description = "전화번호 컬럼 인덱스 (0부터 시작, 필수 매핑)", example = "5")
+        @NotNull(message = "전화번호 인덱스는 필수입니다.")
+        @Min(value = 0, message = "전화번호 컬럼은 반드시 매핑해야 합니다. (-1 불가)")
         private Integer phoneIdx;
 
         @Schema(description = "이메일 컬럼 인덱스 (0부터 시작, 미매핑 시 -1)", example = "6")

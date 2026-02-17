@@ -1,8 +1,6 @@
 package com.campusform.server.project.infrastructure.external.sheet;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,10 +54,6 @@ public class GoogleSheetsReader implements SpreadsheetReader {
             SheetContext context = prepareSheetContext(sheetUrl, ownerId);
             // 데이터 읽기 범위 문자열 구성 (ex: '시트명'!A1:XFD1 혹은 '시트명'!A2:XFD)
             String range = rangeBuilder.build(context.sheetName());
-            String requestUrl = String.format(VALUES_GET_BASE, context.spreadsheetId(),
-                    URLEncoder.encode(range, StandardCharsets.UTF_8));
-            log.info("Google Sheets API 요청 URL: {}", requestUrl);
-            // Google Sheets API를 통해 실제 데이터를 조회
             ValueRange response = fetchValues(context.sheetsService(), context.spreadsheetId(), range);
             // API의 응답을 도메인 객체 또는 배열 등으로 파싱
             T result = responseParser.parse(response);

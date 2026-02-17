@@ -55,7 +55,6 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     private String major;
     private String gender;
     private String phone;
-    @Column(nullable = false)
     private String email;
     private String position;
 
