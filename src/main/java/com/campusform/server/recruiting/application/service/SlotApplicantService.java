@@ -47,7 +47,7 @@ public class SlotApplicantService {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         InterviewSetting setting = ctx.setting();
         Project project = ctx.project();
-        project.validateOwnerAccess(userId);
+        project.validateAdminAccess(userId);
 
         // 모든 날짜별로 슬롯과 지원자 정보 조회
         List<SlotApplicantListResponse.DaySlotSummary> summaries = setting.getDays().stream()

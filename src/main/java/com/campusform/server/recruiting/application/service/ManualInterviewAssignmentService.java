@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -33,8 +32,7 @@ public class ManualInterviewAssignmentService {
     @Transactional
     public void assignInterview(Long projectId, Long applicantId, LocalDate interviewDate,
             LocalTime startTime, Long userId) {
-        InterviewContext context = contextLoader.loadContext(projectId);
-        context.project().validateAdminAccess(userId);
+        contextLoader.loadProjectOrThrow(projectId).validateAdminAccess(userId);
 
         // 지원자 존재 확인 및 프로젝트 소속
         validateApplicantInProject(projectId, applicantId);
@@ -72,8 +70,7 @@ public class ManualInterviewAssignmentService {
      */
     @Transactional
     public void removeAssignment(Long projectId, Long applicantId, Long userId) {
-        InterviewContext context = contextLoader.loadContext(projectId);
-        context.project().validateAdminAccess(userId);
+        contextLoader.loadProjectOrThrow(projectId).validateAdminAccess(userId);
 
         // 지원자가 해당 프로젝트에 속하는지 검증
         validateApplicantInProject(projectId, applicantId);
@@ -91,8 +88,7 @@ public class ManualInterviewAssignmentService {
      */
     @Transactional(readOnly = true)
     public Optional<ManualInterviewAssignment> getAssignment(Long projectId, Long applicantId, Long userId) {
-        InterviewContext context = contextLoader.loadContext(projectId);
-        context.project().validateAdminAccess(userId);
+        contextLoader.loadProjectOrThrow(projectId).validateAdminAccess(userId);
 
         // 지원자가 해당 프로젝트에 속하는지 검증
         validateApplicantInProject(projectId, applicantId);
@@ -108,8 +104,7 @@ public class ManualInterviewAssignmentService {
      */
     @Transactional(readOnly = true)
     public List<ManualInterviewAssignment> getAllAssignments(Long projectId, Long userId) {
-        InterviewContext context = contextLoader.loadContext(projectId);
-        context.project().validateAdminAccess(userId);
+        contextLoader.loadProjectOrThrow(projectId).validateAdminAccess(userId);
 
         return manualAssignmentRepository.findByProjectId(projectId);
     }

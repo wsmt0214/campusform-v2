@@ -91,7 +91,7 @@ public class ApplicantInterviewLinkService {
      */
     public InterviewSlotListResponse getInterviewSlotList(Long projectId, Long userId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateOwnerAccess(userId);
+        ctx.project().validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         // 면접 정보 설정 기반으로 날짜별 슬롯 생성
