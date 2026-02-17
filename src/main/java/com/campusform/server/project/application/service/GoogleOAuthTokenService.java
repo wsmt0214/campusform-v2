@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.campusform.server.project.application.dto.request.ExchangeGoogleOAuthCodeRequest;
@@ -125,6 +126,14 @@ public class GoogleOAuthTokenService {
                     tokenType != null ? tokenType : "Bearer",
                     scope);
 
+        } catch (HttpClientErrorException e) {
+            // 401/400 등 Google이 반환한 상태코드와 응답 본문(error, error_description)을 로그·메시지에 포함
+            String responseBody = e.getResponseBodyAsString();
+            log.error("Google OAuth2 code 교환 실패 status={} body={}", e.getStatusCode(), responseBody, e);
+            String detail = responseBody != null && !responseBody.isEmpty()
+                    ? responseBody
+                    : e.getMessage();
+            throw new IllegalStateException("Google OAuth2 토큰 교환 중 오류가 발생했습니다: " + detail, e);
         } catch (Exception e) {
             log.error("Google OAuth2 code 교환 실패", e);
             throw new IllegalStateException("Google OAuth2 토큰 교환 중 오류가 발생했습니다: " + e.getMessage(), e);

@@ -1,9 +1,9 @@
 package com.campusform.server;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +12,8 @@ import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.application.dto.response.InterviewTestDataGenerateResponse;
+import com.campusform.server.recruiting.application.service.InterviewTestDataService;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +29,6 @@ import lombok.RequiredArgsConstructor;
  * 프로덕션 환경에서는 비활성화하거나 삭제해야 합니다.
  */
 @Hidden
-@Profile("local") // API 테스트 환경에서만 활성화
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test/projects")
@@ -35,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class TestProjectController {
 
     private final ProjectRepository projectRepository;
+    private final InterviewTestDataService interviewTestDataService;
 
     /**
      * 프로젝트 상태 설정 (테스트용)
@@ -62,5 +64,21 @@ public class TestProjectController {
         project.setStateForTest(state);
 
         return ResponseEntity.ok(ProjectResponse.from(project));
+    }
+
+    /**
+     * 면접 테스트 데이터 자동 생성 (테스트용)
+     *
+     * 면접관 가용 시간(30분 블록)과 지원자 슬롯 선택을 자동으로 생성합니다.
+     * 면접 정보 설정이 완료된 프로젝트에서만 사용 가능합니다.
+     */
+    @Operation(summary = "면접 테스트 데이터 자동 생성 (테스트)", description = "면접관 가용 시간과 지원자 슬롯 선택을 확률 기반으로 자동 생성합니다. 기존 데이터는 삭제 후 재생성됩니다.", security = {})
+    @PostMapping("/{projectId}/generate-interview-data")
+    public ResponseEntity<InterviewTestDataGenerateResponse> generateInterviewTestData(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
+            @Parameter(description = "면접관 날짜 별 참여 확률 (0.0~1.0)") @RequestParam(defaultValue = "0.7") double dayParticipationRate,
+            @Parameter(description = "지원자 슬롯 별 선택 확률 (0.0~1.0)") @RequestParam(defaultValue = "0.3") double slotSelectionRate) {
+        InterviewTestDataGenerateResponse result = interviewTestDataService.generateTestData(projectId, dayParticipationRate, slotSelectionRate);
+        return ResponseEntity.ok(result);
     }
 }

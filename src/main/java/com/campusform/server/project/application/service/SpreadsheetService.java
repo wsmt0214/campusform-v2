@@ -139,11 +139,6 @@ public class SpreadsheetService {
                 // 포지션 치환 규칙
                 String position = applyPositionMapping(positionRaw, positionMapping);
 
-                // 필수 필드 검증
-                if (name == null || name.isEmpty() || email == null || email.isEmpty()) {
-                    continue; // 이름이나 이메일이 없으면 건너뜀
-                }
-
                 // 기존 지원자 조회 (projectId, name, email로 식별)
                 Applicant applicant = applicantRepository
                         .findByProjectIdAndNameAndEmail(project.getId(), name, email)
