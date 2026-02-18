@@ -32,7 +32,8 @@ public class NotificationEventHandler {
 
     /**
      * 관리자 추가 이벤트 처리
-     * 이벤트 1건당: 오너에게 1건 + 추가된 관리자 각각에게 1건씩 알림
+     * - 오너에게만: "프로젝트에 새 관리자가 추가되었습니다"
+     * - 추가된 관리자(오너 제외)에게만: "해당 프로젝트의 관리자로 추가되었습니다"
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
@@ -40,21 +41,26 @@ public class NotificationEventHandler {
         log.info("관리자 추가 이벤트 수신 - projectId: {}, ownerId: {}, addedAdminIds: {}",
                 event.projectId(), event.ownerId(), event.addedAdminIds());
 
-        // 오너에게 1건: "프로젝트에 새 관리자가 추가되었습니다"
+        Long ownerId = event.ownerId();
+
+        // 오너에게만 1건: 오너용 메시지 (수신자 = ownerId만)
         try {
             String ownerPayload = createOwnerAdminAddedPayload(event);
             notificationService.createNotification(
-                    event.ownerId(), event.projectId(),
+                    ownerId, event.projectId(),
                     NotificationType.ADMIN_ADDED, ownerPayload);
         } catch (Exception e) {
             log.error("관리자 추가 알림 생성 실패(오너) - ownerId: {}, projectId: {}, reason: {}",
-                    event.ownerId(), event.projectId(), e.getMessage(), e);
+                    ownerId, event.projectId(), e.getMessage(), e);
         }
 
-        // 추가된 관리자 각각에게: "해당 프로젝트의 관리자로 추가되었습니다"
+        // 추가된 관리자에게만 각 1건: 관리자용 메시지 (오너와 동일인 제외)
+        String adminPayload = createAddedAdminPayload(event);
         for (Long adminId : event.addedAdminIds()) {
+            if (ownerId.equals(adminId)) {
+                continue; // 오너는 위에서 이미 오너 메시지로 받음, 중복 방지
+            }
             try {
-                String adminPayload = createAddedAdminPayload(event);
                 notificationService.createNotification(
                         adminId, event.projectId(),
                         NotificationType.ADMIN_ADDED, adminPayload);
