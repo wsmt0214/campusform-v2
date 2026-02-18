@@ -52,7 +52,7 @@ public class Project {
      * - 한글/영문/특수문자/공백만 허용 (숫자/기타 문자 집합은 허용하지 않음)
      */
     private static final int MAX_TITLE_LENGTH = 40;
-    private static final Pattern TITLE_ALLOWED_PATTERN = Pattern.compile("^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z\\p{Punct}\\s]+$");
+    private static final Pattern TITLE_ALLOWED_PATTERN = Pattern.compile("^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\\p{Punct}\\s]+$");
 
     @Id
     @GeneratedValue
@@ -346,9 +346,9 @@ public class Project {
             throw new IllegalArgumentException("프로젝트 이름은 최대 " + MAX_TITLE_LENGTH + "자까지 가능합니다.");
         }
 
-        // 한글/영문/특수문자/공백만 허용 (숫자, 이모지, 기타 문자는 불가)
+        // 한글/영문/숫자/특수문자/공백만 허용 (이모지, 기타 문자는 불가)
         if (!TITLE_ALLOWED_PATTERN.matcher(trimmed).matches()) {
-            throw new IllegalArgumentException("프로젝트 이름은 한글, 영문, 특수문자, 공백만 입력할 수 있습니다.");
+            throw new IllegalArgumentException("프로젝트 이름은 한글, 영문, 숫자, 특수문자, 공백만 입력할 수 있습니다.");
         }
     }
 }
