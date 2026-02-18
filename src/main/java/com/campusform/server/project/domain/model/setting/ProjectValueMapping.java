@@ -53,4 +53,11 @@ public class ProjectValueMapping {
         mapping.toValue = toValue.trim();
         return mapping;
     }
+
+    /** 표시값(toValue)만 갱신 (동일 fromValue로 delete+insert 시 UK 위반 방지) */
+    public void updateToValue(String toValue) {
+        if (toValue == null || toValue.isBlank())
+            throw new IllegalArgumentException("toValue는 필수입니다.");
+        this.toValue = toValue.trim();
+    }
 }

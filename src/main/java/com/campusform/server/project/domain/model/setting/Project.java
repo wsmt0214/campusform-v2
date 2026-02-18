@@ -187,6 +187,18 @@ public class Project {
         valueMappings.add(ProjectValueMapping.create(this, fromValue, toValue));
     }
 
+    /**
+     * 포지션 값 치환 규칙 추가·갱신 (동일 fromValue 있으면 toValue만 갱신, 없으면 추가)
+     */
+    public void addOrUpdateValueMapping(String fromValue, String toValue) {
+        String from = fromValue != null ? fromValue.trim() : "";
+        String to = toValue != null ? toValue.trim() : "";
+        valueMappings.stream()
+                .filter(m -> from.equals(m.getFromValue()))
+                .findFirst()
+                .ifPresentOrElse(m -> m.updateToValue(to), () -> addValueMapping(from, to));
+    }
+
     // ── 상태 검증 도메인 메서드 ──
 
     /** 프로젝트가 종료 상태인지 확인 */

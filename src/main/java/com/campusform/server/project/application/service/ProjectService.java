@@ -312,12 +312,8 @@ public class ProjectService {
         project.validateAdminAccess(userId);
 
         if (request.getValueMappings() != null) {
-            request.getValueMappings().forEach(item -> {
-                String from = item.getFromValue().trim();
-                String to = item.getToValue().trim();
-                project.getValueMappings().removeIf(m -> from.equals(m.getFromValue()));
-                project.addValueMapping(from, to);
-            });
+            request.getValueMappings().forEach(item ->
+                    project.addOrUpdateValueMapping(item.getFromValue(), item.getToValue()));
         }
         projectRepository.save(project);
     }
