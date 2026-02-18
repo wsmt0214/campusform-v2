@@ -32,7 +32,7 @@ public class NotificationEventHandler {
 
     /**
      * 관리자 추가 이벤트 처리
-     * 알림 수신 대상: 프로젝트 오너만
+     * 알림 수신 대상: 프로젝트 오너 + 추가된 관리자 (각각 다른 메시지)
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
@@ -40,14 +40,26 @@ public class NotificationEventHandler {
         log.info("관리자 추가 이벤트 수신 - projectId: {}, ownerId: {}, addedAdminId: {}",
                 event.projectId(), event.ownerId(), event.addedAdminId());
 
-        String payload = createAdminAddedPayload(event);
+        // 오너: "프로젝트에 새 관리자가 추가되었습니다"
         try {
+            String ownerPayload = createOwnerAdminAddedPayload(event);
             notificationService.createNotification(
                     event.ownerId(), event.projectId(),
-                    NotificationType.ADMIN_ADDED, payload);
+                    NotificationType.ADMIN_ADDED, ownerPayload);
         } catch (Exception e) {
-            log.error("관리자 추가 알림 생성 실패 - ownerId: {}, projectId: {}, reason: {}",
+            log.error("관리자 추가 알림 생성 실패(오너) - ownerId: {}, projectId: {}, reason: {}",
                     event.ownerId(), event.projectId(), e.getMessage(), e);
+        }
+
+        // 추가된 관리자: "해당 프로젝트의 관리자로 추가되었습니다"
+        try {
+            String adminPayload = createAddedAdminPayload(event);
+            notificationService.createNotification(
+                    event.addedAdminId(), event.projectId(),
+                    NotificationType.ADMIN_ADDED, adminPayload);
+        } catch (Exception e) {
+            log.error("관리자 추가 알림 생성 실패(추가된 관리자) - addedAdminId: {}, projectId: {}, reason: {}",
+                    event.addedAdminId(), event.projectId(), e.getMessage(), e);
         }
     }
 
@@ -109,8 +121,15 @@ public class NotificationEventHandler {
 
     // ============ Payload Creation Methods ============
 
-    private String createAdminAddedPayload(AdminAddedEvent event) {
-        String message = String.format("'%s' 프로젝트에 관리자가 추가되었습니다.", event.projectTitle());
+    /** 오너용: 프로젝트에 새 관리자가 추가되었음을 안내 */
+    private String createOwnerAdminAddedPayload(AdminAddedEvent event) {
+        String message = String.format("'%s' 프로젝트에 새 관리자가 추가되었습니다.", event.projectTitle());
+        return toJson(new AdminAddedPayload(message, event.projectTitle()));
+    }
+
+    /** 추가된 관리자용: 해당 프로젝트의 관리자로 위임되었음을 안내 */
+    private String createAddedAdminPayload(AdminAddedEvent event) {
+        String message = String.format("'%s' 프로젝트의 관리자로 추가되었습니다.", event.projectTitle());
         return toJson(new AdminAddedPayload(message, event.projectTitle()));
     }
 
