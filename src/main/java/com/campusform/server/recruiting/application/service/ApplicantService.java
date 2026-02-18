@@ -24,7 +24,6 @@ import com.campusform.server.recruiting.domain.model.applicant.value.Recruitment
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
 import com.campusform.server.recruiting.infrastructure.persistence.CommentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,7 +36,6 @@ public class ApplicantService {
     private final ProjectRepository projectRepository;
     private final CommentRepository commentRepository;
     private final InterviewAssignmentQueryService interviewAssignmentQueryService;
-    private final InterviewSettingRepository interviewSettingRepository;
 
     public ApplicantListResponse getApplicants(Long projectId, String sort, RecruitmentStage stage, Long userId) {
         long total;
@@ -112,21 +110,17 @@ public class ApplicantService {
                         Collectors.counting()));
 
         // 6. 면접 단계일 때만 최종 배정 면접 시간 조회
-        // 면접 정보 설정이 없어도 지원자 목록은 반환 가능하도록 처리
+        // 수동 배정은 InterviewSetting 없이도 가능하므로, 면접 설정 유무와 관계없이 항상 조회
+        // (getAssignedTimes 내부에서 수동/자동/미배정을 구분해 반환)
         Map<Long, InterviewAssignedTimeResponse> tempAssignedTimeMap = Map.of();
         if (stage == RecruitmentStage.INTERVIEW) {
-            // 면접 설정이 있는 경우에만 면접 시간 조회
-            if (interviewSettingRepository.findByProjectId(projectId).isPresent()) {
-                List<InterviewAssignedTimeResponse> assignedTimes = interviewAssignmentQueryService
-                        .getAssignedTimes(
-                                projectId, userId);
-                tempAssignedTimeMap = assignedTimes.stream()
-                        .collect(Collectors.toMap(
-                                InterviewAssignedTimeResponse::getApplicantId,
-                                it -> it,
-                                (existing, replacement) -> existing));
-            }
-            // 면접 설정이 없으면 빈 맵 사용 (면접 정보는 null로 반환됨)
+            List<InterviewAssignedTimeResponse> assignedTimes = interviewAssignmentQueryService
+                    .getAssignedTimes(projectId, userId);
+            tempAssignedTimeMap = assignedTimes.stream()
+                    .collect(Collectors.toMap(
+                            InterviewAssignedTimeResponse::getApplicantId,
+                            it -> it,
+                            (existing, replacement) -> existing));
         }
         final Map<Long, InterviewAssignedTimeResponse> assignedTimeMap = tempAssignedTimeMap;
 
