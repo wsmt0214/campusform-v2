@@ -79,4 +79,9 @@ public interface ApplicantRepository {
      * 슬롯별 지원자 정보 조회에 사용됩니다.
      */
     List<Applicant> findByIds(List<Long> applicantIds);
+
+    /**
+     * 프로젝트 지원자들의 포지션 컬럼에 등장하는 고유값 목록 조회 (null·공백 제외, 정렬)
+     */
+    List<String> findDistinctPositionValuesByProjectId(Long projectId);
 }

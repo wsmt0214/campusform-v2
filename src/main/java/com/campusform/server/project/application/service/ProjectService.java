@@ -13,16 +13,19 @@ import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
+import com.campusform.server.project.application.dto.request.UpdatePositionValueMappingsRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectNameRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectPeriodRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
+import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.infrastructure.persistence.ApplicantJpaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -43,6 +46,7 @@ public class ProjectService {
     private final ApplicationEventPublisher eventPublisher;
 
     private final ProjectRepository projectRepository;
+    private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
     private final ApplicantJpaRepository applicantJpaRepository;
 
@@ -282,6 +286,40 @@ public class ProjectService {
         }
 
         return ProjectDetailExportResponse.from(project, applicantCount, admins);
+    }
+
+    /**
+     * 프로젝트 지원자(Applicant)의 position 컬럼에 등장하는 고유값 종류 조회
+     */
+    @Transactional(readOnly = true)
+    public PositionValuesResponse getStoredPositionValues(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+        project.validateAdminAccess(userId);
+
+        List<String> values = applicantRepository.findDistinctPositionValuesByProjectId(projectId);
+        return PositionValuesResponse.from(values);
+    }
+
+    /**
+     * 포지션 값 치환 규칙 추가·갱신 (기존 매핑 유지, 요청 항목은 동일 fromValue면 toValue만 갱신)
+     */
+    @Transactional
+    public void updatePositionValueMappings(Long projectId, Long userId,
+            UpdatePositionValueMappingsRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+        project.validateAdminAccess(userId);
+
+        if (request.getValueMappings() != null) {
+            request.getValueMappings().forEach(item -> {
+                String from = item.getFromValue().trim();
+                String to = item.getToValue().trim();
+                project.getValueMappings().removeIf(m -> from.equals(m.getFromValue()));
+                project.addValueMapping(from, to);
+            });
+        }
+        projectRepository.save(project);
     }
 
     private void validateCreateProjectRequest(CreateProjectRequest request) {

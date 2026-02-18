@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
+import com.campusform.server.project.application.dto.request.UpdatePositionValueMappingsRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectNameRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectPeriodRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
+import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.application.service.ProjectService;
@@ -91,6 +94,33 @@ public class ProjectController {
         Long userId = authService.extractUserId(authentication);
         ProjectResponse response = projectService.updateProjectPeriod(projectId, userId, request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * DB에 저장된 포지션 값(표시값) 종류 조회 (관리자만 가능)
+     */
+    @Operation(summary = "저장된 포지션 값 조회", description = "프로젝트에 저장된 포지션 값의 종류를 조회합니다.")
+    @GetMapping("/{projectId}/position-values")
+    public ResponseEntity<PositionValuesResponse> getStoredPositionValues(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        PositionValuesResponse response = projectService.getStoredPositionValues(projectId, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 포지션 값 치환 규칙 설정 (관리자만 가능, 전체 교체)
+     */
+    @Operation(summary = "포지션 값 치환 규칙 설정", description = "프로젝트의 포지션 값 치환 규칙을 전체 교체합니다. 시트 원시값(fromValue) → 표시값(toValue) 목록을 보냅니다.")
+    @PutMapping("/{projectId}/position-values")
+    public ResponseEntity<Void> updatePositionValueMappings(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            @Valid @RequestBody UpdatePositionValueMappingsRequest request,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        projectService.updatePositionValueMappings(projectId, userId, request);
+        return ResponseEntity.ok().build();
     }
 
     /**

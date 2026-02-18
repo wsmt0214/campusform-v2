@@ -121,4 +121,9 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     public List<Applicant> findByIds(List<Long> applicantIds) {
         return applicantJpaRepository.findByIdIn(applicantIds);
     }
+
+    @Override
+    public List<String> findDistinctPositionValuesByProjectId(Long projectId) {
+        return applicantJpaRepository.findDistinctPositionByProjectId(projectId);
+    }
 }
