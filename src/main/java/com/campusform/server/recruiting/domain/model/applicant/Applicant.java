@@ -151,6 +151,13 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     }
 
     /**
+     * 포지션 값 치환 규칙 변경 시 지원자 position만 갱신 (다른 필드·추가답변 유지)
+     */
+    public void updatePosition(String position) {
+        this.position = position != null ? position.trim() : null;
+    }
+
+    /**
      * 지원자 정보를 업데이트합니다.
      * 
      * 시트 동기화 시 기존 지원자의 정보를 최신 데이터로 갱신합니다.

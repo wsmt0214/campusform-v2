@@ -2,7 +2,10 @@ package com.campusform.server.project.application.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
+import com.campusform.server.project.domain.model.setting.ProjectValueMapping;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.infrastructure.persistence.ApplicantJpaRepository;
@@ -303,6 +307,7 @@ public class ProjectService {
 
     /**
      * 포지션 값 치환 규칙 추가·갱신 (기존 매핑 유지, 요청 항목은 동일 fromValue면 toValue만 갱신)
+     * 변경된 규칙을 적용해 해당 프로젝트 지원자들의 position 컬럼도 함께 갱신한다.
      */
     @Transactional
     public void updatePositionValueMappings(Long projectId, Long userId,
@@ -316,6 +321,20 @@ public class ProjectService {
                     project.addOrUpdateValueMapping(item.getFromValue(), item.getToValue()));
         }
         projectRepository.save(project);
+
+        // 치환 규칙 적용: 시트 원시값(fromValue)을 가진 지원자 → toValue로 DB 갱신
+        Map<String, String> positionMapping = project.getValueMappings().stream()
+                .collect(Collectors.toMap(ProjectValueMapping::getFromValue, ProjectValueMapping::getToValue,
+                        (existing, replacement) -> existing));
+        List<Applicant> applicants = applicantRepository.findByProjectId(projectId);
+        for (Applicant applicant : applicants) {
+            if (applicant.getPosition() == null) continue;
+            String mapped = positionMapping.get(applicant.getPosition().trim());
+            if (mapped != null && !mapped.equals(applicant.getPosition())) {
+                applicant.updatePosition(mapped);
+                applicantRepository.save(applicant);
+            }
+        }
     }
 
     private void validateCreateProjectRequest(CreateProjectRequest request) {
