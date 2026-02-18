@@ -14,6 +14,7 @@ import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectNameRequest;
+import com.campusform.server.project.application.dto.request.UpdateProjectPeriodRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
@@ -123,6 +124,21 @@ public class ProjectService {
 
         project.validateOwnerAccess(userId);
         project.updateTitle(request.getTitle());
+
+        long applicantCount = applicantJpaRepository.countByProjectId(project.getId());
+        return ProjectResponse.from(project, applicantCount);
+    }
+
+    /**
+     * 프로젝트 모집 기간(시작일·종료일) 수정 (OWNER만 가능)
+     */
+    @Transactional
+    public ProjectResponse updateProjectPeriod(Long projectId, Long userId, UpdateProjectPeriodRequest request) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+
+        project.validateOwnerAccess(userId);
+        project.updatePeriod(request.getStartAt(), request.getEndAt());
 
         long applicantCount = applicantJpaRepository.countByProjectId(project.getId());
         return ProjectResponse.from(project, applicantCount);

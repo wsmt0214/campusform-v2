@@ -306,6 +306,23 @@ public class Project {
         this.title = newTitle.trim();
     }
 
+    /**
+     * 프로젝트 모집 기간(시작일·종료일) 수정
+     *
+     * @param startAt 모집 시작일
+     * @param endAt   모집 종료일 (시작일 이후여야 함)
+     */
+    public void updatePeriod(LocalDate startAt, LocalDate endAt) {
+        if (startAt == null || endAt == null) {
+            throw new IllegalArgumentException("모집 시작일과 종료일은 필수입니다.");
+        }
+        if (endAt.isBefore(startAt)) {
+            throw new IllegalArgumentException("모집 종료일은 시작일 이후여야 합니다.");
+        }
+        this.startAt = startAt;
+        this.endAt = endAt;
+    }
+
     /** 프로젝트 생성 시 유효성 검사 */
     private static void validate(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
         validateTitle(title);

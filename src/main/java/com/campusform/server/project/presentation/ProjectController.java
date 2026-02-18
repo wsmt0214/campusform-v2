@@ -18,6 +18,7 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.request.UpdateProjectNameRequest;
+import com.campusform.server.project.application.dto.request.UpdateProjectPeriodRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
@@ -75,6 +76,20 @@ public class ProjectController {
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
         ProjectResponse response = projectService.updateProjectName(projectId, userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 프로젝트 모집 기간(시작일·종료일) 수정 (OWNER만 가능)
+     */
+    @Operation(summary = "프로젝트 모집 기간 수정", description = "프로젝트의 모집 시작일과 종료일을 수정합니다. OWNER만 수정 가능합니다.")
+    @PatchMapping("/{projectId}/period")
+    public ResponseEntity<ProjectResponse> updateProjectPeriod(
+            @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
+            @Valid @RequestBody UpdateProjectPeriodRequest request,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        ProjectResponse response = projectService.updateProjectPeriod(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
 
