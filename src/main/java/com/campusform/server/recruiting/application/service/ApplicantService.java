@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -222,7 +223,8 @@ public class ApplicantService {
     }
 
     @Transactional(readOnly = true)
-    public ApplicantDetailResponse getApplicantDetail(Long applicantId, RecruitmentStage stage) {
+    public ApplicantDetailResponse getApplicantDetail(Long projectId, Long applicantId, RecruitmentStage stage,
+            Long userId) {
         // 1. 지원자 조회 (없으면 예외 발생)
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));
@@ -256,6 +258,23 @@ public class ApplicantService {
         long commentCount = commentRepository.findAllByApplicantIdAndStageOrderByCreatedAtAsc(
                 applicantId, stage).size();
 
+        // 5. 면접 단계일 때만 해당 지원자(applicantId)의 면접 시간 배정만 조회 (수동/자동/미배정)
+        LocalDate interviewDate = null;
+        LocalTime interviewStartTime = null;
+        InterviewTimeSource interviewTimeSource = null;
+        if (stage == RecruitmentStage.INTERVIEW) {
+            Optional<InterviewAssignedTimeResponse> assignedOpt = interviewAssignmentQueryService
+                    .getAssignedTimeForApplicant(projectId, applicantId, userId);
+            if (assignedOpt.isPresent()) {
+                InterviewAssignedTimeResponse assigned = assignedOpt.get();
+                interviewTimeSource = assigned.getSource();
+                if (assigned.getSource() != InterviewTimeSource.NONE) {
+                    interviewDate = assigned.getInterviewDate();
+                    interviewStartTime = assigned.getStartTime();
+                }
+            }
+        }
+
         return ApplicantDetailResponse.builder()
                 .applicantId(applicant.getId())
                 .name(applicant.getName())
@@ -269,6 +288,9 @@ public class ApplicantService {
                 // 상세 조회도 단계별 즐겨찾기 여부를 사용
                 .isFavorite(applicant.isBookmarkedFor(stage))
                 .commentCount(commentCount)
+                .interviewDate(interviewDate)
+                .interviewStartTime(interviewStartTime)
+                .interviewTimeSource(interviewTimeSource)
                 .answers(answerDtos)
                 .build();
     }

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Schema(description = "지원자 상세 정보 응답")
@@ -36,6 +38,12 @@ public class ApplicantDetailResponse {
     private boolean isFavorite;
     @Schema(description = "해당 단계에서 이 지원자에게 달린 댓글 개수", example = "3")
     private long commentCount;
+    @Schema(description = "배정된 면접 날짜 (면접 단계에서만, 미배정 시 null)", example = "2024-07-01")
+    private LocalDate interviewDate;
+    @Schema(description = "배정된 면접 시작 시간 (면접 단계에서만, 미배정 시 null)", example = "10:00")
+    private LocalTime interviewStartTime;
+    @Schema(description = "면접 시간 출처 (MANUAL/AUTO/NONE, 면접 단계에서만)", example = "MANUAL")
+    private InterviewTimeSource interviewTimeSource;
     @Schema(description = "Google Sheet의 질문/답변 목록")
     private List<AnswerDto> answers;
 

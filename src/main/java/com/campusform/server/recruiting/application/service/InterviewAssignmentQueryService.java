@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -104,6 +105,49 @@ public class InterviewAssignmentQueryService {
                                                         InterviewTimeSource.NONE);
                                 })
                                 .toList();
+        }
+
+        /**
+         * 특정 지원자(applicantId)의 면접 시간 배정만 조회
+         * 상세 조회 등에서 "해당 지원자의" 배정 정보만 필요할 때 사용 (프로젝트 전체 목록 조회 X)
+         */
+        public Optional<InterviewAssignedTimeResponse> getAssignedTimeForApplicant(
+                        Long projectId, Long applicantId, Long userId) {
+                Project project = contextLoader.loadProjectOrThrow(projectId);
+                project.validateAdminAccess(userId);
+
+                // 수동 배정: 해당 지원자만 조회
+                Optional<ManualInterviewAssignment> manual = manualAssignmentRepository
+                                .findByProjectIdAndApplicantId(projectId, applicantId);
+                if (manual.isPresent()) {
+                        ManualInterviewAssignment m = manual.get();
+                        return Optional.of(InterviewAssignedTimeResponse.of(
+                                        applicantId,
+                                        m.getInterviewDate(),
+                                        m.getStartTime(),
+                                        InterviewTimeSource.MANUAL));
+                }
+
+                // 자동 배정: 프로젝트 슬롯에서 해당 지원자 포함된 슬롯 찾기
+                AutoTime auto = scheduledSlotRepository.findByProjectIdWithApplicants(projectId).stream()
+                                .sorted(Comparator.comparing(InterviewScheduledSlot::getDate)
+                                                .thenComparing(InterviewScheduledSlot::getStartTime))
+                                .flatMap(slot -> slot.getApplicants().stream()
+                                                .filter(a -> applicantId.equals(a.getApplicantId()))
+                                                .map(a -> new AutoTime(a.getApplicantId(), slot.getDate(),
+                                                                slot.getStartTime())))
+                                .findFirst()
+                                .orElse(null);
+                if (auto != null) {
+                        return Optional.of(InterviewAssignedTimeResponse.of(
+                                        applicantId,
+                                        auto.date(),
+                                        auto.startTime(),
+                                        InterviewTimeSource.AUTO));
+                }
+
+                return Optional.of(InterviewAssignedTimeResponse.of(
+                                applicantId, null, null, InterviewTimeSource.NONE));
         }
 
         /**

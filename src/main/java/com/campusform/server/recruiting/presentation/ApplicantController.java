@@ -109,12 +109,15 @@ public class ApplicantController {
      * }
      * </pre>
      */
-    @Operation(summary = "특정 단계의 지원자 상세 정보 조회", description = "특정 지원자의 상세 정보(인적사항, 답변, 댓글 등)를 조회합니다.")
+    @Operation(summary = "특정 단계의 지원자 상세 정보 조회", description = "특정 지원자의 상세 정보(인적사항, 답변, 댓글, 면접 시간 배정 등)를 조회합니다.")
     @GetMapping("/{applicantId}")
     public ResponseEntity<ApplicantDetailResponse> getApplicantDetail(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage) {
-        ApplicantDetailResponse response = applicantService.getApplicantDetail(applicantId, stage);
+            @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        ApplicantDetailResponse response = applicantService.getApplicantDetail(projectId, applicantId, stage, userId);
         return ResponseEntity.ok(response);
     }
 }
