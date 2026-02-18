@@ -137,7 +137,7 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
 
-        project.validateOwnerAccess(userId);
+        project.validateAdminAccess(userId);
         project.updatePeriod(request.getStartAt(), request.getEndAt());
 
         long applicantCount = applicantJpaRepository.countByProjectId(project.getId());
