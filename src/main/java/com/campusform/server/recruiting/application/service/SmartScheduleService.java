@@ -61,6 +61,7 @@ public class SmartScheduleService {
      */
     @Transactional(readOnly = true)
     public SmartScheduleResponse generateSchedule(Long projectId, Long userId) {
+        validateScheduleNotConfirmed(projectId);
         return generateScheduleInternal(projectId);
     }
 
@@ -69,6 +70,8 @@ public class SmartScheduleService {
      */
     @Transactional
     public SmartScheduleResponse generateAndSaveSchedule(Long projectId, Long userId) {
+        validateScheduleNotConfirmed(projectId);
+
         Project project = contextLoader.loadContext(projectId).project();
         project.validateOwnerAccess(userId);
 
@@ -126,6 +129,19 @@ public class SmartScheduleService {
         unassignedApplicantRepository.saveAll(unassignedEntities);
 
         return response;
+    }
+
+    /**
+     * 이미 스마트 시간표가 확정된 프로젝트인지 검사.
+     * 확정된 상태면 미리보기·재생성 모두 불가하므로 예외 발생.
+     */
+    private void validateScheduleNotConfirmed(Long projectId) {
+        boolean hasSlots = !scheduledSlotRepository.findByProjectId(projectId).isEmpty();
+        boolean hasUnassigned = !unassignedApplicantRepository.findByProjectId(projectId).isEmpty();
+        if (hasSlots || hasUnassigned) {
+            throw new IllegalStateException(
+                    "이미 스마트 시간표가 확정된 상태입니다. 미리보기 및 재생성할 수 없습니다.");
+        }
     }
 
     /**

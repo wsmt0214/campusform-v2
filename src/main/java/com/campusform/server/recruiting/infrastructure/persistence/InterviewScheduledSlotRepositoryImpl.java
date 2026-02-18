@@ -36,9 +36,16 @@ public class InterviewScheduledSlotRepositoryImpl implements InterviewScheduledS
         return jpaRepository.findByProjectIdWithApplicants(projectId);
     }
 
+    /**
+     * 프로젝트의 배정 슬롯 전체 삭제.
+     * 자식(applicants, interviewers)이 있어 FK 제약이 있으므로 엔티티 조회 후 deleteAll로 삭제해 cascade로 자식 먼저 삭제되게 함.
+     */
     @Override
     @Transactional
     public void deleteByProjectId(Long projectId) {
-        jpaRepository.deleteByProjectId(projectId);
+        List<InterviewScheduledSlot> slots = jpaRepository.findByProjectId(projectId);
+        if (!slots.isEmpty()) {
+            jpaRepository.deleteAll(slots);
+        }
     }
 }
