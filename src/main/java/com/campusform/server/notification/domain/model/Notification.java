@@ -42,7 +42,7 @@ public class Notification {
     private Long projectId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private NotificationType type;
 
     /**
