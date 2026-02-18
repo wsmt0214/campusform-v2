@@ -86,9 +86,12 @@ public class ProjectService {
         // 부모 엔티티로 한 번에 저장 (valueMappings는 cascade로 함께 persist)
         projectRepository.save(project);
 
-        // 관리자 추가 알림 이벤트 발행 (오너에게만 알림, 중복 제거)
-        adminIds.stream().distinct().forEach(adminId -> eventPublisher.publishEvent(new AdminAddedEvent(
-                project.getId(), ownerId, adminId, project.getTitle())));
+        // 관리자 추가 알림 이벤트 1회 발행 (핸들러에서 오너 1건 + 추가된 관리자 각각 1건씩 알림)
+        List<Long> distinctAdminIds = adminIds.stream().distinct().toList();
+        if (!distinctAdminIds.isEmpty()) {
+            eventPublisher.publishEvent(new AdminAddedEvent(
+                    project.getId(), ownerId, distinctAdminIds, project.getTitle()));
+        }
 
         // Google OAuth 토큰 확인 (프로젝트 생성 시 필수)
         // getValidToken은 토큰이 만료되었을 때 자동으로 refresh_token으로 갱신함
@@ -202,9 +205,9 @@ public class ProjectService {
         project.addAdmin(adminId);
         projectRepository.save(project);
 
-        // 관리자 추가 알림 이벤트 발행 (오너에게만 알림)
+        // 관리자 추가 알림 이벤트 발행 (오너 + 추가된 관리자에게 각각 알림)
         eventPublisher.publishEvent(new AdminAddedEvent(
-                project.getId(), project.getOwnerId(), adminId, project.getTitle()));
+                project.getId(), project.getOwnerId(), List.of(adminId), project.getTitle()));
 
         return new AddAdminResponse(adminId, user.getNickname(), user.getEmail(), user.getProfileImageUrl());
     }

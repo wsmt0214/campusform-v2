@@ -32,15 +32,15 @@ public class NotificationEventHandler {
 
     /**
      * 관리자 추가 이벤트 처리
-     * 알림 수신 대상: 프로젝트 오너 + 추가된 관리자 (각각 다른 메시지)
+     * 이벤트 1건당: 오너에게 1건 + 추가된 관리자 각각에게 1건씩 알림
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void handleAdminAdded(AdminAddedEvent event) {
-        log.info("관리자 추가 이벤트 수신 - projectId: {}, ownerId: {}, addedAdminId: {}",
-                event.projectId(), event.ownerId(), event.addedAdminId());
+        log.info("관리자 추가 이벤트 수신 - projectId: {}, ownerId: {}, addedAdminIds: {}",
+                event.projectId(), event.ownerId(), event.addedAdminIds());
 
-        // 오너: "프로젝트에 새 관리자가 추가되었습니다"
+        // 오너에게 1건: "프로젝트에 새 관리자가 추가되었습니다"
         try {
             String ownerPayload = createOwnerAdminAddedPayload(event);
             notificationService.createNotification(
@@ -51,15 +51,17 @@ public class NotificationEventHandler {
                     event.ownerId(), event.projectId(), e.getMessage(), e);
         }
 
-        // 추가된 관리자: "해당 프로젝트의 관리자로 추가되었습니다"
-        try {
-            String adminPayload = createAddedAdminPayload(event);
-            notificationService.createNotification(
-                    event.addedAdminId(), event.projectId(),
-                    NotificationType.ADMIN_ADDED, adminPayload);
-        } catch (Exception e) {
-            log.error("관리자 추가 알림 생성 실패(추가된 관리자) - addedAdminId: {}, projectId: {}, reason: {}",
-                    event.addedAdminId(), event.projectId(), e.getMessage(), e);
+        // 추가된 관리자 각각에게: "해당 프로젝트의 관리자로 추가되었습니다"
+        for (Long adminId : event.addedAdminIds()) {
+            try {
+                String adminPayload = createAddedAdminPayload(event);
+                notificationService.createNotification(
+                        adminId, event.projectId(),
+                        NotificationType.ADMIN_ADDED, adminPayload);
+            } catch (Exception e) {
+                log.error("관리자 추가 알림 생성 실패(추가된 관리자) - addedAdminId: {}, projectId: {}, reason: {}",
+                        adminId, event.projectId(), e.getMessage(), e);
+            }
         }
     }
 
