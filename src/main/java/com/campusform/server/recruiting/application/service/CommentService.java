@@ -77,7 +77,7 @@ public class CommentService {
         Comment savedComment = commentRepository.save(comment);
 
         // 댓글 생성 알림: 해당 프로젝트의 모든 관리자(댓글 작성자 제외)에게 발송
-        publishCommentCreatedEvent(applicantId, authorId);
+        publishCommentCreatedEvent(applicantId, authorId, stage);
 
         return new CommentCreateResponse(
                 savedComment.getId(),
@@ -90,7 +90,7 @@ public class CommentService {
      * 해당 프로젝트의 모든 관리자(OWNER + ADMIN)에게 알림이 가며, 댓글 작성자 본인에게는 발송하지 않습니다.
      * NotificationEventHandler가 수신해 각 수신자별로 알림을 DB에 저장합니다.
      */
-    private void publishCommentCreatedEvent(Long applicantId, Long commenterId) {
+    private void publishCommentCreatedEvent(Long applicantId, Long commenterId, RecruitmentStage stage) {
         var applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
         var project = projectRepository.findById(applicant.getProjectId())
@@ -119,7 +119,8 @@ public class CommentService {
                 applicant.getName() != null ? applicant.getName() : "지원자",
                 commenterId,
                 commenterName,
-                recipientIds));
+                recipientIds,
+                stage.name()));
     }
 
     // 3. 댓글 수정

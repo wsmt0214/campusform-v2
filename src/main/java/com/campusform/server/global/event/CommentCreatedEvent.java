@@ -15,6 +15,7 @@ import java.util.List;
  * @param commenterId    댓글 작성자 ID
  * @param commenterName  댓글 작성자 이름
  * @param recipientIds   알림 수신자 목록 (댓글 작성자 제외)
+ * @param stage          모집 단계 (DOCUMENT: 서류, INTERVIEW: 면접) — 알림 payload의 별도 필드로 제공
  */
 public record CommentCreatedEvent(
         Long projectId,
@@ -23,5 +24,6 @@ public record CommentCreatedEvent(
         String applicantName,
         Long commenterId,
         String commenterName,
-        List<Long> recipientIds
+        List<Long> recipientIds,
+        String stage
 ) {}

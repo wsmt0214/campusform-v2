@@ -124,7 +124,7 @@ public class NotificationEventHandler {
     }
 
     private record CommentCreatedPayload(String projectTitle, String title, String message, Long applicantId,
-            Long commenterId) {
+            Long commenterId, String stage) {
     }
 
     // ============ Payload Creation Methods ============
@@ -155,7 +155,8 @@ public class NotificationEventHandler {
                 title,
                 message,
                 event.applicantId(),
-                event.commenterId()));
+                event.commenterId(),
+                event.stage()));
     }
 
     private String toJson(Object payload) {
