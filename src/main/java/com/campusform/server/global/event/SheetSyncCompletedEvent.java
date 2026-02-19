@@ -8,13 +8,15 @@ import java.util.List;
  * Project Context에서 스프레드시트 동기화가 완료되었을 때 발행됩니다.
  * Notification Context에서 이 이벤트를 수신하여 관리자들에게 알림을 생성합니다.
  *
- * @param projectId  프로젝트 ID
- * @param adminIds   알림 수신자 목록 (OWNER + ADMIN)
- * @param statistics 동기화 통계 정보
- * @param changes    변경사항 목록 (null 가능 - 변경사항이 없을 경우)
+ * @param projectId    프로젝트 ID
+ * @param projectTitle 프로젝트 제목 (알림 payload의 별도 필드로 제공)
+ * @param adminIds     알림 수신자 목록 (OWNER + ADMIN)
+ * @param statistics   동기화 통계 정보
+ * @param changes      변경사항 목록 (null 가능 - 변경사항이 없을 경우)
  */
 public record SheetSyncCompletedEvent(
         Long projectId,
+        String projectTitle,
         List<Long> adminIds,
         SheetSyncStatistics statistics,
         List<SheetSyncChangeInfo> changes) {
@@ -30,6 +32,6 @@ public record SheetSyncCompletedEvent(
      * 하위 호환성을 위한 생성자 (통계 정보만으로 생성)
      */
     public SheetSyncCompletedEvent(Long projectId, List<Long> adminIds, SheetSyncStatistics statistics) {
-        this(projectId, adminIds, statistics, null);
+        this(projectId, null, adminIds, statistics, null);
     }
 }

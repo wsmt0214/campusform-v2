@@ -64,13 +64,14 @@ public class NotificationSyncHandler {
         }
     }
 
-    private record SheetSyncPayload(String message, int syncedCount) {
+    private record SheetSyncPayload(String message, String projectTitle, int syncedCount) {
     }
 
     private String createSheetSyncPayload(SheetSyncCompletedEvent event) {
         SheetSyncStatistics statistics = event.statistics();
         String message = buildMessage(event);
-        SheetSyncPayload payload = new SheetSyncPayload(message, statistics.totalSyncedCount());
+        String projectTitle = event.projectTitle();
+        SheetSyncPayload payload = new SheetSyncPayload(message, projectTitle, statistics.totalSyncedCount());
         return toJson(payload);
     }
 

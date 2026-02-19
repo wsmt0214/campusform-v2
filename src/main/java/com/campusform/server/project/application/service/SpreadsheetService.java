@@ -225,8 +225,9 @@ public class SpreadsheetService {
             // 이벤트 발행
             List<Long> adminIds = project.getAdminIds();
             List<SheetSyncChangeInfo> finalChanges = eventChanges.isEmpty() ? null : eventChanges;
+            String projectTitle = project.getTitle() != null ? project.getTitle().trim() : null;
             eventPublisher.publishEvent(new SheetSyncCompletedEvent(
-                    project.getId(), adminIds, statistics, finalChanges));
+                    project.getId(), projectTitle, adminIds, statistics, finalChanges));
 
             project.updateSyncStatus(SyncStatus.OK);
             projectRepository.save(project);
