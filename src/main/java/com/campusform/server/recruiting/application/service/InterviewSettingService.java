@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.recruiting.application.dto.request.UpsertInterviewSettingRequest;
 import com.campusform.server.recruiting.application.dto.response.InterviewSettingResponse;
@@ -27,12 +28,15 @@ public class InterviewSettingService {
 
     private final InterviewContextLoader contextLoader;
     private final InterviewSettingRepository interviewSettingRepository;
+    private final ProjectAuthorizationService projectAuthorizationService;
 
     /**
-     * 면접 정보 설정 조회
+     * 면접 정보 설정 조회 (프로젝트 OWNER/ADMIN만 조회 가능)
      */
     public InterviewSettingResponse getSetting(Long projectId, Long userId) {
-        Project project = contextLoader.loadProjectOrThrow(projectId);
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
+        contextLoader.loadProjectOrThrow(projectId);
 
         /**
          * interviewSettingRepository.findByProjectId(projectId)는
@@ -45,11 +49,13 @@ public class InterviewSettingService {
     }
 
     /**
-     * 면접 정보 설정 저장/수정
+     * 면접 정보 설정 저장/수정 (프로젝트 OWNER/ADMIN만 가능)
      */
     @Transactional
     public InterviewSettingResponse saveOrUpdateSetting(Long projectId, Long userId,
             UpsertInterviewSettingRequest request) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         Project project = contextLoader.loadProjectOrThrow(projectId);
 
         // 면접 단계(INTERVIEW)에서만 면접 정보 설정 저장/수정 가능

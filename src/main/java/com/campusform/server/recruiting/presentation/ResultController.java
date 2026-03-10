@@ -1,6 +1,7 @@
 package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
@@ -29,14 +31,17 @@ import lombok.RequiredArgsConstructor;
 public class ResultController {
     private final ResultService resultService;
     private final SmsService smsService;
+    private final AuthService authService;
 
     @Operation(summary = "단계별 합격/불합격자 명단 조회", description = "특정 단계(서류, 면접)의 합격 또는 불합격자 명단을 조회합니다.")
     @GetMapping("/results")
     public ResponseEntity<ResultListResponse> getResultList(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
-            @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ScreeningResult status) {
-        ResultListResponse response = resultService.getResults(projectId, stage, status);
+            @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ScreeningResult status,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        ResultListResponse response = resultService.getResults(projectId, stage, status, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -45,8 +50,10 @@ public class ResultController {
     public ResponseEntity<Void> saveSmsTemplate(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "저장할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage,
-            @RequestBody SmsTemplateSaveRequest request) {
-        smsService.saveTemplate(projectId, stage, request);
+            @RequestBody SmsTemplateSaveRequest request,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        smsService.saveTemplate(projectId, stage, request, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -55,8 +62,10 @@ public class ResultController {
     public ResponseEntity<SmsPreviewResponse> getSmsPreview(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "미리보기할 지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage) {
-        SmsPreviewResponse response = smsService.getPreview(projectId, applicantId, stage);
+            @Parameter(description = "적용할 템플릿의 모집 단계") @RequestParam RecruitmentStage stage,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        SmsPreviewResponse response = smsService.getPreview(projectId, applicantId, stage, userId);
         return ResponseEntity.ok(response);
     }
 }

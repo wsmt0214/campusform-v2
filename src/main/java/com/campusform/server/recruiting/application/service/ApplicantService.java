@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.dto.response.ApplicantDetailResponse;
@@ -37,8 +38,11 @@ public class ApplicantService {
     private final ProjectRepository projectRepository;
     private final CommentRepository commentRepository;
     private final InterviewAssignmentQueryService interviewAssignmentQueryService;
+    private final ProjectAuthorizationService projectAuthorizationService;
 
     public ApplicantListResponse getApplicants(Long projectId, String sort, RecruitmentStage stage, Long userId) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         long total;
         long pending;
         long pass;
@@ -181,15 +185,24 @@ public class ApplicantService {
     }
 
     @Transactional
-    public ApplicantStatusUpdateResponse updateApplicantStatus(Long applicantId, RecruitmentStage stage,
-            ScreeningResult status) {
+    public ApplicantStatusUpdateResponse updateApplicantStatus(Long projectId, Long applicantId,
+            RecruitmentStage stage, ScreeningResult status, Long userId) {
+        // 0. 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN만 상태 변경 가능)
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         // 1. 지원자 찾기
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));
 
-        // 2. 프로젝트 상태 검증: 해당 단계가 활성 상태인지 확인
+        // 1-1. URL의 projectId와 지원자가 속한 프로젝트 일치 여부 검증
+        if (!applicant.getProjectId().equals(projectId)) {
+            throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
+        }
+
+        // 2. 프로젝트 상태 및 권한 검증
         Project project = projectRepository.findById(applicant.getProjectId())
                 .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."));
+        // 프로젝트 단계(DOCUMENT/INTERVIEW) 활성 여부
         validateStageActive(project, stage);
 
         // 면접 단계에서는 서류 합격자만 상태 변경 가능 (서류 불합격자는 면접 대상 아님)
@@ -209,11 +222,17 @@ public class ApplicantService {
                 .build();
     }
 
-    // 찜하기 토글
+    // 찜하기 토글 (프로젝트 관리자만 가능)
     @Transactional
-    public void Bookmark(Long applicantId, RecruitmentStage stage) {
+    public void Bookmark(Long projectId, Long applicantId, RecruitmentStage stage, Long userId) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("지원자가 존재하지 않습니다."));
+
+        if (!applicant.getProjectId().equals(projectId)) {
+            throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
+        }
 
         // 면접 단계에서는 서류 합격자만 즐겨찾기 가능
         validateDocumentPassForInterview(applicant, stage);
@@ -225,6 +244,8 @@ public class ApplicantService {
     @Transactional(readOnly = true)
     public ApplicantDetailResponse getApplicantDetail(Long projectId, Long applicantId, RecruitmentStage stage,
             Long userId) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         // 1. 지원자 조회 (없으면 예외 발생)
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));

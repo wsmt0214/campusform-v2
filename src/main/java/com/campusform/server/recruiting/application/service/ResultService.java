@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.request.ResultAnnouncementRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
@@ -24,9 +25,13 @@ public class ResultService {
         private final ApplicantRepository applicantRepository;
         private final MessageTemplateRepository templateRepository;
         private final MessageGenerator messageGenerator;
+        private final ProjectAuthorizationService projectAuthorizationService;
 
         // 합,불 명단/ 통계 조회
-        public ResultListResponse getResults(Long projectId, RecruitmentStage stage, ScreeningResult status) {
+        public ResultListResponse getResults(Long projectId, RecruitmentStage stage, ScreeningResult status, Long userId) {
+
+                // 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN)
+                projectAuthorizationService.assertAdmin(projectId, userId);
 
                 // 1. Enum으로 변환
                 List<Applicant> applicants;
@@ -134,8 +139,6 @@ public class ResultService {
                                 })
                                 .count();
 
-                long otherCount = totalCount - maleCount - femaleCount;
-
                 int malePercent = (int) ((maleCount * 100) / totalCount);
                 int femalePercent = (int) ((femaleCount * 100) / totalCount);
                 int otherPercent = 100 - malePercent - femalePercent; // 나머지 비율
@@ -148,7 +151,9 @@ public class ResultService {
         }
 
         @Transactional
-        public void announceResults(Long projectId, ResultAnnouncementRequest request) {
+        public void announceResults(Long projectId, ResultAnnouncementRequest request, Long userId) {
+                // 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN)
+                projectAuthorizationService.assertAdmin(projectId, userId);
                 // 1. 대상 지원자 조회
                 List<Applicant> applicants = applicantRepository.findAllById(request.applicantIds());
 

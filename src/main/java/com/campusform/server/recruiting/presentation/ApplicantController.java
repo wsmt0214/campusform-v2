@@ -58,14 +58,19 @@ public class ApplicantController {
     @Operation(summary = "지원자 상태 변경", description = "특정 지원자의 서류/면접 전형 상태를 변경합니다. (예: 보류, 합격, 불합격)")
     @PatchMapping("/{applicantId}")
     public ResponseEntity<ApplicantStatusUpdateResponse> updateStatus(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "지원자 ID") @PathVariable Long applicantId,
             @Parameter(description = "변경할 모집 단계") @RequestParam RecruitmentStage stage, // ?stage=DOCUMENT
-            @RequestBody ApplicantStatusUpdateRequest request // Body { "status": "PASS" }
+            @RequestBody ApplicantStatusUpdateRequest request, // Body { "status": "PASS" }
+            Authentication authentication
     ) {
+        Long userId = authService.extractUserId(authentication);
         ApplicantStatusUpdateResponse response = applicantService.updateApplicantStatus(
+                projectId,
                 applicantId,
                 stage,
-                request.getStatus());
+                request.getStatus(),
+                userId);
 
         return ResponseEntity.ok(response);
     }
@@ -76,9 +81,10 @@ public class ApplicantController {
     public ResponseEntity<Void> Bookmark(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "찜할 지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "즐겨찾기를 토글할 모집 단계 (DOCUMENT: 서류, INTERVIEW: 면접)") @RequestParam RecruitmentStage stage) {
-        // 서비스의 토글 메서드 호출
-        applicantService.Bookmark(applicantId, stage);
+            @Parameter(description = "즐겨찾기를 토글할 모집 단계 (DOCUMENT: 서류, INTERVIEW: 면접)") @RequestParam RecruitmentStage stage,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        applicantService.Bookmark(projectId, applicantId, stage, userId);
         return ResponseEntity.ok().build();
     }
 

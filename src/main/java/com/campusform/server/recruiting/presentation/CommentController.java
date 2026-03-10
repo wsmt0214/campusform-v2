@@ -39,21 +39,25 @@ public class CommentController {
     @Operation(summary = "지원자 댓글 조회", description = "특정 모집 단계(DOCUMENT/INTERVIEW)의 지원자에 달린 댓글을 계층 구조로 조회합니다.")
     @GetMapping("/applicants/{applicantId}/comments")
     public ResponseEntity<List<CommentResponse>> getComments(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "지원자 ID") @PathVariable Long applicantId,
-            @Parameter(description = "조회할 모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage) {
-        List<CommentResponse> comments = commentService.getComments(applicantId, stage);
+            @Parameter(description = "조회할 모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
+            Authentication authentication) {
+        Long userId = authService.extractUserId(authentication);
+        List<CommentResponse> comments = commentService.getComments(projectId, applicantId, stage, userId);
         return ResponseEntity.ok(comments);
     }
 
     @Operation(summary = "댓글 작성", description = "루트 댓글 또는 대댓글을 작성합니다. 요청 본문의 parentId가 있으면 해당 댓글의 대댓글, 없으면 루트 댓글입니다.")
     @PostMapping("/applicants/{applicantId}/comments")
     public ResponseEntity<CommentCreateResponse> createComment(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "지원자 ID") @PathVariable Long applicantId,
             @Parameter(description = "모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
             @RequestBody @Valid CommentRequest requestCommentRequest,
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
-        CommentCreateResponse response = commentService.createComment(applicantId, memberId, stage,
+        CommentCreateResponse response = commentService.createComment(projectId, applicantId, memberId, stage,
                 requestCommentRequest);
         return ResponseEntity.ok(response);
     }
@@ -61,6 +65,7 @@ public class CommentController {
     @Operation(summary = "댓글 수정", description = "댓글 내용을 수정합니다. 작성자 본인만 가능합니다.")
     @PatchMapping("/applicants/{applicantId}/comments/{commentId}")
     public ResponseEntity<CommentUpdateResponse> updateComment(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "지원자 ID") @PathVariable Long applicantId,
             @Parameter(description = "댓글 ID") @PathVariable Long commentId,
             @Parameter(description = "모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
@@ -68,18 +73,19 @@ public class CommentController {
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
         CommentUpdateResponse response = commentService.updateComment(
-                applicantId, commentId, memberId, stage, request);
+                projectId, applicantId, commentId, memberId, stage, request);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "댓글 삭제", description = "댓글을 삭제합니다. 작성자 본인만 가능하며, 루트 댓글 삭제 시 대댓글도 함께 삭제됩니다.")
     @DeleteMapping("/applicants/{applicantId}/comments/{commentId}")
     public ResponseEntity<?> deleteComment(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "댓글 ID") @PathVariable Long commentId,
             @Parameter(description = "모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
-        commentService.deleteComment(commentId, memberId, stage);
+        commentService.deleteComment(projectId, commentId, memberId, stage);
         return ResponseEntity.ok().build();
     }
 }

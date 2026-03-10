@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
@@ -27,17 +28,21 @@ public class SmsService {
     private final MessageTemplateRepository templateRepository;
     private final MessageGenerator messageGenerator;
     private final ProjectRepository projectRepository;
+    private final ProjectAuthorizationService projectAuthorizationService;
 
     /**
      * 문자 관련 로직만
-     * 템플릿 저장
+     * 템플릿 저장 (프로젝트 OWNER/ADMIN만 가능)
      *
      * @param projectId
      * @param stage
      * @param request   수정사항 문자열을 Enum으로 변환하여 Type Safety를 확보함
+     * @param userId   요청 사용자 ID (권한 검증용)
      */
     @Transactional
-    public void saveTemplate(Long projectId, RecruitmentStage stage, SmsTemplateSaveRequest request) {
+    public void saveTemplate(Long projectId, RecruitmentStage stage, SmsTemplateSaveRequest request, Long userId) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         // 프로젝트 상태 검증: 해당 단계가 활성 상태인지 확인
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
@@ -54,11 +59,13 @@ public class SmsService {
     }
 
     /**
-     * 개인별 문자메시지 미리보기
+     * 개인별 문자메시지 미리보기 (프로젝트 OWNER/ADMIN만 가능)
      * 지원자의 현재 상태를 DB에서 조회하여 해당 템플릿을 사용합니다.
      */
     @Transactional(readOnly = true)
-    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, RecruitmentStage stage) {
+    public SmsPreviewResponse getPreview(Long projectId, Long applicantId, RecruitmentStage stage, Long userId) {
+        projectAuthorizationService.assertAdmin(projectId, userId);
+
         // 1. 지원자 조회
         Applicant applicant = applicantRepository.findById(applicantId)
                 .filter(a -> a.getProjectId().equals(projectId))
