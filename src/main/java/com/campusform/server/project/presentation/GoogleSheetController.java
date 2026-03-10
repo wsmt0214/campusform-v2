@@ -16,9 +16,8 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
+import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.application.service.SpreadsheetService;
-import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.project.domain.repository.ProjectRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class GoogleSheetController {
 
     private final SpreadsheetService spreadsheetService;
-    private final ProjectRepository projectRepository;
+    private final ProjectAuthorizationService projectAuthorizationService;
     private final AuthService authService;
 
     /**
@@ -81,11 +80,8 @@ public class GoogleSheetController {
 
         Long userId = authService.extractUserId(authentication);
 
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
-
-        // 프로젝트에 관한 관리자만 호출 가능
-        project.validateAdminAccess(userId);
+        // 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN)
+        projectAuthorizationService.assertAdmin(projectId, userId);
 
         // 시트 동기화 실행 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
         try {

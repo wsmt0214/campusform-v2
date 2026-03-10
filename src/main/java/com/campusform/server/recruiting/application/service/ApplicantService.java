@@ -26,7 +26,7 @@ import com.campusform.server.recruiting.domain.model.applicant.value.Recruitment
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-import com.campusform.server.recruiting.infrastructure.persistence.CommentRepository;
+import com.campusform.server.recruiting.domain.repository.CommentRepository;
 
 import lombok.RequiredArgsConstructor;
 

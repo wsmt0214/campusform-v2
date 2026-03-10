@@ -24,7 +24,7 @@ import com.campusform.server.project.domain.model.setting.ProjectValueMapping;
 import com.campusform.server.project.domain.model.setting.value.SyncStatus;
 import com.campusform.server.project.domain.model.sheet.SpreadsheetColumn;
 import com.campusform.server.project.domain.repository.ProjectRepository;
-import com.campusform.server.project.infrastructure.external.sheet.GoogleSheetsReader;
+import com.campusform.server.project.domain.service.SpreadsheetReader;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.ApplicantExtraAnswer;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SpreadsheetService {
 
-    private final GoogleSheetsReader googleSheetsReader;
+    private final SpreadsheetReader spreadsheetReader;
     private final ApplicationEventPublisher eventPublisher;
 
     private final ProjectRepository projectRepository;
@@ -51,7 +51,7 @@ public class SpreadsheetService {
      * 0번 인덱스이면서 헤더 이름이 'timestamp' 또는 '타임스탬프'인 컬럼은 응답에서 제외 (구글 폼 기본 컬럼)
      */
     public List<SpreadsheetColumnResponse> getSheetHeaders(String sheetUrl, Long ownerId) {
-        return googleSheetsReader.readHeader(sheetUrl, ownerId).stream()
+        return spreadsheetReader.readHeader(sheetUrl, ownerId).stream()
                 .filter(Objects::nonNull)
                 .filter(column -> !isTimestampHeader(column))
                 .map(column -> new SpreadsheetColumnResponse(column.getName(), column.getIndex()))
@@ -79,7 +79,7 @@ public class SpreadsheetService {
         if (positionColumnIndex == null || positionColumnIndex < 0) {
             return List.of();
         }
-        List<String[]> dataRows = googleSheetsReader.readAllLines(sheetUrl, ownerId);
+        List<String[]> dataRows = spreadsheetReader.readAllLines(sheetUrl, ownerId);
         return dataRows.stream()
                 .map(columns -> getColumnValue(columns, positionColumnIndex))
                 .filter(Objects::nonNull)
@@ -112,8 +112,8 @@ public class SpreadsheetService {
             requiredIndices.add(mapping.getPositionIdx());
 
             // Google Sheets API를 사용하여 헤더 및 데이터 읽기
-            List<SpreadsheetColumn> headers = googleSheetsReader.readHeader(sheetUrl, ownerId);
-            List<String[]> dataRows = googleSheetsReader.readAllLines(sheetUrl, ownerId);
+            List<SpreadsheetColumn> headers = spreadsheetReader.readHeader(sheetUrl, ownerId);
+            List<String[]> dataRows = spreadsheetReader.readAllLines(sheetUrl, ownerId);
 
             // 포지션 값 치환 규칙: 시트 원시값 → 저장용 값 (동기화 시 적용)
             Map<String, String> positionMapping = project.getValueMappings().stream()

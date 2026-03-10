@@ -19,7 +19,7 @@ import com.campusform.server.recruiting.application.dto.response.CommentUpdateRe
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-import com.campusform.server.recruiting.infrastructure.persistence.CommentRepository;
+import com.campusform.server.recruiting.domain.repository.CommentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
