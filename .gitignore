@@ -44,5 +44,8 @@ db_data/
 ### Documentation ###
 docs/
 
+# 루트 경로의 Markdown 파일은 Git에서 제외
+/*.md
+
 ### Cursor Rules ###
 .cursor/rules/campusform-rule.mdc
