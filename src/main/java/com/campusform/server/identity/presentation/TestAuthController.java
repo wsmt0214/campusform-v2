@@ -3,7 +3,7 @@ package com.campusform.server.identity.presentation;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -14,11 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
-
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * 테스트용 인증 컨트롤러
  */
 @Hidden
+@Profile("local")
 @Tag(name = "테스트", description = "개발 및 테스트용 API")
 @RestController
 @RequestMapping("/api/test/auth")
@@ -44,7 +43,9 @@ public class TestAuthController {
         /**
          * 특정 userId로 테스트용 세션 생성
          */
-        @Operation(summary = "테스트용 세션 생성", description = "지정한 `userId`로 강제 로그인하여 테스트용 세션을 생성합니다. Postman 등에서 API를 테스트할 때 사용합니다.", security = {})
+        @Operation(summary = "테스트용 세션 생성",
+                        description = "지정한 `userId`로 강제 로그인하여 테스트용 세션을 생성합니다. Postman 등에서 API를 테스트할 때 사용합니다.",
+                        security = {})
         @PostMapping("/session")
         public ResponseEntity<Map<String, Object>> createTestSession(
                         @Parameter(description = "로그인할 사용자의 ID") @RequestParam Long userId,
@@ -52,7 +53,8 @@ public class TestAuthController {
 
                 // 사용자 조회
                 User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. userId=" + userId));
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                                "사용자를 찾을 수 없습니다. userId=" + userId));
 
                 // OAuth2User와 동일한 구조의 attributes 생성
                 Map<String, Object> attributes = new HashMap<>();
@@ -64,17 +66,15 @@ public class TestAuthController {
 
                 // OAuth2User 생성 (실제 OAuth2 로그인과 동일한 구조)
                 OAuth2User oAuth2User = new DefaultOAuth2User(
-                                Collections.singleton(() -> "ROLE_USER"),
-                                attributes,
-                                "email" // nameAttributeKey
+                                Collections.singleton(() -> "ROLE_USER"), attributes, "email" // nameAttributeKey
                 );
 
                 // OAuth2AuthenticationToken 생성 (실제 OAuth2 로그인과 동일)
-                org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken authentication = new org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken(
-                                oAuth2User,
-                                Collections.singleton(() -> "ROLE_USER"),
-                                "google" // registrationId
-                );
+                org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken authentication =
+                                new org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken(
+                                                oAuth2User,
+                                                Collections.singleton(() -> "ROLE_USER"), "google" // registrationId
+                                );
 
                 // SecurityContext에 Authentication 저장
                 SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
@@ -84,8 +84,8 @@ public class TestAuthController {
                 // HttpSession에 SecurityContext 저장 (Spring Security가 자동으로 처리하지만 명시적으로 저장)
                 session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 
-                log.info("테스트 세션 생성 완료 - userId: {}, email: {}, sessionId: {}",
-                                user.getId(), user.getEmail(), session.getId());
+                log.info("테스트 세션 생성 완료 - userId: {}, email: {}, sessionId: {}", user.getId(),
+                                user.getEmail(), session.getId());
 
                 // 검증: 생성된 세션으로 사용자 정보 조회 테스트
                 Authentication savedAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -106,7 +106,8 @@ public class TestAuthController {
         /**
          * 현재 세션의 인증 정보 확인 (테스트용)
          */
-        @Operation(summary = "현재 세션 정보 확인 (테스트용)", description = "현재 요청에 포함된 세션(쿠키)이 유효한지 확인하고, 인증된 사용자 정보를 반환합니다.")
+        @Operation(summary = "현재 세션 정보 확인 (테스트용)",
+                        description = "현재 요청에 포함된 세션(쿠키)이 유효한지 확인하고, 인증된 사용자 정보를 반환합니다.")
         @PostMapping("/verify")
         public ResponseEntity<Map<String, Object>> verifySession(Authentication authentication) {
                 if (authentication == null || !authentication.isAuthenticated()) {
