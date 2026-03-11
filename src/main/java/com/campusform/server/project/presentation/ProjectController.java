@@ -26,7 +26,8 @@ import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
-import com.campusform.server.project.application.service.ProjectService;
+import com.campusform.server.project.application.service.ProjectCommandService;
+import com.campusform.server.project.application.service.ProjectQueryService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,7 +41,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProjectController {
 
-    private final ProjectService projectService;
+    private final ProjectQueryService projectQueryService;
+    private final ProjectCommandService projectCommandService;
     private final AuthService authService;
 
     /**
@@ -51,7 +53,7 @@ public class ProjectController {
     public ResponseEntity<List<ProjectResponse>> getProjects(
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        List<ProjectResponse> projects = projectService.getProjectsByUserId(userId);
+        List<ProjectResponse> projects = projectQueryService.getProjectsByUserId(userId);
         return ResponseEntity.ok(projects);
     }
 
@@ -64,7 +66,7 @@ public class ProjectController {
             @Valid @RequestBody CreateProjectRequest request,
             Authentication authentication) {
         Long ownerId = authService.extractUserId(authentication);
-        ProjectResponse response = projectService.createProject(ownerId, request);
+        ProjectResponse response = projectCommandService.createProject(ownerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -78,7 +80,7 @@ public class ProjectController {
             @Valid @RequestBody UpdateProjectNameRequest request,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectResponse response = projectService.updateProjectName(projectId, userId, request);
+        ProjectResponse response = projectCommandService.updateProjectName(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -92,7 +94,7 @@ public class ProjectController {
             @Valid @RequestBody UpdateProjectPeriodRequest request,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectResponse response = projectService.updateProjectPeriod(projectId, userId, request);
+        ProjectResponse response = projectCommandService.updateProjectPeriod(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -105,7 +107,7 @@ public class ProjectController {
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        PositionValuesResponse response = projectService.getStoredPositionValues(projectId, userId);
+        PositionValuesResponse response = projectQueryService.getStoredPositionValues(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -119,7 +121,7 @@ public class ProjectController {
             @Valid @RequestBody UpdatePositionValueMappingsRequest request,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        projectService.updatePositionValueMappings(projectId, userId, request);
+        projectCommandService.updatePositionValueMappings(projectId, userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -132,7 +134,7 @@ public class ProjectController {
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        projectService.deleteProject(projectId, userId);
+        projectCommandService.deleteProject(projectId, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -145,7 +147,7 @@ public class ProjectController {
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectDetailExportResponse response = projectService.getProjectDetailForExport(projectId, userId);
+        ProjectDetailExportResponse response = projectQueryService.getProjectDetailForExport(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -158,7 +160,7 @@ public class ProjectController {
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        AdminListResponse response = projectService.getAdmins(projectId, userId);
+        AdminListResponse response = projectQueryService.getAdmins(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -172,7 +174,7 @@ public class ProjectController {
             @Valid @RequestBody AddAdminRequest request,
             Authentication authentication) {
         Long ownerId = authService.extractUserId(authentication);
-        AddAdminResponse response = projectService.addAdmin(projectId, ownerId, request);
+        AddAdminResponse response = projectCommandService.addAdmin(projectId, ownerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -186,7 +188,7 @@ public class ProjectController {
             @Parameter(description = "제거할 관리자 ID", required = true) @PathVariable Long adminId,
             Authentication authentication) {
         Long ownerId = authService.extractUserId(authentication);
-        projectService.removeAdmin(projectId, ownerId, adminId);
+        projectCommandService.removeAdmin(projectId, ownerId, adminId);
         return ResponseEntity.noContent().build();
     }
 }
