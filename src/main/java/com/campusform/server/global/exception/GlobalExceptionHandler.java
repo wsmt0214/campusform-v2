@@ -8,12 +8,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.campusform.server.notification.domain.exception.NotificationAccessDeniedException;
-import com.campusform.server.notification.domain.exception.NotificationNotFoundException;
-import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
-import com.campusform.server.project.domain.exception.TokenExpiredException;
-import com.campusform.server.project.domain.exception.TokenNotFoundException;
-import com.campusform.server.recruiting.domain.exception.StatusChangeNotAllowedException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,10 +22,8 @@ public class GlobalExceptionHandler {
 
     /**
      * @Valid 어노테이션으로 검증 실패 시 발생하는 예외를 처리합니다.
-     *        각 필드의 검증 오류 메시지를 모아서 반환합니다.
-     * 
-     * @Valid는 모든 제약을 한 번에 검증하여 MethodArgumentNotValidException 예외를 발생시킵니다.
-     *         MethodArgumentNotValidException 는 필드 에러, 전역 에러, 메시지 등을 가지고 있음
+     *        모든 제약을 한 번에 검증하여 MethodArgumentNotValidException 예외를 발생
+     *        MethodArgumentNotValidException 는 필드 에러, 전역 에러, 메시지 등을 가지고 있음
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
@@ -43,121 +35,64 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-
-        ErrorResponse response = new ErrorResponse("Validation Error", "입력 데이터 검증에 실패했습니다.", errors);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("VALIDATION_ERROR", "입력 데이터 검증에 실패했습니다.", errors));
     }
 
     /**
      * 인증이 없거나 인증 컨텍스트가 유효하지 않을 때의 예외 처리
-     * 예: 로그인 안했는데 보호 API 호출, principal에 userId 누락 등
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
-        ErrorResponse response = new ErrorResponse("Unauthorized", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse("UNAUTHORIZED", ex.getMessage(), null));
     }
 
     /**
-     * 잘못된 인자 예외 처리
-     * 예: 존재하지 않는 프로젝트 조회, 중복된 관리자 추가 등
+     * BaseException을 상속한 모든 도메인 예외를 단일 핸들러로 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex) {
+        log.warn("[{}] {}", ex.getErrorCode(), ex.getDetailMessage());
+        return ResponseEntity.status(ex.getHttpStatus())
+                .body(new ErrorResponse(ex.getErrorCode(), ex.getMessage(), null));
+    }
+
+    /**
+     * 잘못된 인자 — 존재하지 않는 리소스 요청, 중복 등
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorResponse response = new ErrorResponse("Illegal Argument Error", ex.getMessage(), null);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("ILLEGAL_ARGUMENT", ex.getMessage(), null));
     }
 
     /**
-     * 잘못된 상태 예외 처리
-     * 예: 이미 추가된 관리자, 프로젝트 상태 변경 불가 등
+     * 잘못된 상태 — 이미 처리된 요청, 상태 전이 불가 등
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
-        ErrorResponse response = new ErrorResponse("Illegal State Error", ex.getMessage(), null);
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("ILLEGAL_STATE", ex.getMessage(), null));
     }
 
     /**
-     * 알림을 찾을 수 없을 때 발생하는 예외 처리
+     * JPA EntityNotFoundException — 연관 엔티티 미존재 시
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleNotificationNotFoundException(NotificationNotFoundException ex) {
-        ErrorResponse response = new ErrorResponse("Not Found", ex.getMessage(), null);
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
-    /**
-     * 알림 접근 권한이 없을 때 발생하는 예외 처리
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleNotificationAccessDeniedException(NotificationAccessDeniedException ex) {
-        log.warn("알림 접근 거부: {}", ex.getDetailMessage());
-        ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-    }
-
-    /**
-     * 프로젝트 권한(OWNER 전용 등) 예외 처리
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleProjectAccessDeniedException(ProjectAccessDeniedException ex) {
-        ErrorResponse response = new ErrorResponse("Forbidden", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-    }
-
-    /**
-     * Google OAuth 토큰을 찾을 수 없을 때 발생하는 예외 처리
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleTokenNotFoundException(TokenNotFoundException ex) {
-        ErrorResponse response = new ErrorResponse("Token Not Found", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
-    /**
-     * Google OAuth 토큰이 만료되었을 때 발생하는 예외 처리
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleTokenExpiredException(TokenExpiredException ex) {
-        ErrorResponse response = new ErrorResponse("Token Expired", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-    }
-
-    /**
-     * 엔티티 미존재 시 (JPA EntityNotFoundException, 댓글/지원자 등 조회 실패)
-     */
-    @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex) {
-        ErrorResponse response = new ErrorResponse("Not Found", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("NOT_FOUND", ex.getMessage(), null));
     }
 
     /**
-     * 지원자/댓글 등 상태 변경 불가 시 (도메인 규칙 위반)
+     * 위에서 처리하지 않은 예외 — 서버 내부 오류
      */
-    @ExceptionHandler(StatusChangeNotAllowedException.class)
-    public ResponseEntity<ErrorResponse> handleStatusChangeNotAllowedException(StatusChangeNotAllowedException ex) {
-        ErrorResponse response = new ErrorResponse("Bad Request", ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
-    /**
-     * 위에서 처리하지 않은 모든 예외를 처리합니다.
-     */
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        log.error("예외 발생 ", ex);
-
-        ErrorResponse response = new ErrorResponse("Internal Server Error", "서버 내부 오류가 발생했습니다." + ex.getMessage(),
-                null);
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        log.error("처리되지 않은 예외 발생", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.", null));
     }
 
     /**
