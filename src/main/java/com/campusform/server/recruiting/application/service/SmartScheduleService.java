@@ -18,6 +18,8 @@ import com.campusform.server.recruiting.application.dto.response.interview.Smart
 import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse.DaySummary;
 import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse.InterviewerInfo;
 import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse.SlotInfo;
+import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse.Statistics;
+import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse.UnassignedApplicantInfo;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
@@ -25,6 +27,7 @@ import com.campusform.server.recruiting.domain.model.interview.availability.Inte
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
 import com.campusform.server.recruiting.domain.model.interview.schedule.InterviewScheduleUnassignedApplicant;
 import com.campusform.server.recruiting.domain.model.interview.schedule.InterviewScheduledSlot;
+import com.campusform.server.recruiting.domain.model.interview.schedule.SchedulePlan;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -38,6 +41,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 스마트 시간표 생성 Application Service
+ *
+ * 도메인 서비스({@link SmartScheduleGenerator})는 {@link SchedulePlan}만 반환하며,
+ * application 레이어인 이 클래스에서 {@link SmartScheduleResponse}로 변환합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -48,25 +54,22 @@ public class SmartScheduleService {
     private final InterviewerAvailabilityBlockRepository interviewerBlockRepository;
     private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
-
-    // 각 애그리거트별 Repository
     private final InterviewScheduledSlotRepository scheduledSlotRepository;
     private final InterviewScheduleUnassignedApplicantRepository unassignedApplicantRepository;
 
-    // 도메인 서비스
     private final SmartScheduleGenerator generator = new SmartScheduleGenerator();
 
     /**
-     * 프로젝트의 스마트 시간표 미리보기 (저장하지 않음)
+     * 스마트 시간표 미리보기 (저장하지 않음)
      */
     @Transactional(readOnly = true)
     public SmartScheduleResponse generateSchedule(Long projectId, Long userId) {
         validateScheduleNotConfirmed(projectId);
-        return generateScheduleInternal(projectId);
+        return toResponse(generateScheduleInternal(projectId));
     }
 
     /**
-     * 프로젝트의 스마트 시간표 생성 및 저장
+     * 스마트 시간표 생성 및 저장
      */
     @Transactional
     public SmartScheduleResponse generateAndSaveSchedule(Long projectId, Long userId) {
@@ -74,19 +77,16 @@ public class SmartScheduleService {
 
         Project project = contextLoader.loadContext(projectId).project();
         project.validateOwnerAccess(userId);
-
-        // 스마트 시간표 생성/저장은 면접 단계(INTERVIEW)에서만 가능
         project.validateInterviewStage();
 
-        // 시간표 생성
-        SmartScheduleResponse response = generateScheduleInternal(projectId);
+        SchedulePlan plan = generateScheduleInternal(projectId);
 
         // 기존 결과 삭제 (덮어쓰기)
         scheduledSlotRepository.deleteByProjectId(projectId);
         unassignedApplicantRepository.deleteByProjectId(projectId);
 
-        if (response.getDays().isEmpty() && response.getUnassignedApplicants().isEmpty()) {
-            return response;
+        if (plan.days().isEmpty() && plan.unassignedApplicants().isEmpty()) {
+            return toResponse(plan);
         }
 
         // InterviewDay date -> id 매핑
@@ -96,24 +96,21 @@ public class SmartScheduleService {
 
         // 배정된 슬롯 저장
         List<InterviewScheduledSlot> slots = new ArrayList<>();
-        for (DaySummary day : response.getDays()) {
-            Long interviewDayId = dateToInterviewDayId.get(day.getDate());
+        for (SchedulePlan.DayResult day : plan.days()) {
+            Long interviewDayId = dateToInterviewDayId.get(day.date());
             if (interviewDayId == null) {
                 continue;
             }
 
-            for (SlotInfo slotInfo : day.getSlots()) {
+            for (SchedulePlan.SlotResult slotResult : day.slots()) {
                 InterviewScheduledSlot slot = InterviewScheduledSlot.create(
-                        projectId, interviewDayId, day.getDate(), slotInfo.getStartTime());
+                        projectId, interviewDayId, day.date(), slotResult.startTime());
 
-                // 지원자 추가
-                for (ApplicantInfo applicant : slotInfo.getApplicants()) {
-                    slot.addApplicant(applicant.getId());
+                for (SchedulePlan.AssignedApplicant applicant : slotResult.applicants()) {
+                    slot.addApplicant(applicant.id());
                 }
-
-                // 면접관 추가
-                for (InterviewerInfo interviewer : slotInfo.getInterviewers()) {
-                    slot.addInterviewer(interviewer.getId());
+                for (SchedulePlan.AssignedInterviewer interviewer : slotResult.interviewers()) {
+                    slot.addInterviewer(interviewer.id());
                 }
 
                 slots.add(slot);
@@ -122,81 +119,65 @@ public class SmartScheduleService {
         scheduledSlotRepository.saveAll(slots);
 
         // 미배정 지원자 저장
-        List<InterviewScheduleUnassignedApplicant> unassignedEntities = response.getUnassignedApplicants().stream()
+        List<InterviewScheduleUnassignedApplicant> unassignedEntities = plan.unassignedApplicants().stream()
                 .map(info -> InterviewScheduleUnassignedApplicant.create(
-                        projectId, info.getId(), info.getReason()))
+                        projectId, info.id(), info.reason().getMessage()))
                 .toList();
         unassignedApplicantRepository.saveAll(unassignedEntities);
 
-        return response;
+        return toResponse(plan);
     }
 
     /**
-     * 이미 스마트 시간표가 확정된 프로젝트인지 검사.
-     * 확정된 상태면 미리보기·재생성 모두 불가하므로 예외 발생.
+     * 이미 스마트 시간표가 확정된 프로젝트인지 검사
      */
     private void validateScheduleNotConfirmed(Long projectId) {
         boolean hasSlots = !scheduledSlotRepository.findByProjectId(projectId).isEmpty();
         boolean hasUnassigned = !unassignedApplicantRepository.findByProjectId(projectId).isEmpty();
         if (hasSlots || hasUnassigned) {
-            throw new IllegalStateException(
-                    "이미 스마트 시간표가 확정된 상태입니다. 미리보기 및 재생성할 수 없습니다.");
+            throw new IllegalStateException("이미 스마트 시간표가 확정된 상태입니다. 미리보기 및 재생성할 수 없습니다.");
         }
     }
 
     /**
-     * 내부용: 시간표 생성 로직
+     * 내부용: 시간표 알고리즘 실행 — 도메인 결과 반환
      */
-    private SmartScheduleResponse generateScheduleInternal(Long projectId) {
+    private SchedulePlan generateScheduleInternal(Long projectId) {
         InterviewContext context = contextLoader.loadContext(projectId);
         InterviewSetting setting = context.setting();
         List<InterviewDay> days = setting.getDays();
 
         if (days.isEmpty()) {
-            return SmartScheduleResponse.empty();
+            return SchedulePlan.empty();
         }
 
-        // 면접 일자자
-        List<Long> dayIds = days.stream()
-                .map(InterviewDay::getId)
-                .toList();
+        List<Long> dayIds = days.stream().map(InterviewDay::getId).toList();
 
-        // 지원자 제출 슬롯
         List<IntervieweeAvailabilitySlot> applicantSlots = applicantSlotRepository.findByInterviewDayIdIn(dayIds);
 
         if (applicantSlots.isEmpty()) {
-            return SmartScheduleResponse.empty();
+            return SchedulePlan.empty();
         }
 
-        // 면접관 제출 블록록
         List<InterviewerAvailabilityBlock> interviewerBlocks = interviewerBlockRepository
                 .findByInterviewDayIdIn(dayIds);
 
-        // 지원자 id -> ApplicantInfo 생성
-        Map<Long, ApplicantInfo> applicantInfoMap = buildApplicantInfoMap(applicantSlots);
+        Map<Long, SchedulePlan.AssignedApplicant> applicantInfoMap = buildApplicantInfoMap(applicantSlots);
+        Map<Long, SchedulePlan.AssignedInterviewer> interviewerInfoMap = buildInterviewerInfoMap(interviewerBlocks);
 
-        // 면접관 id -> InterviewerInfo 생성
-        Map<Long, InterviewerInfo> interviewerInfoMap = buildInterviewerInfoMap(interviewerBlocks);
-
-        // 스마트 시간표 알고리즘
-        return generator.generate(
-                setting,
-                days,
-                applicantSlots,
-                interviewerBlocks,
-                applicantInfoMap,
-                interviewerInfoMap);
+        return generator.generate(setting, days, applicantSlots, interviewerBlocks, applicantInfoMap, interviewerInfoMap);
     }
 
     /**
-     * 지원자 id -> ApplicantInfo 생성
+     * 지원자 ID → AssignedApplicant 매핑
+     * 서류 합격(PASS)자만 포함
      */
-    private Map<Long, ApplicantInfo> buildApplicantInfoMap(List<IntervieweeAvailabilitySlot> slots) {
+    private Map<Long, SchedulePlan.AssignedApplicant> buildApplicantInfoMap(
+            List<IntervieweeAvailabilitySlot> slots) {
         Set<Long> applicantIds = slots.stream()
                 .map(IntervieweeAvailabilitySlot::getApplicantId)
                 .collect(Collectors.toSet());
 
-        // 서류 합격(PASS)자만 스마트 시간표 대상에 포함 (서류 불합격자 제외)
         List<Applicant> applicants = applicantRepository.findByIds(applicantIds.stream().toList()).stream()
                 .filter(a -> a.getDocumentStatus() == ScreeningResult.PASS)
                 .toList();
@@ -204,31 +185,60 @@ public class SmartScheduleService {
         return applicants.stream()
                 .collect(Collectors.toMap(
                         Applicant::getId,
-                        a -> ApplicantInfo.of(
-                                a.getId(),
-                                a.getName(),
-                                a.getSchool(),
-                                a.getMajor(),
-                                a.getPosition())));
+                        a -> new SchedulePlan.AssignedApplicant(
+                                a.getId(), a.getName(), a.getSchool(), a.getMajor(), a.getPosition())));
     }
 
     /**
-     * 면접관 id -> InterviewerInfo 생성
+     * 면접관 ID → AssignedInterviewer 매핑
+     * 필수 면접관 여부는 알고리즘 내에서 설정되므로 기본값 false
      */
-    private Map<Long, InterviewerInfo> buildInterviewerInfoMap(List<InterviewerAvailabilityBlock> blocks) {
+    private Map<Long, SchedulePlan.AssignedInterviewer> buildInterviewerInfoMap(
+            List<InterviewerAvailabilityBlock> blocks) {
         Set<Long> interviewerIds = blocks.stream()
                 .map(InterviewerAvailabilityBlock::getAdminId)
                 .collect(Collectors.toSet());
 
         List<User> users = userRepository.findByIds(interviewerIds.stream().toList());
 
-        // 필수 면접관 여부는 SmartScheduleGenerator에서 설정하므로 기본값 false
         return users.stream()
                 .collect(Collectors.toMap(
                         User::getId,
-                        u -> InterviewerInfo.of(
-                                u.getId(),
-                                u.getNickname(),
-                                false)));
+                        u -> new SchedulePlan.AssignedInterviewer(u.getId(), u.getNickname(), false)));
+    }
+
+    /**
+     * SchedulePlan → SmartScheduleResponse 변환
+     * application 레이어의 책임: 도메인 결과를 HTTP 응답 형태로 변환
+     */
+    private SmartScheduleResponse toResponse(SchedulePlan plan) {
+        List<DaySummary> days = plan.days().stream()
+                .map(day -> DaySummary.of(
+                        day.date(),
+                        day.slots().stream()
+                                .map(slot -> SlotInfo.of(
+                                        slot.startTime(),
+                                        slot.endTime(),
+                                        slot.applicants().stream()
+                                                .map(a -> ApplicantInfo.of(a.id(), a.name(), a.school(), a.major(), a.position()))
+                                                .toList(),
+                                        slot.interviewers().stream()
+                                                .map(i -> InterviewerInfo.of(i.id(), i.name(), i.required()))
+                                                .toList()))
+                                .toList()))
+                .toList();
+
+        List<UnassignedApplicantInfo> unassigned = plan.unassignedApplicants().stream()
+                .map(u -> new UnassignedApplicantInfo(
+                        u.id(), u.name(), u.school(), u.major(), u.position(),
+                        u.reason().getMessage()))
+                .toList();
+
+        SchedulePlan.PlanStatistics stats = plan.statistics();
+        Statistics statistics = Statistics.of(
+                stats.totalApplicants(), stats.assignedApplicants(),
+                stats.unassignedApplicants(), stats.usedSlots());
+
+        return SmartScheduleResponse.of(days, unassigned, statistics);
     }
 }
