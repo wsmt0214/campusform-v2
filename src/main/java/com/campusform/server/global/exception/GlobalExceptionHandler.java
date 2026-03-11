@@ -40,15 +40,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 인증이 없거나 인증 컨텍스트가 유효하지 않을 때의 예외 처리
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse("UNAUTHORIZED", ex.getMessage(), null));
-    }
-
-    /**
      * BaseException을 상속한 모든 도메인 예외를 단일 핸들러로 처리
      */
     @ExceptionHandler
