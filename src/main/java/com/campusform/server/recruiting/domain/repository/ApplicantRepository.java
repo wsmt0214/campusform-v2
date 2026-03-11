@@ -19,13 +19,13 @@ public interface ApplicantRepository {
     // 1. 저장 및 수정
     Applicant save(Applicant applicant);
 
-    // 2. 일괄 저장 (ResultService.announceResults에서 사용)
+    // 2. 일괄 저장 (ResultCommandService.announceResults에서 사용)
     void saveAll(List<Applicant> applicants);
 
     // 3. 단건 조회 (SmsService에서 사용)
     Optional<Applicant> findById(Long id);
 
-    // 4. 다건 ID 조회 (ResultService.announceResults에서 사용)
+    // 4. 다건 ID 조회 (ResultCommandService.announceResults에서 사용)
     List<Applicant> findAllById(List<Long> ids);
 
     // 프로젝트의 전체 지원자 수 (통계용)

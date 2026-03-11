@@ -19,7 +19,8 @@ import com.campusform.server.recruiting.application.dto.request.CommentRequest;
 import com.campusform.server.recruiting.application.dto.response.CommentCreateResponse;
 import com.campusform.server.recruiting.application.dto.response.CommentResponse;
 import com.campusform.server.recruiting.application.dto.response.CommentUpdateResponse;
-import com.campusform.server.recruiting.application.service.CommentService;
+import com.campusform.server.recruiting.application.service.CommentCommandService;
+import com.campusform.server.recruiting.application.service.CommentQueryService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,12 +29,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 댓글 API (Step 4: Query/Command 분리 반영)
+ *
+ * <p>조회는 CommentQueryService, 작성/수정/삭제는 CommentCommandService에 위임하여
+ * CQRS-Lite에 맞게 책임을 나눔.
+ */
 @Tag(name = "댓글", description = "지원자별 댓글·대댓글 조회, 작성, 수정, 삭제 API (서류/면접 단계별 구분)")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/projects/{projectId}")
 public class CommentController {
-    private final CommentService commentService;
+    private final CommentQueryService commentQueryService;
+    private final CommentCommandService commentCommandService;
     private final AuthService authService;
 
     @Operation(summary = "지원자 댓글 조회", description = "특정 모집 단계(DOCUMENT/INTERVIEW)의 지원자에 달린 댓글을 계층 구조로 조회합니다.")
@@ -44,7 +52,7 @@ public class CommentController {
             @Parameter(description = "조회할 모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        List<CommentResponse> comments = commentService.getComments(projectId, applicantId, stage, userId);
+        List<CommentResponse> comments = commentQueryService.getComments(projectId, applicantId, stage, userId);
         return ResponseEntity.ok(comments);
     }
 
@@ -57,7 +65,7 @@ public class CommentController {
             @RequestBody @Valid CommentRequest requestCommentRequest,
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
-        CommentCreateResponse response = commentService.createComment(projectId, applicantId, memberId, stage,
+        CommentCreateResponse response = commentCommandService.createComment(projectId, applicantId, memberId, stage,
                 requestCommentRequest);
         return ResponseEntity.ok(response);
     }
@@ -72,7 +80,7 @@ public class CommentController {
             @RequestBody @Valid CommentRequest request,
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
-        CommentUpdateResponse response = commentService.updateComment(
+        CommentUpdateResponse response = commentCommandService.updateComment(
                 projectId, applicantId, commentId, memberId, stage, request);
         return ResponseEntity.ok(response);
     }
@@ -85,7 +93,7 @@ public class CommentController {
             @Parameter(description = "모집 단계 (DOCUMENT 또는 INTERVIEW)", required = true) @RequestParam RecruitmentStage stage,
             Authentication authentication) {
         Long memberId = authService.extractUserId(authentication);
-        commentService.deleteComment(projectId, commentId, memberId, stage);
+        commentCommandService.deleteComment(projectId, commentId, memberId, stage);
         return ResponseEntity.ok().build();
     }
 }

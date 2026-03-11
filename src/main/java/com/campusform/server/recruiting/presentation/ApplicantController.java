@@ -9,27 +9,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.request.ApplicantStatusUpdateRequest;
 import com.campusform.server.recruiting.application.dto.response.ApplicantDetailResponse;
 import com.campusform.server.recruiting.application.dto.response.ApplicantListResponse;
 import com.campusform.server.recruiting.application.dto.response.ApplicantStatusUpdateResponse;
-import com.campusform.server.recruiting.application.service.ApplicantService;
+import com.campusform.server.recruiting.application.service.ApplicantCommandService;
+import com.campusform.server.recruiting.application.service.ApplicantQueryService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 지원자 관리 API
+ */
 @Tag(name = "지원자 관리", description = "지원자 목록 조회, 상태 변경, 상세 정보 등 API")
 @RestController
-@RequestMapping("/api/projects/{projectId}/applicants") // 공통 URL
+@RequestMapping("/api/projects/{projectId}/applicants")
 @RequiredArgsConstructor
 public class ApplicantController {
 
-    private final ApplicantService applicantService;
+    private final ApplicantQueryService applicantQueryService;
+    private final ApplicantCommandService applicantCommandService;
     private final AuthService authService;
 
     /**
@@ -51,7 +54,7 @@ public class ApplicantController {
             Authentication authentication) {
 
         Long userId = authService.extractUserId(authentication);
-        ApplicantListResponse response = applicantService.getApplicants(projectId, sort, stage, userId);
+        ApplicantListResponse response = applicantQueryService.getApplicants(projectId, sort, stage, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -65,7 +68,7 @@ public class ApplicantController {
             Authentication authentication
     ) {
         Long userId = authService.extractUserId(authentication);
-        ApplicantStatusUpdateResponse response = applicantService.updateApplicantStatus(
+        ApplicantStatusUpdateResponse response = applicantCommandService.updateApplicantStatus(
                 projectId,
                 applicantId,
                 stage,
@@ -84,7 +87,7 @@ public class ApplicantController {
             @Parameter(description = "즐겨찾기를 토글할 모집 단계 (DOCUMENT: 서류, INTERVIEW: 면접)") @RequestParam RecruitmentStage stage,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        applicantService.Bookmark(projectId, applicantId, stage, userId);
+        applicantCommandService.toggleBookmark(projectId, applicantId, stage, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -123,7 +126,7 @@ public class ApplicantController {
             @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ApplicantDetailResponse response = applicantService.getApplicantDetail(projectId, applicantId, stage, userId);
+        ApplicantDetailResponse response = applicantQueryService.getApplicantDetail(projectId, applicantId, stage, userId);
         return ResponseEntity.ok(response);
     }
 }

@@ -14,7 +14,7 @@ import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
 import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
-import com.campusform.server.recruiting.application.service.ResultService;
+import com.campusform.server.recruiting.application.service.ResultQueryService;
 import com.campusform.server.recruiting.application.service.SmsService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
@@ -24,12 +24,18 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 합격/불합격 결과 API (Step 4: Query/Command 분리 반영)
+ *
+ * <p>명단·통계 조회는 ResultQueryService, 결과 확정(공지)은 ResultCommandService에 위임.
+ * 결과 확정 API 추가 시 ResultCommandService.announceResults를 호출하면 됨.
+ */
 @Tag(name = "합불 결과", description = "합격/불합격자 조회, 문자 템플릿 및 결과 통보 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/projects/{projectId}")
 public class ResultController {
-    private final ResultService resultService;
+    private final ResultQueryService resultQueryService;
     private final SmsService smsService;
     private final AuthService authService;
 
@@ -41,7 +47,7 @@ public class ResultController {
             @Parameter(description = "조회할 지원자 상태 (PASS, FAIL 등)") @RequestParam ScreeningResult status,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ResultListResponse response = resultService.getResults(projectId, stage, status, userId);
+        ResultListResponse response = resultQueryService.getResults(projectId, stage, status, userId);
         return ResponseEntity.ok(response);
     }
 
