@@ -2,28 +2,25 @@ package com.campusform.server.global.exception;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
 import com.campusform.server.notification.domain.exception.NotificationAccessDeniedException;
 import com.campusform.server.notification.domain.exception.NotificationNotFoundException;
 import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
 import com.campusform.server.project.domain.exception.TokenExpiredException;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
-
+import com.campusform.server.recruiting.domain.exception.StatusChangeNotAllowedException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * 전역 예외 처리 핸들러
- * 
- * @RestControllerAdvice -> 예외를 한 곳에서 처리
  */
 @RestControllerAdvice
 @Slf4j
@@ -130,6 +127,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTokenExpiredException(TokenExpiredException ex) {
         ErrorResponse response = new ErrorResponse("Token Expired", ex.getMessage(), null);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    /**
+     * 엔티티 미존재 시 (JPA EntityNotFoundException, 댓글/지원자 등 조회 실패)
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex) {
+        ErrorResponse response = new ErrorResponse("Not Found", ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    /**
+     * 지원자/댓글 등 상태 변경 불가 시 (도메인 규칙 위반)
+     */
+    @ExceptionHandler(StatusChangeNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleStatusChangeNotAllowedException(StatusChangeNotAllowedException ex) {
+        ErrorResponse response = new ErrorResponse("Bad Request", ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     /**
