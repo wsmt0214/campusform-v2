@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
-import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
+import com.campusform.server.recruiting.application.dto.response.result.ResultListResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;

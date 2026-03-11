@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.ApplicantStatusUpdateRequest;
-import com.campusform.server.recruiting.application.dto.response.ApplicantDetailResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantListResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantStatusUpdateResponse;
+import com.campusform.server.recruiting.application.dto.request.applicant.ApplicantStatusUpdateRequest;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantDetailResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantListResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantStatusUpdateResponse;
 import com.campusform.server.recruiting.application.service.ApplicantCommandService;
 import com.campusform.server.recruiting.application.service.ApplicantQueryService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;

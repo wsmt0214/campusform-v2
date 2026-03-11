@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.Comparator;
 import java.util.List;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
-import com.campusform.server.recruiting.application.dto.response.CommentResponse;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentResponse;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;

@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,7 +11,7 @@ import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
-import com.campusform.server.recruiting.application.dto.response.InterviewerListResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerListResponse;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 
@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.recruiting.application.dto.request.SetRequiredInterviewerRequest;
-import com.campusform.server.recruiting.application.dto.request.UpdateRequiredInterviewersRequest;
-import com.campusform.server.recruiting.application.dto.response.RequiredInterviewersResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.SetRequiredInterviewerRequest;
+import com.campusform.server.recruiting.application.dto.request.interview.UpdateRequiredInterviewersRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.RequiredInterviewersResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 

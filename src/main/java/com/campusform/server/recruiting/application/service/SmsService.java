@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 
@@ -9,8 +9,8 @@ import com.campusform.server.project.application.service.ProjectAuthorizationSer
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.component.MessageGenerator;
-import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
-import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
+import com.campusform.server.recruiting.application.dto.request.message.SmsTemplateSaveRequest;
+import com.campusform.server.recruiting.application.dto.response.message.SmsPreviewResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;

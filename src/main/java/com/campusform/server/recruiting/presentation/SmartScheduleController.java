@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.response.SmartScheduleResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse;
 import com.campusform.server.recruiting.application.service.SmartScheduleService;
 
 import io.swagger.v3.oas.annotations.Operation;

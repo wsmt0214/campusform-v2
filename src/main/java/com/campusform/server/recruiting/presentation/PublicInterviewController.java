@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.campusform.server.recruiting.application.dto.request.SubmitSlotsRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
-import com.campusform.server.recruiting.application.dto.response.PublicInterviewConfigResponse;
-import com.campusform.server.recruiting.application.dto.response.SubmitSlotsResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.SubmitSlotsRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.PublicInterviewConfigResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.SubmitSlotsResponse;
 import com.campusform.server.recruiting.application.service.IntervieweeAvailabilityService;
 
 import io.swagger.v3.oas.annotations.Operation;

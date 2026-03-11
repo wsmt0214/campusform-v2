@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.AssignManualInterviewRequest;
-import com.campusform.server.recruiting.application.dto.response.ManualInterviewAssignmentResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.AssignManualInterviewRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.ManualInterviewAssignmentResponse;
 import com.campusform.server.recruiting.application.service.ManualInterviewAssignmentService;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
 

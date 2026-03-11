@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
@@ -9,9 +9,9 @@ import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.repository.ProjectRepository;
-import com.campusform.server.recruiting.application.dto.request.CommentRequest;
-import com.campusform.server.recruiting.application.dto.response.CommentCreateResponse;
-import com.campusform.server.recruiting.application.dto.response.CommentUpdateResponse;
+import com.campusform.server.recruiting.application.dto.request.comment.CommentRequest;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentCreateResponse;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentUpdateResponse;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;

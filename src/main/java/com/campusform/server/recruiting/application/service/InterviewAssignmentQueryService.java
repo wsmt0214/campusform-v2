@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.recruiting.application.dto.response.InterviewAssignedTimeResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewTimeSource;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewAssignedTimeResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewTimeSource;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.interview.schedule.InterviewScheduledSlot;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;

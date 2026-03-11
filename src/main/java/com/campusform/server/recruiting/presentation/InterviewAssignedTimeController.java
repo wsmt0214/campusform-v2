@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.response.InterviewAssignedTimeResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewAssignedTimeResponse;
 import com.campusform.server.recruiting.application.service.InterviewAssignmentQueryService;
 
 import io.swagger.v3.oas.annotations.Hidden;

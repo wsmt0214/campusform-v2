@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -7,10 +7,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.recruiting.application.dto.request.UpdateApplicantLinkConfigRequest;
-import com.campusform.server.recruiting.application.dto.response.ApplicantInterviewLinkConfigResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantInterviewLinkResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.request.applicant.UpdateApplicantLinkConfigRequest;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkConfigResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewAvailabilityInvestigationLink;

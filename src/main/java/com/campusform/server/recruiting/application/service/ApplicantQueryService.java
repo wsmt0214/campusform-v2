@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
-import com.campusform.server.recruiting.application.dto.response.ApplicantDetailResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantListResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewAssignedTimeResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewTimeSource;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantDetailResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantListResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewAssignedTimeResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewTimeSource;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;

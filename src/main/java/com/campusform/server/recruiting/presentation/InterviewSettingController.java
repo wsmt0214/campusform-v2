@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.UpsertInterviewSettingRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewSettingResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.UpsertInterviewSettingRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSettingResponse;
 import com.campusform.server.recruiting.application.service.InterviewSettingService;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -12,10 +12,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.global.event.ChangeType;
-import com.campusform.server.global.event.SheetSyncChangeInfo;
-import com.campusform.server.global.event.SheetSyncCompletedEvent;
-import com.campusform.server.global.event.SheetSyncStatistics;
+import com.campusform.server.global.event.sheet.ChangeType;
+import com.campusform.server.global.event.sheet.SheetSyncChangeInfo;
+import com.campusform.server.global.event.sheet.SheetSyncCompletedEvent;
+import com.campusform.server.global.event.sheet.SheetSyncStatistics;
 import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.domain.model.setting.Project;

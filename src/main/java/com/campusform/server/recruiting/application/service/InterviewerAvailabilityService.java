@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.recruiting.application.dto.request.UpsertInterviewerAvailabilityRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewerAvailabilityResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewerAvailabilitySummaryResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.UpsertInterviewerAvailabilityRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerAvailabilityResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerAvailabilitySummaryResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;

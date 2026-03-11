@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,8 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.recruiting.application.dto.request.UpsertInterviewSettingRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewSettingResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.UpsertInterviewSettingRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSettingResponse;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.model.interview.setup.value.SlotConfiguration;
 import com.campusform.server.recruiting.domain.model.interview.setup.value.TimeRange;

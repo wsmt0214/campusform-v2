@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import java.util.List;
 
@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.CommentRequest;
-import com.campusform.server.recruiting.application.dto.response.CommentCreateResponse;
-import com.campusform.server.recruiting.application.dto.response.CommentResponse;
-import com.campusform.server.recruiting.application.dto.response.CommentUpdateResponse;
+import com.campusform.server.recruiting.application.dto.request.comment.CommentRequest;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentCreateResponse;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentResponse;
+import com.campusform.server.recruiting.application.dto.response.comment.CommentUpdateResponse;
 import com.campusform.server.recruiting.application.service.CommentCommandService;
 import com.campusform.server.recruiting.application.service.CommentQueryService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;

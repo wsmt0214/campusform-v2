@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.campusform.server.global.event.ChangeType;
-import com.campusform.server.global.event.SheetSyncChangeInfo;
-import com.campusform.server.global.event.SheetSyncCompletedEvent;
-import com.campusform.server.global.event.SheetSyncStatistics;
+import com.campusform.server.global.event.sheet.ChangeType;
+import com.campusform.server.global.event.sheet.SheetSyncChangeInfo;
+import com.campusform.server.global.event.sheet.SheetSyncCompletedEvent;
+import com.campusform.server.global.event.sheet.SheetSyncStatistics;
 import com.campusform.server.notification.application.service.NotificationService;
 import com.campusform.server.notification.domain.model.value.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;

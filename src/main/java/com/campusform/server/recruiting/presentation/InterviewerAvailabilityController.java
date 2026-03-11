@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.SetRequiredInterviewerRequest;
-import com.campusform.server.recruiting.application.dto.request.UpdateRequiredInterviewersRequest;
-import com.campusform.server.recruiting.application.dto.request.UpsertInterviewerAvailabilityRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewerAvailabilityResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewerAvailabilitySummaryResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewerListResponse;
-import com.campusform.server.recruiting.application.dto.response.RequiredInterviewersResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.SetRequiredInterviewerRequest;
+import com.campusform.server.recruiting.application.dto.request.interview.UpdateRequiredInterviewersRequest;
+import com.campusform.server.recruiting.application.dto.request.interview.UpsertInterviewerAvailabilityRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerAvailabilityResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerAvailabilitySummaryResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewerListResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.RequiredInterviewersResponse;
 import com.campusform.server.recruiting.application.service.InterviewerAvailabilityService;
 import com.campusform.server.recruiting.application.service.InterviewerQueryService;
 import com.campusform.server.recruiting.application.service.RequiredInterviewerService;

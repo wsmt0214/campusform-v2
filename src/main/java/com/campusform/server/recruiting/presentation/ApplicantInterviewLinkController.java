@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.UpdateApplicantLinkConfigRequest;
-import com.campusform.server.recruiting.application.dto.response.ApplicantInterviewLinkConfigResponse;
-import com.campusform.server.recruiting.application.dto.response.ApplicantInterviewLinkResponse;
-import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
-import com.campusform.server.recruiting.application.dto.response.SlotApplicantListResponse;
+import com.campusform.server.recruiting.application.dto.request.applicant.UpdateApplicantLinkConfigRequest;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkConfigResponse;
+import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.response.message.SlotApplicantListResponse;
 import com.campusform.server.recruiting.application.service.ApplicantInterviewLinkService;
 import com.campusform.server.recruiting.application.service.SlotApplicantService;
 

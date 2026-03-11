@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.application.service;
+﻿package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.recruiting.application.dto.request.SubmitSlotsRequest;
-import com.campusform.server.recruiting.application.dto.response.InterviewSlotListResponse;
-import com.campusform.server.recruiting.application.dto.response.PublicInterviewConfigResponse;
+import com.campusform.server.recruiting.application.dto.request.interview.SubmitSlotsRequest;
+import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
+import com.campusform.server.recruiting.application.dto.response.interview.PublicInterviewConfigResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;

@@ -2,7 +2,7 @@ package com.campusform.server.project.application.dto.response;
 
 import java.util.List;
 
-import com.campusform.server.global.event.ChangeType;
+import com.campusform.server.global.event.sheet.ChangeType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

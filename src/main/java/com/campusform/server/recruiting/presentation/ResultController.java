@@ -1,4 +1,4 @@
-package com.campusform.server.recruiting.presentation;
+﻿package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.recruiting.application.dto.request.SmsTemplateSaveRequest;
-import com.campusform.server.recruiting.application.dto.response.ResultListResponse;
-import com.campusform.server.recruiting.application.dto.response.SmsPreviewResponse;
+import com.campusform.server.recruiting.application.dto.request.message.SmsTemplateSaveRequest;
+import com.campusform.server.recruiting.application.dto.response.result.ResultListResponse;
+import com.campusform.server.recruiting.application.dto.response.message.SmsPreviewResponse;
 import com.campusform.server.recruiting.application.service.ResultQueryService;
 import com.campusform.server.recruiting.application.service.SmsService;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
