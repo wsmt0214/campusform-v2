@@ -2,21 +2,18 @@ package com.campusform.server.project.domain.model.setting;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
+import java.util.regex.Pattern;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.campusform.server.project.domain.exception.ProjectAccessDeniedException;
 import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.project.domain.model.setting.value.RequiredFieldMapping;
 import com.campusform.server.project.domain.model.setting.value.SyncStatus;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -103,7 +100,7 @@ public class Project {
     private List<ProjectValueMapping> valueMappings = new ArrayList<>();
 
     /**
-     * 사용자가 프로젝트의 Owner인지 검증
+     * 접근 권한 검증 - OWNER
      */
     public void validateOwnerAccess(Long userId) {
         if (!this.ownerId.equals(userId)) {
@@ -112,7 +109,7 @@ public class Project {
     }
 
     /**
-     * 사용자가 프로젝트의 관리자(Owner 또는 Admin)인지 검증
+     * 접근 권한 검증 - OWNER + ADMIN
      */
     public void validateAdminAccess(Long userId) {
         if (this.ownerId.equals(userId)) {
@@ -123,8 +120,8 @@ public class Project {
                 .anyMatch(admin -> admin.getAdminId().equals(userId));
 
         if (!isAdmin) {
-            throw new IllegalArgumentException(
-                    "해당 사용자는 프로젝트의 관리자가 아니거나 접근할 권한이 없습니다. userId=" + userId + ", projectId=" + this.id);
+            throw new ProjectAccessDeniedException(
+                    "해당 프로젝트에 대한 접근 권한이 없습니다. userId=" + userId + ", projectId=" + this.id);
         }
     }
 
@@ -132,7 +129,6 @@ public class Project {
     public static Project create(String title, Long ownerId, String sheetUrl, LocalDate startAt, LocalDate endAt) {
         validate(title, ownerId, sheetUrl, startAt, endAt);
         Project project = new Project();
-        // 저장 시에는 trim을 적용하여 일관된 값을 저장합니다.
         project.title = title.trim();
         project.ownerId = ownerId;
         project.sheetUrl = sheetUrl;
@@ -141,7 +137,9 @@ public class Project {
         return project;
     }
 
-    /** 관리자 추가 연관관계 편의메서드 */
+    /**
+     * 관리자 추가 연관관계 편의메서드 
+     */
     public void addAdmin(Long adminId) {
         if (adminId == null)
             throw new IllegalArgumentException("adminId가 필요합니다.");
@@ -153,16 +151,12 @@ public class Project {
 
     /**
      * 관리자 제거 연관관계 편의메서드
-     * 
-     * @param adminId 제거할 관리자 ID
-     * @throws IllegalArgumentException 관리자가 존재하지 않는 경우
      */
     public void removeAdmin(Long adminId) {
         if (adminId == null) {
             throw new IllegalArgumentException("adminId가 필요합니다.");
         }
 
-        // OWNER는 제거할 수 없음
         if (this.ownerId.equals(adminId)) {
             throw new IllegalArgumentException("프로젝트 OWNER는 관리자에서 제거할 수 없습니다.");
         }
@@ -175,7 +169,9 @@ public class Project {
         }
     }
 
-    /** 필수 필드 매핑 정보 설정 연관관계 편의메서드 */
+    /** 
+     * 필수 필드 매핑 정보 설정 연관관계 편의메서드 
+     */
     public void addMapping(RequiredFieldMapping mappingValue) {
         this.mapping = ProjectRequiredMapping.create(this, mappingValue);
     }
