@@ -1,10 +1,9 @@
-package com.campusform.server.global.event.sheet;
+package com.campusform.server.project.domain.event.sheet;
 
 /**
  * 스프레드시트 동기화 시 발생하는 변경사항의 유형
  */
 public enum ChangeType {
     NEW,
-
     UPDATED
 }

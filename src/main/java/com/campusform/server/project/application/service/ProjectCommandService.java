@@ -8,7 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.global.event.AdminAddedEvent;
+import com.campusform.server.project.domain.event.AdminAddedEvent;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;

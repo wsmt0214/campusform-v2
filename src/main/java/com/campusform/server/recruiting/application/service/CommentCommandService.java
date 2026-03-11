@@ -1,10 +1,10 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.campusform.server.global.event.CommentCreatedEvent;
+import com.campusform.server.recruiting.domain.event.CommentCreatedEvent;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;

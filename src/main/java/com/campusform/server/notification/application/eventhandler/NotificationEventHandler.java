@@ -5,9 +5,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.campusform.server.global.event.AdminAddedEvent;
-import com.campusform.server.global.event.CommentCreatedEvent;
-import com.campusform.server.global.event.NewApplicantEvent;
+import com.campusform.server.project.domain.event.AdminAddedEvent;
+import com.campusform.server.recruiting.domain.event.CommentCreatedEvent;
+import com.campusform.server.recruiting.domain.event.NewApplicantEvent;
 import com.campusform.server.notification.application.service.NotificationService;
 import com.campusform.server.notification.domain.model.value.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;

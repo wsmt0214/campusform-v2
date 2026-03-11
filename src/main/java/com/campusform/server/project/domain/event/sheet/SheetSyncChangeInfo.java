@@ -1,4 +1,4 @@
-package com.campusform.server.global.event.sheet;
+package com.campusform.server.project.domain.event.sheet;
 
 import java.util.List;
 

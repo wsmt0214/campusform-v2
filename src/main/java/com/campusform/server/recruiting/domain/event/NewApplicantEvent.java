@@ -1,4 +1,4 @@
-package com.campusform.server.global.event;
+package com.campusform.server.recruiting.domain.event;
 
 import java.util.List;
 
