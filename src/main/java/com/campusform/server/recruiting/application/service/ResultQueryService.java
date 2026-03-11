@@ -57,8 +57,8 @@ public class ResultQueryService {
                 ? String.format("%.1f:1", (double) totalCount / currentPassCount)
                 : "0:1";
 
-        // 성비 계산 (현재 조회된 명단 기준)
-        ResultListResponse.GenderRatio genderRatio = calculateGenderRatio(applicants);
+        // 성비 계산 — GenderRatio 내부 팩토리 메서드에 로직 위임
+        ResultListResponse.GenderRatio genderRatio = ResultListResponse.GenderRatio.from(applicants);
 
         // 4. 저장된 템플릿 가져오기 (없으면 빈 문자열)
         String templateContent = templateRepository.findByProjectId(projectId)
@@ -97,34 +97,4 @@ public class ResultQueryService {
                 .build();
     }
 
-    private ResultListResponse.GenderRatio calculateGenderRatio(List<Applicant> applicants) {
-        if (applicants.isEmpty()) {
-            return ResultListResponse.GenderRatio.builder()
-                    .malePercent(0)
-                    .femalePercent(0)
-                    .otherPercent(0)
-                    .build();
-        }
-        int totalCount = applicants.size();
-        long maleCount = applicants.stream()
-                .filter(a -> {
-                    String g = a.getGender();
-                    return g != null && ("남".equals(g) || "Male".equalsIgnoreCase(g) || "남자".equals(g) || "남성".equals(g));
-                })
-                .count();
-        long femaleCount = applicants.stream()
-                .filter(a -> {
-                    String g = a.getGender();
-                    return g != null && ("여".equals(g) || "Female".equalsIgnoreCase(g) || "여성".equals(g) || "여자".equals(g));
-                })
-                .count();
-        int malePercent = (int) ((maleCount * 100) / totalCount);
-        int femalePercent = (int) ((femaleCount * 100) / totalCount);
-        int otherPercent = 100 - malePercent - femalePercent;
-        return ResultListResponse.GenderRatio.builder()
-                .malePercent(malePercent)
-                .femalePercent(femalePercent)
-                .otherPercent(otherPercent)
-                .build();
-    }
 }

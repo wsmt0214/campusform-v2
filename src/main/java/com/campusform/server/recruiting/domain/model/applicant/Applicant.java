@@ -3,17 +3,14 @@ package com.campusform.server.recruiting.domain.model.applicant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.campusform.server.recruiting.domain.exception.StatusChangeNotAllowedException;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -171,6 +168,24 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
         this.position = position;
         // extraAnswers는 orphanRemoval=true이므로 리스트를 비우면 자동 삭제됨
         this.extraAnswers.clear();
+    }
+
+    /**
+     * 성별이 남성인지 여부
+     */
+    public boolean isMale() {
+        if (gender == null) return false;
+        String g = gender.trim();
+        return "남".equals(g) || "남자".equals(g) || "남성".equals(g) || "male".equalsIgnoreCase(g);
+    }
+
+    /**
+     * 성별이 여성인지 여부
+     */
+    public boolean isFemale() {
+        if (gender == null) return false;
+        String g = gender.trim();
+        return "여".equals(g) || "여자".equals(g) || "여성".equals(g) || "female".equalsIgnoreCase(g);
     }
 
     /**

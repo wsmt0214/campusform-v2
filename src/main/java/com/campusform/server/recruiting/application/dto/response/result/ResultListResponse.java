@@ -1,12 +1,14 @@
 package com.campusform.server.recruiting.application.dto.response.result;
 
+import java.util.List;
+
+import com.campusform.server.recruiting.domain.model.applicant.Applicant;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Schema(description = "단계별 합격/불합격자 명단 조회 응답")
 @Getter
@@ -49,6 +51,31 @@ public class ResultListResponse {
         private int femalePercent;
         @Schema(description = "기타 비율 (%)", example = "5")
         private int otherPercent;
+
+        /**
+         * 지원자 목록으로부터 성비를 계산하여 GenderRatio 인스턴스 생성
+         * Applicant.isMale() / isFemale()에 성별 판단 로직이 위임되어 있음
+         */
+        public static GenderRatio from(List<Applicant> applicants) {
+            if (applicants.isEmpty()) {
+                return GenderRatio.builder()
+                        .malePercent(0).femalePercent(0).otherPercent(0)
+                        .build();
+            }
+
+            int total = applicants.size();
+            long maleCount = applicants.stream().filter(Applicant::isMale).count();
+            long femaleCount = applicants.stream().filter(Applicant::isFemale).count();
+
+            int malePercent = (int) (maleCount * 100 / total);
+            int femalePercent = (int) (femaleCount * 100 / total);
+
+            return GenderRatio.builder()
+                    .malePercent(malePercent)
+                    .femalePercent(femalePercent)
+                    .otherPercent(100 - malePercent - femalePercent)
+                    .build();
+        }
     }
 
     @Schema(description = "SMS 템플릿 정보")
