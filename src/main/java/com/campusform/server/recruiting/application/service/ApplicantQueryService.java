@@ -1,8 +1,7 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,9 +37,9 @@ public class ApplicantQueryService {
     private final ProjectAuthorizationService projectAuthorizationService;
 
     /**
-     * 프로젝트별 지원자 목록 조회 
+     * 프로젝트별 지원자 목록 조회
      */
-    public ApplicantListResponse getApplicants(Long projectId, String sort, RecruitmentStage stage, Long userId) {
+    public ApplicantListResponse getApplicants(Long projectId, RecruitmentStage stage, Long userId) {
 
         projectAuthorizationService.assertAdmin(projectId, userId);
 
@@ -85,19 +84,6 @@ public class ApplicantQueryService {
             // 위에서 이미 예외 처리했지만, 방어적 코드
             throw new IllegalArgumentException("지원자 목록을 조회할 수 없는 단계입니다: " + stage);
         }
-
-        // 정렬 기준 적용 (in-memory)
-        applicants = switch (sort) {
-            case "name_desc" -> applicants.stream().sorted(Comparator.comparing(Applicant::getName,
-                    Comparator.nullsLast(Comparator.reverseOrder()))).toList();
-            case "bookmark" -> applicants.stream()
-                    .sorted(Comparator.comparing((Applicant a) -> a.isBookmarkedFor(stage),
-                            Comparator.reverseOrder()).thenComparing(Applicant::getName,
-                                    Comparator.nullsLast(Comparator.naturalOrder())))
-                    .toList();
-            default -> applicants.stream().sorted(Comparator.comparing(Applicant::getName,
-                    Comparator.nullsLast(Comparator.naturalOrder()))).toList();
-        };
 
         // 단계별 댓글 개수 집계 (해당 프로젝트 + 단계 기준)
         Map<Long, Long> commentCountMap = commentRepository

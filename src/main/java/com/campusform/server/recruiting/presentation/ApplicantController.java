@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.presentation;
+package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -37,24 +37,17 @@ public class ApplicantController {
 
     /**
      * 프로젝트의 지원자 목록을 모집 단계에 따라 조회
-     * 원하는 정렬 기준으로 반환
      */
-    @Operation(summary = "지원자 목록 조회", description = "프로젝트 ID에 해당하는 지원자 목록을 모집 단계(stage)별로 조회하고, 정렬 기준(sort)에 따라 결과를 반환합니다. "
-            +
-            "서류·면접 단계별 지원자 현황(전체, 합격, 불합격, 보류 수)과 각 지원자의 간략 정보가 포함됩니다.")
+    @Operation(summary = "지원자 목록 조회", description = "프로젝트 ID에 해당하는 지원자 목록을 모집 단계(stage)별로 조회합니다. "
+            + "서류·면접 단계별 지원자 현황(전체, 합격, 불합격, 보류 수)과 각 지원자의 간략 정보가 포함됩니다.")
     @GetMapping
     public ResponseEntity<ApplicantListResponse> getApplicants(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            @Parameter(description = "정렬 기준\n" +
-                    "name: 이름 오름차순\n" +
-                    "name_desc: 이름 내림차순\n" +
-                    "latest: 최신순(등록순, 기본값)\n" +
-                    "bookmark: 찜한 순(찜 여부 → 이름 오름차순)", example = "latest") @RequestParam(required = false, defaultValue = "latest") String sort,
             @Parameter(description = "조회할 모집 단계") @RequestParam RecruitmentStage stage,
             Authentication authentication) {
 
         Long userId = authService.extractUserId(authentication);
-        ApplicantListResponse response = applicantQueryService.getApplicants(projectId, sort, stage, userId);
+        ApplicantListResponse response = applicantQueryService.getApplicants(projectId, stage, userId);
         return ResponseEntity.ok(response);
     }
 
