@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 import org.springframework.stereotype.Service;

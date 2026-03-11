@@ -1,10 +1,8 @@
 package com.campusform.server.project.presentation;
 
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,8 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.campusform.server.identity.application.service.AuthService;
+import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
 import com.campusform.server.project.application.dto.request.CreateProjectRequest;
 import com.campusform.server.project.application.dto.request.UpdatePositionValueMappingsRequest;
@@ -28,7 +25,6 @@ import com.campusform.server.project.application.dto.response.ProjectDetailExpor
 import com.campusform.server.project.application.dto.response.ProjectResponse;
 import com.campusform.server.project.application.service.ProjectCommandService;
 import com.campusform.server.project.application.service.ProjectQueryService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,16 +39,13 @@ public class ProjectController {
 
     private final ProjectQueryService projectQueryService;
     private final ProjectCommandService projectCommandService;
-    private final AuthService authService;
 
     /**
      * 사용자가 속한 프로젝트 목록 조회
      */
     @Operation(summary = "프로젝트 목록 조회", description = "로그인한 사용자가 Owner이거나 Admin인 프로젝트 목록을 조회합니다. 각 프로젝트의 지원자 수가 포함됩니다.")
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> getProjects(
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+    public ResponseEntity<List<ProjectResponse>> getProjects(@CurrentUserId Long userId) {
         List<ProjectResponse> projects = projectQueryService.getProjectsByUserId(userId);
         return ResponseEntity.ok(projects);
     }
@@ -64,9 +57,8 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(
             @Valid @RequestBody CreateProjectRequest request,
-            Authentication authentication) {
-        Long ownerId = authService.extractUserId(authentication);
-        ProjectResponse response = projectCommandService.createProject(ownerId, request);
+            @CurrentUserId Long userId) {
+        ProjectResponse response = projectCommandService.createProject(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -78,8 +70,7 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> updateProjectName(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             @Valid @RequestBody UpdateProjectNameRequest request,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         ProjectResponse response = projectCommandService.updateProjectName(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -92,8 +83,7 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> updateProjectPeriod(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             @Valid @RequestBody UpdateProjectPeriodRequest request,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         ProjectResponse response = projectCommandService.updateProjectPeriod(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -105,8 +95,7 @@ public class ProjectController {
     @GetMapping("/{projectId}/position-values")
     public ResponseEntity<PositionValuesResponse> getStoredPositionValues(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         PositionValuesResponse response = projectQueryService.getStoredPositionValues(projectId, userId);
         return ResponseEntity.ok(response);
     }
@@ -119,8 +108,8 @@ public class ProjectController {
     public ResponseEntity<Void> updatePositionValueMappings(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             @Valid @RequestBody UpdatePositionValueMappingsRequest request,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
+
         projectCommandService.updatePositionValueMappings(projectId, userId, request);
         return ResponseEntity.ok().build();
     }
@@ -132,8 +121,7 @@ public class ProjectController {
     @DeleteMapping("/{projectId}")
     public ResponseEntity<Void> deleteProject(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         projectCommandService.deleteProject(projectId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -145,8 +133,7 @@ public class ProjectController {
     @GetMapping("/{projectId}/export")
     public ResponseEntity<ProjectDetailExportResponse> exportProjectDetail(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         ProjectDetailExportResponse response = projectQueryService.getProjectDetailForExport(projectId, userId);
         return ResponseEntity.ok(response);
     }
@@ -158,8 +145,7 @@ public class ProjectController {
     @GetMapping("/{projectId}/admins")
     public ResponseEntity<AdminListResponse> getAdmins(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         AdminListResponse response = projectQueryService.getAdmins(projectId, userId);
         return ResponseEntity.ok(response);
     }
@@ -172,9 +158,8 @@ public class ProjectController {
     public ResponseEntity<AddAdminResponse> addAdmin(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             @Valid @RequestBody AddAdminRequest request,
-            Authentication authentication) {
-        Long ownerId = authService.extractUserId(authentication);
-        AddAdminResponse response = projectCommandService.addAdmin(projectId, ownerId, request);
+            @CurrentUserId Long userId) {
+        AddAdminResponse response = projectCommandService.addAdmin(projectId, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -186,9 +171,8 @@ public class ProjectController {
     public ResponseEntity<Void> removeAdmin(
             @Parameter(description = "프로젝트 ID", required = true) @PathVariable Long projectId,
             @Parameter(description = "제거할 관리자 ID", required = true) @PathVariable Long adminId,
-            Authentication authentication) {
-        Long ownerId = authService.extractUserId(authentication);
-        projectCommandService.removeAdmin(projectId, ownerId, adminId);
+            @CurrentUserId Long userId) {
+        projectCommandService.removeAdmin(projectId, userId, adminId);
         return ResponseEntity.noContent().build();
     }
 }

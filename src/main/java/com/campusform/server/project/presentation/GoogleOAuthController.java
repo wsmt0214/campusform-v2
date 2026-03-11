@@ -1,21 +1,17 @@
 package com.campusform.server.project.presentation;
 
 import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.campusform.server.identity.application.service.AuthService;
+import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.project.application.dto.request.ExchangeGoogleOAuthCodeRequest;
 import com.campusform.server.project.application.dto.response.ExchangeGoogleOAuthCodeResponse;
 import com.campusform.server.project.application.service.GoogleOAuthTokenService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -35,33 +31,19 @@ import lombok.extern.slf4j.Slf4j;
 public class GoogleOAuthController {
 
     private final GoogleOAuthTokenService tokenService;
-    private final AuthService authService;
 
     /**
      * Scope 권한 요청 -> 승인 후 code를 access_token과 refresh_token으로 교환
-     * 
      * 권한 승인 후 Google이 redirectUri로 code를 전달했을 때, 프론트엔드가 이 엔드포인트로 전달
-     * 
-     * [에러 처리]
-     * - 인증 실패: 401 Unauthorized
-     * - Code 교환 실패: 500 Internal Server Error (Google API 오류)
-     * - 잘못된 redirect_uri: Google에서 400 Bad Request 반환
      */
     @Operation(summary = "Google OAuth 인증 코드를 토큰으로 교환", description = "Google로부터 받은 인증 코드를 서버에 전달하여 Access Token 및 Refresh Token으로 교환하고 저장합니다.")
     @PostMapping("/exchange-code")
     public ResponseEntity<ExchangeGoogleOAuthCodeResponse> exchangeCode(
             @RequestBody ExchangeGoogleOAuthCodeRequest request,
-            Authentication authentication) {
-
-        log.info("Google OAuth2 code 교환 요청 - redirectUri: {}", request.getRedirectUri());
-
-        // 인증된 사용자만 사용 가능
-        Long userId = authService.extractUserId(authentication);
-
+            @CurrentUserId Long userId) {
         // 구글 토큰 엔드포인트(https://oauth2.googleapis.com/token)에 Post 요청하여 Code를 Token으로 교환
         ExchangeGoogleOAuthCodeResponse response = tokenService.exchangeCode(request);
 
-        // DB 토큰 테이블에 Upsert -> 이후 시트 API 호출 시 이 토큰 사용
         tokenService.saveToken(
                 userId,
                 response.getAccessToken(),
@@ -83,7 +65,7 @@ public class GoogleOAuthController {
      * 테스트용).
      * false 또는 생략이면 app.oauth2.sheets-redirect-uri 사용.
      */
-    @Operation(summary = "Google 권한 요청 URL 생성", description = "Google Sheets API 접근 권한을 얻기 위한 동의 화면 URL을 생성하여 반환합니다. useLocalhost=true 시 로컬(localhost:3000) 콜백으로 분기합니다.", security = {})
+    @Operation(summary = "Google 권한 요청 URL 생성", description = "Google Sheets API 접근 권한을 얻기 위한 동의 화면 URL을 생성하여 반환합니다.", security = {})
     @GetMapping("/authorize-url")
     public ResponseEntity<Map<String, String>> getAuthorizeUrl(
             @RequestParam(required = false, defaultValue = "false") boolean useLocalhost) {

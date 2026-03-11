@@ -1,24 +1,20 @@
 package com.campusform.server.project.presentation;
 
 import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
+import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
+import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.application.service.SpreadsheetService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +31,6 @@ public class GoogleSheetController {
 
     private final SpreadsheetService spreadsheetService;
     private final ProjectAuthorizationService projectAuthorizationService;
-    private final AuthService authService;
 
     /**
      * 시트 헤더 조회 API
@@ -44,27 +39,20 @@ public class GoogleSheetController {
     @GetMapping("/sheet-headers")
     public ResponseEntity<List<SpreadsheetColumnResponse>> getSheetHeaders(
             @Parameter(description = "헤더를 조회할 Google Sheet의 전체 URL", required = true) @RequestParam String sheetUrl,
-            Authentication authentication) {
-
-        Long userId = authService.extractUserId(authentication);
-
-        // 시트 헤더 조회 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
+            @CurrentUserId Long userId) {
         List<SpreadsheetColumnResponse> headers = spreadsheetService.getSheetHeaders(sheetUrl, userId);
         return ResponseEntity.ok(headers);
     }
 
     /**
      * 포지션 컬럼 고유값 목록 조회 (편집하기용)
-     * 시트 URL 기준으로 동작하여 프로젝트 생성 전에도 호출 가능 (sheet-headers로 컬럼 인덱스 확인 후 사용)
      */
-    @Operation(summary = "포지션 컬럼 고유값 목록 조회", description = "지정한 시트의 지정 컬럼 인덱스에 등장하는 모든 고유값을 반환합니다. ")
+    @Operation(summary = "포지션 컬럼 고유값 목록 조회", description = "지정한 시트의 지정 컬럼 인덱스에 등장하는 모든 고유값을 반환합니다.")
     @GetMapping("/mapping-column-values")
     public ResponseEntity<PositionValuesResponse> getPositionValues(
             @Parameter(description = "시트 URL", required = true) @RequestParam String sheetUrl,
             @Parameter(description = "포지션 컬럼의 인덱스 (-1, 즉 미매핑 시 빈 List를 반환)", required = true) @RequestParam Integer positionColumnIndex,
-            Authentication authentication) {
-
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         List<String> values = spreadsheetService.getDistinctPositionValues(sheetUrl, userId, positionColumnIndex);
         return ResponseEntity.ok(PositionValuesResponse.from(values));
     }
@@ -76,14 +64,9 @@ public class GoogleSheetController {
     @PostMapping("/{projectId}/sync-sheet")
     public ResponseEntity<SheetSyncResponse> syncSheet(
             @Parameter(description = "동기화할 프로젝트의 ID", required = true) @PathVariable Long projectId,
-            Authentication authentication) {
-
-        Long userId = authService.extractUserId(authentication);
-
-        // 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN)
+            @CurrentUserId Long userId) {
         projectAuthorizationService.assertAdmin(projectId, userId);
 
-        // 시트 동기화 실행 (토큰은 GoogleSheetsServiceFactory에서 자동 갱신됨)
         try {
             SheetSyncResponse response = spreadsheetService.syncSheet(projectId);
             return ResponseEntity.ok(response);

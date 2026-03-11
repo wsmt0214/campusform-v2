@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.Comparator;
 import java.util.List;

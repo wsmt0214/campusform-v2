@@ -1,12 +1,10 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.recruiting.application.dto.request.interview.UpsertInterviewSettingRequest;
@@ -15,7 +13,6 @@ import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSe
 import com.campusform.server.recruiting.domain.model.interview.setup.value.SlotConfiguration;
 import com.campusform.server.recruiting.domain.model.interview.setup.value.TimeRange;
 import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -35,14 +32,8 @@ public class InterviewSettingService {
      */
     public InterviewSettingResponse getSetting(Long projectId, Long userId) {
         projectAuthorizationService.assertAdmin(projectId, userId);
-
         contextLoader.loadProjectOrThrow(projectId);
 
-        /**
-         * interviewSettingRepository.findByProjectId(projectId)는
-         * Optional<InterviewSetting>을 반환
-         * 값이 있으면 map() 수행 / 값이 없으면 orElseGet() 수행
-         */
         return interviewSettingRepository.findByProjectId(projectId)
                 .map(this::convertToResponse)
                 .orElseGet(InterviewSettingResponse::unconfigured);
@@ -63,13 +54,12 @@ public class InterviewSettingService {
 
         // 값 객체 생성 -> 도메인 규칙 검증은 값 객체에서 수행
         TimeRange timeRange = TimeRange.of(request.getStartTime(), request.getEndTime());
-        SlotConfiguration slotConfig = SlotConfiguration
-                .of(
-                        request.getSlotDurationMin(),
-                        request.getSlotBreakMin(),
-                        request.getMaxApplicantsPerSlot(),
-                        request.getMinInterviewersPerSlot(),
-                        request.getMaxInterviewersPerSlot());
+        SlotConfiguration slotConfig = SlotConfiguration.of(
+                request.getSlotDurationMin(),
+                request.getSlotBreakMin(),
+                request.getMaxApplicantsPerSlot(),
+                request.getMinInterviewersPerSlot(),
+                request.getMaxInterviewersPerSlot());
 
         // 날짜 목록: null이면 빈 리스트, 중복 제거 후 정렬
         List<LocalDate> interviewDates = Stream.ofNullable(request.getInterviewDates())

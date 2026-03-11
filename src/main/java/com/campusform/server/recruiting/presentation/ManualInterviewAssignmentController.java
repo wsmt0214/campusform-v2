@@ -1,11 +1,9 @@
-﻿package com.campusform.server.recruiting.presentation;
+package com.campusform.server.recruiting.presentation;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,13 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.campusform.server.identity.application.service.AuthService;
+import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.recruiting.application.dto.request.interview.AssignManualInterviewRequest;
 import com.campusform.server.recruiting.application.dto.response.interview.ManualInterviewAssignmentResponse;
 import com.campusform.server.recruiting.application.service.ManualInterviewAssignmentService;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
-
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,15 +32,13 @@ import lombok.RequiredArgsConstructor;
 public class ManualInterviewAssignmentController {
 
     private final ManualInterviewAssignmentService manualAssignmentService;
-    private final AuthService authService;
 
     @Operation(summary = "지원자 면접 시간 수동 배정", description = "특정 지원자에게 면접 날짜와 시간을 수동으로 배정합니다. 스마트 시간표 결과보다 우선 적용됩니다.")
     @PostMapping
     public ResponseEntity<ManualInterviewAssignmentResponse> assignInterview(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @RequestBody AssignManualInterviewRequest request,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         manualAssignmentService.assignInterview(
                 projectId,
                 request.getApplicantId(),
@@ -64,11 +58,9 @@ public class ManualInterviewAssignmentController {
     public ResponseEntity<ManualInterviewAssignmentResponse> getAssignment(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "조회할 지원자 ID") @PathVariable Long applicantId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         Optional<ManualInterviewAssignment> assignment = manualAssignmentService.getAssignment(
                 projectId, applicantId, userId);
-
         return assignment
                 .map(ManualInterviewAssignmentResponse::from)
                 .map(ResponseEntity::ok)
@@ -80,15 +72,12 @@ public class ManualInterviewAssignmentController {
     @GetMapping
     public ResponseEntity<List<ManualInterviewAssignmentResponse>> getAllAssignments(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         List<ManualInterviewAssignment> assignments = manualAssignmentService.getAllAssignments(
                 projectId, userId);
-
         List<ManualInterviewAssignmentResponse> responses = assignments.stream()
                 .map(ManualInterviewAssignmentResponse::from)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(responses);
     }
 
@@ -97,8 +86,7 @@ public class ManualInterviewAssignmentController {
     public ResponseEntity<Void> removeAssignment(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @Parameter(description = "삭제할 지원자 ID") @PathVariable Long applicantId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         manualAssignmentService.removeAssignment(projectId, applicantId, userId);
         return ResponseEntity.noContent().build();
     }

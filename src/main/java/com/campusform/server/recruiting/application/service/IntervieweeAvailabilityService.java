@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -8,10 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.campusform.server.recruiting.application.dto.request.interview.SubmitSlotsRequest;
 import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.PublicInterviewConfigResponse;
@@ -27,12 +25,11 @@ import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.repository.IntervieweeAvailabilitySlotRepository;
 import com.campusform.server.recruiting.domain.repository.InterviewerAvailabilityBlockRepository;
 import com.campusform.server.recruiting.domain.service.InterviewSlotGenerator;
-
 import lombok.RequiredArgsConstructor;
 
 /**
  * 지원자 면접 가능 시간 조사 서비스 (공개 API용)
- * 
+ *
  * 토큰 기반으로 지원자가 면접 가능 시간 슬롯을 조회하고 제출합니다.
  */
 @Service
@@ -80,8 +77,7 @@ public class IntervieweeAvailabilityService {
 
                     // 도메인 서비스를 사용하여 슬롯 생성
                     List<InterviewSlotGenerator.SlotInfo> domainSlots = slotGenerator.generateSlots(
-                            setting,
-                            dayBlocks);
+                            setting, dayBlocks);
 
                     // 도메인 DTO를 응답 DTO로 변환 (availableInterviewerCount가 0보다 큰 슬롯만 포함)
                     // InterviewSlotGenerator에서 이미 0인 슬롯은 생성하지 않으므로 필터링은 방어적 프로그래밍 차원에서 유지
@@ -129,22 +125,6 @@ public class IntervieweeAvailabilityService {
         // 기존 제출 내역 삭제 <- 처음 제출이라면 삭제X
         slotRepository.deleteByApplicantId(applicant.getId());
 
-        /**
-         * 지원자가 제출한 요청(request)을 통해 IntervieweeAvailabilitySlot 객체 리스트 생성
-         * 
-         * <pre>
-         * 예시:
-         * {
-         *   "name": "홍길동",
-         *   "phone": "010-1234-5678",
-         *   "selections": [
-         *     { "date": "2024-06-25", "startTimes": ["10:00", "14:00"] },
-         *     { "date": "2024-06-26", "startTimes": ["11:00"] }
-         *   ]
-         * }
-         * </pre>
-         */
-
         // 모든 날짜에 대한 실제 생성 가능한 슬롯 목록을 한 번에 생성
         // 날짜별로 (InterviewDay, 생성 가능한 시작 시간 Set)을 저장하는 Map
         Map<LocalDate, DaySlotInfo> daySlotInfoMap = new HashMap<>();
@@ -156,9 +136,7 @@ public class IntervieweeAvailabilityService {
             List<InterviewerAvailabilityBlock> dayBlocks = availabilityBlockRepository
                     .findByInterviewDayId(dayId);
 
-            // 실제 생성 가능한 슬롯 목록 생성 (도메인 서비스 사용)
-            List<InterviewSlotGenerator.SlotInfo> availableSlots = slotGenerator.generateSlots(setting,
-                    dayBlocks);
+            List<InterviewSlotGenerator.SlotInfo> availableSlots = slotGenerator.generateSlots(setting, dayBlocks);
 
             // 생성 가능한 슬롯의 시작 시간만 추출 (검증용)
             Set<LocalTime> availableStartTimes = availableSlots.stream()
@@ -192,25 +170,22 @@ public class IntervieweeAvailabilityService {
                     for (LocalTime startTime : distinctStartTimes) {
                         if (!availableStartTimes.contains(startTime)) {
                             throw new IllegalArgumentException(
-                                    String.format("유효하지 않은 슬롯입니다. date=%s, startTime=%s",
-                                            date, startTime));
+                                    String.format("유효하지 않은 슬롯입니다. date=%s, startTime=%s", date, startTime));
                         }
                     }
 
                     // 각 시작 시간에 대해 슬롯 생성
                     return distinctStartTimes.stream()
                             .map(startTime -> IntervieweeAvailabilitySlot.create(
-                                    applicant.getId(), interviewDay.getId(),
-                                    startTime));
+                                    applicant.getId(), interviewDay.getId(), startTime));
                 })
                 .collect(Collectors.toList());
 
-        // 슬롯 저장
         slotRepository.saveAll(newSlots);
     }
 
     /**
-     * 날짜별 슬롯 정보를 담는 내부 클래스
+     * 날짜별 슬롯 정보를 담는 내부 record
      */
     private record DaySlotInfo(InterviewDay interviewDay, Set<LocalTime> availableStartTimes) {
     }

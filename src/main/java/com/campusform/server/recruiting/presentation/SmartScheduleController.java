@@ -1,17 +1,14 @@
-﻿package com.campusform.server.recruiting.presentation;
+package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.campusform.server.identity.application.service.AuthService;
+import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.recruiting.application.dto.response.interview.SmartScheduleResponse;
 import com.campusform.server.recruiting.application.service.SmartScheduleService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,14 +24,12 @@ import lombok.RequiredArgsConstructor;
 public class SmartScheduleController {
 
     private final SmartScheduleService smartScheduleService;
-    private final AuthService authService;
 
     @Operation(summary = "스마트 시간표 생성 미리보기", description = "현재까지 수집된 정보를 바탕으로 스마트 시간표를 생성했을 때의 결과를 미리보기로 조회합니다. (저장되지 않음)")
     @GetMapping
     public ResponseEntity<SmartScheduleResponse> previewSchedule(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         SmartScheduleResponse response = smartScheduleService.generateSchedule(projectId, userId);
         return ResponseEntity.ok(response);
     }
@@ -43,8 +38,7 @@ public class SmartScheduleController {
     @PostMapping
     public ResponseEntity<SmartScheduleResponse> generateAndSaveSchedule(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
-            Authentication authentication) {
-        Long userId = authService.extractUserId(authentication);
+            @CurrentUserId Long userId) {
         SmartScheduleResponse response = smartScheduleService.generateAndSaveSchedule(projectId, userId);
         return ResponseEntity.ok(response);
     }

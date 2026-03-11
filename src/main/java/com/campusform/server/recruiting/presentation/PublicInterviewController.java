@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.presentation;
+package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,13 +7,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.campusform.server.recruiting.application.dto.request.interview.SubmitSlotsRequest;
 import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.PublicInterviewConfigResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.SubmitSlotsResponse;
 import com.campusform.server.recruiting.application.service.IntervieweeAvailabilityService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 지원자 면접 가능 시간 조사 공개 API
- * 
+ *
  * 토큰 기반으로 지원자가 면접 가능 시간 슬롯을 조회하고 제출합니다.
  * 인증 없이 접근 가능한 공개 API입니다.
  */
