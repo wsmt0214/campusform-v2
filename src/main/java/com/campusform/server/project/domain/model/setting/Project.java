@@ -263,21 +263,6 @@ public class Project {
     }
 
     /**
-     * 테스트용: 프로젝트 상태를 직접 설정
-     * 
-     * 주의: 이 메서드는 테스트 목적으로만 사용해야 합니다.
-     * 프로덕션 환경에서는 비즈니스 로직에 맞는 상태 전환 메서드를 사용해야 합니다.
-     * 
-     * @param state 설정할 프로젝트 상태
-     */
-    public void setStateForTest(ProjectState state) {
-        if (state == null) {
-            throw new IllegalArgumentException("상태는 null일 수 없습니다.");
-        }
-        this.state = state;
-    }
-
-    /**
      * 시트 동기화 상태 업데이트
      * 
      * @param status 동기화 상태 (OK 또는 ERROR)
