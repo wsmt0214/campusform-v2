@@ -13,6 +13,7 @@ import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -49,7 +50,7 @@ public class ProjectQueryService {
      */
     public AdminListResponse getAdmins(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateAdminAccess(userId);
 
         User ownerUser = userRepository.findById(project.getOwnerId())
@@ -75,7 +76,7 @@ public class ProjectQueryService {
      */
     public ProjectDetailExportResponse getProjectDetailForExport(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateAdminAccess(userId);
 
         long applicantCount = applicantRepository.countByProjectId(project.getId());
@@ -102,7 +103,7 @@ public class ProjectQueryService {
      */
     public PositionValuesResponse getStoredPositionValues(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateAdminAccess(userId);
 
         List<String> values = applicantRepository.findDistinctPositionValuesByProjectId(projectId);

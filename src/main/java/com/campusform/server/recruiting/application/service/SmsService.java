@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.component.SmsMessageComposer;
 import com.campusform.server.recruiting.application.dto.request.message.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.message.SmsPreviewResponse;
@@ -45,7 +47,7 @@ public class SmsService {
 
         // 프로젝트 상태 검증: 해당 단계가 활성 상태인지 확인
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
         validateStageActive(project, stage);
 
         ScreeningResult applicantStatus = request.getStatus();
@@ -69,7 +71,7 @@ public class SmsService {
         // 1. 지원자 조회
         Applicant applicant = applicantRepository.findById(applicantId)
                 .filter(a -> a.getProjectId().equals(projectId))
-                .orElseThrow(() -> new IllegalArgumentException("지원자가 없습니다."));
+                .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
 
         // 면접 단계에서는 서류 합격자만 미리보기 가능 (서류 불합격자는 면접 대상 아님)
         if (stage == RecruitmentStage.INTERVIEW && applicant.getDocumentStatus() != ScreeningResult.PASS) {

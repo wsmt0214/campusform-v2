@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.identity.domain.exception.UserNotFoundException;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.model.setting.Project;
@@ -42,7 +43,7 @@ public class InterviewerQueryService {
         List<InterviewerListResponse.AdminInfo> interviewers = adminIds.stream()
                 .map(adminId -> {
                     User user = userRepository.findById(adminId)
-                            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. userId=" + adminId));
+                            .orElseThrow(() -> new UserNotFoundException(adminId));
                     return InterviewerListResponse.AdminInfo.of(
                             user.getId(),
                             user.getNickname(),

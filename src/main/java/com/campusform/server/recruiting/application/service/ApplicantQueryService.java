@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantDetailResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantListResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantResponse;
@@ -152,7 +153,7 @@ public class ApplicantQueryService {
 
         // 1. 지원자 조회 (없으면 예외 발생)
         Applicant applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));
+                .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
         // 면접 단계에서는 서류 합격자만 상세 조회 가능
         validateDocumentPassForInterview(applicant, stage);
 

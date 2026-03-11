@@ -1,11 +1,13 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantStatusUpdateResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
@@ -35,13 +37,13 @@ public class ApplicantCommandService {
         projectAuthorizationService.assertAdmin(projectId, userId);
 
         Applicant applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지원자입니다."));
+                .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
         if (!applicant.getProjectId().equals(projectId)) {
             throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
         }
 
         Project project = projectRepository.findById(applicant.getProjectId())
-                .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectNotFoundException(applicant.getProjectId()));
         
         // 프로젝트 단계 active 여부
         validateStageActive(project, stage);
@@ -71,14 +73,14 @@ public class ApplicantCommandService {
         projectAuthorizationService.assertAdmin(projectId, userId);
 
         Applicant applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new IllegalArgumentException("지원자가 존재하지 않습니다."));
+                .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
 
         if (!applicant.getProjectId().equals(projectId)) {
             throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
         }
         // 서류 합격자인지 검증 
         validateDocumentPassForInterview(applicant, stage);
-        
+
         applicant.toggleBookmark(stage);
     }
 

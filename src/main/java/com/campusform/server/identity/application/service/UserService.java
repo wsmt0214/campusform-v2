@@ -8,6 +8,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import com.campusform.server.global.infrastructure.S3Service;
+import com.campusform.server.identity.domain.exception.UserNotFoundException;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 
@@ -36,7 +37,7 @@ public class UserService {
     @Transactional
     public String updateProfileImage(Long userId, MultipartFile imageFile) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         String oldProfileImageUrl = user.getProfileImageUrl();
 
@@ -70,7 +71,7 @@ public class UserService {
     @Transactional
     public void deleteProfileImage(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         String profileImageUrl = user.getProfileImageUrl();
 
@@ -101,7 +102,7 @@ public class UserService {
     @Transactional
     public String updateNickname(Long userId, String newNickname) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         user.updateNickname(newNickname);
 

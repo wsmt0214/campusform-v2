@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.domain.event.sheet.ChangeType;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.event.sheet.SheetSyncChangeInfo;
 import com.campusform.server.project.domain.event.sheet.SheetSyncCompletedEvent;
 import com.campusform.server.project.domain.event.sheet.SheetSyncStatistics;
@@ -94,7 +95,7 @@ public class SpreadsheetService {
     @Transactional
     public SheetSyncResponse syncSheet(Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         String sheetUrl = project.getSheetUrl();
         Long ownerId = project.getOwnerId();

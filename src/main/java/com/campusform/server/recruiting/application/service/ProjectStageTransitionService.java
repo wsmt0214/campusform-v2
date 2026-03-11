@@ -3,6 +3,7 @@ package com.campusform.server.recruiting.application.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
@@ -28,7 +29,7 @@ public class ProjectStageTransitionService {
     @Transactional
     public ProjectResponse startInterview(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         project.validateOwnerAccess(userId);
         project.startInterview();
@@ -43,7 +44,7 @@ public class ProjectStageTransitionService {
     @Transactional
     public ProjectResponse completeDocument(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         long holdCount = applicantRepository.countByProjectIdAndDocumentStatus(projectId, ScreeningResult.HOLD);
         if (holdCount > 0) {
@@ -64,7 +65,7 @@ public class ProjectStageTransitionService {
     @Transactional
     public ProjectResponse completeAll(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
         long holdCount = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
                 projectId, ScreeningResult.PASS, ScreeningResult.HOLD);

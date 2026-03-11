@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.campusform.server.identity.domain.exception.UserNotFoundException;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.model.setting.Project;
@@ -46,7 +47,7 @@ public class InterviewerAvailabilityService {
 
         // User 정보 조회
         User user = userRepository.findById(adminId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. userId=" + adminId));
+                .orElseThrow(() -> new UserNotFoundException(adminId));
 
         // 프로젝트의 모든 InterviewDay ID 수집
         List<Long> projectDayIds = setting.getDays().stream()

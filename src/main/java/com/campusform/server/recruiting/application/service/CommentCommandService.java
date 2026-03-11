@@ -8,6 +8,7 @@ import com.campusform.server.recruiting.domain.event.CommentCreatedEvent;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.dto.request.comment.CommentRequest;
 import com.campusform.server.recruiting.application.dto.response.comment.CommentCreateResponse;
@@ -133,7 +134,7 @@ public class CommentCommandService {
         var applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
         var project = projectRepository.findById(applicant.getProjectId())
-                .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProjectNotFoundException(applicant.getProjectId()));
         User commenter = userRepository.findById(commenterId).orElse(null);
 
         List<Long> recipientIds = project.getAdminIds().stream()
@@ -173,7 +174,7 @@ public class CommentCommandService {
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."))
                 .getProjectId();
         projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalStateException("지원자가 속한 프로젝트를 찾을 수 없습니다."))
+                .orElseThrow(() -> new ProjectNotFoundException(projectId))
                 .validateNotCompleted();
     }
 }

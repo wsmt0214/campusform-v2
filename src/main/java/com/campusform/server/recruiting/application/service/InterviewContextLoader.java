@@ -1,13 +1,14 @@
 package com.campusform.server.recruiting.application.service;
 
 import org.springframework.stereotype.Component;
-
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
+import com.campusform.server.recruiting.domain.exception.InterviewSettingNotFoundException;
+import com.campusform.server.recruiting.domain.exception.InvalidInterviewTokenException;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewAvailabilityInvestigationLink;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,8 +28,7 @@ public class InterviewContextLoader {
      */
     public Project loadProjectOrThrow(Long projectId) {
         return projectRepository.findById(projectId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
 
     /**
@@ -36,8 +36,7 @@ public class InterviewContextLoader {
      */
     public InterviewSetting loadSettingOrThrow(Long projectId) {
         return interviewSettingRepository.findByProjectId(projectId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "면접 정보 설정을 먼저 완료해야 합니다. projectId=" + projectId));
+                .orElseThrow(() -> new InterviewSettingNotFoundException(projectId));
     }
 
     /**
@@ -75,7 +74,7 @@ public class InterviewContextLoader {
     public InterviewContext loadContextByToken(String token) {
         // 토큰으로 InterviewSetting 조회 (investigationLink 포함)
         InterviewSetting setting = interviewSettingRepository.findByInvestigationLinkToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+                .orElseThrow(InvalidInterviewTokenException::new);
 
         // investigationLink가 비활성화되어 있는지 확인
         InterviewAvailabilityInvestigationLink link = setting.getInvestigationLink();

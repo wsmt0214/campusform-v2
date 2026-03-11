@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.interview.schedule.ManualInterviewAssignment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -58,7 +59,7 @@ public class ManualInterviewAssignmentService {
 
     private void validateApplicantInProject(Long projectId, Long applicantId) {
         Applicant applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new IllegalArgumentException("지원자를 찾을 수 없습니다. applicantId=" + applicantId));
+                .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
         if (!applicant.getProjectId().equals(projectId)) {
             throw new IllegalArgumentException("지원자가 해당 프로젝트에 속하지 않습니다. applicantId=" + applicantId
                     + ", projectId=" + projectId);

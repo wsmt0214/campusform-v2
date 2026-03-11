@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.campusform.server.project.domain.event.AdminAddedEvent;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
@@ -81,7 +82,7 @@ public class ProjectCommandService {
     public ProjectResponse updateProjectName(Long projectId, Long userId,
             UpdateProjectNameRequest request) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateOwnerAccess(userId);
         project.updateTitle(request.getTitle());
 
@@ -93,7 +94,7 @@ public class ProjectCommandService {
     public ProjectResponse updateProjectPeriod(Long projectId, Long userId,
             UpdateProjectPeriodRequest request) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateAdminAccess(userId);
         project.updatePeriod(request.getStartAt(), request.getEndAt());
 
@@ -104,7 +105,7 @@ public class ProjectCommandService {
     @Transactional
     public void deleteProject(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateOwnerAccess(userId);
         projectRepository.delete(project);
     }
@@ -112,7 +113,7 @@ public class ProjectCommandService {
     @Transactional
     public AddAdminResponse addAdmin(Long projectId, Long ownerId, AddAdminRequest request) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateOwnerAccess(ownerId);
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -139,7 +140,7 @@ public class ProjectCommandService {
     @Transactional
     public void removeAdmin(Long projectId, Long ownerId, Long adminId) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateOwnerAccess(ownerId);
         project.removeAdmin(adminId);
         projectRepository.save(project);
@@ -149,7 +150,7 @@ public class ProjectCommandService {
     public void updatePositionValueMappings(Long projectId, Long userId,
             UpdatePositionValueMappingsRequest request) {
         Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new IllegalArgumentException("프로젝트를 찾을 수 없습니다. projectId=" + projectId));
+                () -> new ProjectNotFoundException(projectId));
         project.validateAdminAccess(userId);
 
         if (request.getValueMappings() != null) {
