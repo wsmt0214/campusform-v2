@@ -1,17 +1,14 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.recruiting.application.dto.request.interview.SetRequiredInterviewerRequest;
 import com.campusform.server.recruiting.application.dto.request.interview.UpdateRequiredInterviewersRequest;
 import com.campusform.server.recruiting.application.dto.response.interview.RequiredInterviewersResponse;
 import com.campusform.server.recruiting.application.service.InterviewContextLoader.InterviewContext;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -71,7 +68,7 @@ public class RequiredInterviewerService {
             Long projectId, Long userId, Long adminId, SetRequiredInterviewerRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         Project project = ctx.project();
-        project.validateAdminAccess(adminId);
+        project.validateAdminAccess(userId);
         InterviewSetting setting = ctx.setting();
 
         // @NotNull 검증으로 null은 이미 차단되지만, 방어적 프로그래밍 차원에서 명시적으로 처리

@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -7,10 +7,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.domain.model.setting.Project;
@@ -22,7 +20,6 @@ import com.campusform.server.recruiting.domain.model.interview.availability.Inte
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewSetting;
 import com.campusform.server.recruiting.domain.repository.InterviewerAvailabilityBlockRepository;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -42,7 +39,8 @@ public class InterviewerAvailabilityService {
      */
     public InterviewerAvailabilityResponse getInterviewerAvailability(Long projectId, Long userId, Long adminId) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
-        ctx.project().validateAdminAccess(adminId);
+        // 요청자(userId)가 해당 프로젝트의 관리자인지 검증 
+        ctx.project().validateAdminAccess(userId);
 
         InterviewSetting setting = ctx.setting();
 
@@ -115,7 +113,8 @@ public class InterviewerAvailabilityService {
             Long projectId, Long userId, Long adminId, UpsertInterviewerAvailabilityRequest request) {
         InterviewContext ctx = contextLoader.loadContext(projectId);
         Project project = ctx.project();
-        project.validateAdminAccess(adminId);
+        // 요청자(userId)가 해당 프로젝트의 관리자인지 검증 (대상 adminId가 아닌 요청자 기준)
+        project.validateAdminAccess(userId);
 
         // 면접관 가능 시간 설정은 면접 단계(INTERVIEW)에서만 가능
         project.validateInterviewStage();
