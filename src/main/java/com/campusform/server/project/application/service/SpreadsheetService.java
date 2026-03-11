@@ -16,7 +16,7 @@ import com.campusform.server.global.event.sheet.ChangeType;
 import com.campusform.server.global.event.sheet.SheetSyncChangeInfo;
 import com.campusform.server.global.event.sheet.SheetSyncCompletedEvent;
 import com.campusform.server.global.event.sheet.SheetSyncStatistics;
-import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
+import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectRequiredMapping;

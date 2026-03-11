@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
-import com.campusform.server.recruiting.application.service.RecruitingStageService;
+import com.campusform.server.recruiting.application.service.ProjectStageTransitionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,21 +17,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 모집(Recruiting) 컨텍스트의 "단계 종료" API
+ * 모집 단계 전환 컨트롤러
  *
  * 프로젝트 상태 흐름:
  * DOCUMENT → DOCUMENT_COMPLETE (면접 없이 종료)
  * DOCUMENT → INTERVIEW → INTERVIEW_COMPLETE (면접까지 진행 후 종료)
- *
- * DOCUMENT → INTERVIEW 전환은 PATCH /{projectId}/start-interview API로 수행합니다.
  */
 @Tag(name = "모집 단계", description = "서류/면접 단계 전환 및 종료 API")
 @RestController
 @RequestMapping("/api/recruiting/projects")
 @RequiredArgsConstructor
-public class RecruitingStageController {
+public class ProjectStageController {
 
-    private final RecruitingStageService recruitingStageService;
+    private final ProjectStageTransitionService projectStageTransitionService;
     private final AuthService authService;
 
     @Operation(summary = "면접 단계 시작", description = "서류 단계를 마치고 면접 단계로 전환합니다. DOCUMENT → INTERVIEW (소유자만 가능)")
@@ -40,7 +38,7 @@ public class RecruitingStageController {
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectResponse response = recruitingStageService.startInterview(projectId, userId);
+        ProjectResponse response = projectStageTransitionService.startInterview(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -50,17 +48,17 @@ public class RecruitingStageController {
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectResponse response = recruitingStageService.completeDocument(projectId, userId);
+        ProjectResponse response = projectStageTransitionService.completeDocument(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "면접 단계 종료 (프로젝트 전체 종료)", description = "면접 단계를 종료하고 프로젝트 전체를 완료합니다. INTERVIEW → INTERVIEW_COMPLETE (소유자만 가능)")
+    @Operation(summary = "면접 단계 종료", description = "면접 단계를 종료하고 프로젝트 전체를 완료합니다. INTERVIEW → INTERVIEW_COMPLETE (소유자만 가능)")
     @PatchMapping("/{projectId}/complete-all")
     public ResponseEntity<ProjectResponse> completeAll(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ProjectResponse response = recruitingStageService.completeAll(projectId, userId);
+        ProjectResponse response = projectStageTransitionService.completeAll(projectId, userId);
         return ResponseEntity.ok(response);
     }
 }

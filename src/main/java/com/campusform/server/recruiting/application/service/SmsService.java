@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.application.service;
+package com.campusform.server.recruiting.application.service;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
-import com.campusform.server.recruiting.application.component.MessageGenerator;
+import com.campusform.server.recruiting.application.service.SmsMessageComposer;
 import com.campusform.server.recruiting.application.dto.request.message.SmsTemplateSaveRequest;
 import com.campusform.server.recruiting.application.dto.response.message.SmsPreviewResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
@@ -26,7 +26,7 @@ public class SmsService {
     // 문자 메시지 내용, 템플릿, 발송 서비스
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
-    private final MessageGenerator messageGenerator;
+    private final SmsMessageComposer smsMessageComposer;
     private final ProjectRepository projectRepository;
     private final ProjectAuthorizationService projectAuthorizationService;
 
@@ -82,7 +82,7 @@ public class SmsService {
                 : applicant.getInterviewStatus();
 
         // 3. 메시지 생성 (지원자의 현재 상태를 사용)
-        String finalContent = messageGenerator.generateMessage(
+        String finalContent = smsMessageComposer.compose(
                 projectId,
                 stage,
                 currentStatus,

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusform.server.identity.application.service.AuthService;
-import com.campusform.server.project.application.dto.SpreadsheetColumnResponse;
+import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;

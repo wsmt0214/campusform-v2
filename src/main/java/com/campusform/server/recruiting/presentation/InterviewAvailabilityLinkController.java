@@ -1,4 +1,4 @@
-﻿package com.campusform.server.recruiting.presentation;
+package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -8,65 +8,62 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.campusform.server.identity.application.service.AuthService;
 import com.campusform.server.recruiting.application.dto.request.applicant.UpdateApplicantLinkConfigRequest;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkConfigResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantInterviewLinkResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.InterviewSlotListResponse;
 import com.campusform.server.recruiting.application.dto.response.message.SlotApplicantListResponse;
-import com.campusform.server.recruiting.application.service.ApplicantInterviewLinkService;
-import com.campusform.server.recruiting.application.service.SlotApplicantService;
-
+import com.campusform.server.recruiting.application.service.InterviewAvailabilityLinkService;
+import com.campusform.server.recruiting.application.service.InterviewSlotApplicantQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 스마트 시간표 설정 - 3. 지원자 면접 가능 시간 모집 (Owner용)
+ * 지원자 면접 가능 시간 조사 링크 관리 컨트롤러 (관리자용)
  */
 @Tag(name = "지원자 면접 링크", description = "지원자에게 발송할 면접 시간 제출 링크 및 관련 설정 API")
 @RestController
 @RequestMapping("/api/recruiting/projects")
 @RequiredArgsConstructor
-public class ApplicantInterviewLinkController {
+public class InterviewAvailabilityLinkController {
 
-    private final ApplicantInterviewLinkService applicantInterviewLinkService;
-    private final SlotApplicantService slotApplicantService;
-
+    private final InterviewAvailabilityLinkService interviewAvailabilityLinkService;
+    private final InterviewSlotApplicantQueryService interviewSlotApplicantQueryService;
     private final AuthService authService;
 
     @Operation(summary = "지원자 면접 시간 제출 링크 조회", description = "지원자에게 배포할, 면접 가능 시간을 제출받는 페이지의 고유 링크(토큰)를 조회합니다.")
     @GetMapping("/{projectId}/investigation-link")
-    public ResponseEntity<ApplicantInterviewLinkResponse> getApplicantLink(
+    public ResponseEntity<ApplicantInterviewLinkResponse> getInvestigationLink(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ApplicantInterviewLinkResponse response = applicantInterviewLinkService.getApplicantLink(projectId, userId);
+        ApplicantInterviewLinkResponse response = interviewAvailabilityLinkService.getInvestigationLink(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "지원자 시간 제출 페이지 설정 조회", description = "지원자에게 보여질 면접 시간 제출 페이지의 활성화 여부 및 안내 문구를 조회합니다.")
     @GetMapping("/{projectId}/investigation-link/config")
-    public ResponseEntity<ApplicantInterviewLinkConfigResponse> getApplicantLinkConfig(
+    public ResponseEntity<ApplicantInterviewLinkConfigResponse> getInvestigationLinkConfig(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        ApplicantInterviewLinkConfigResponse response = applicantInterviewLinkService
-                .getApplicantLinkConfig(projectId, userId);
+        ApplicantInterviewLinkConfigResponse response = interviewAvailabilityLinkService
+                .getInvestigationLinkConfig(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "지원자 시간 제출 페이지 설정 수정", description = "지원자에게 보여질 면접 시간 제출 페이지의 활성화 여부 및 안내 문구를 수정합니다.")
     @PutMapping("/{projectId}/investigation-link/config")
-    public ResponseEntity<ApplicantInterviewLinkConfigResponse> updateApplicantLinkConfig(
+    public ResponseEntity<ApplicantInterviewLinkConfigResponse> updateInvestigationLinkConfig(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication,
             @RequestBody UpdateApplicantLinkConfigRequest request) {
         Long userId = authService.extractUserId(authentication);
-        ApplicantInterviewLinkConfigResponse response = applicantInterviewLinkService
-                .updateApplicantLinkConfig(projectId, userId, request);
+        ApplicantInterviewLinkConfigResponse response = interviewAvailabilityLinkService
+                .updateInvestigationLinkConfig(projectId, userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -76,7 +73,7 @@ public class ApplicantInterviewLinkController {
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-        InterviewSlotListResponse response = applicantInterviewLinkService.getInterviewSlotList(projectId, userId);
+        InterviewSlotListResponse response = interviewAvailabilityLinkService.getInterviewSlotList(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -86,8 +83,7 @@ public class ApplicantInterviewLinkController {
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             Authentication authentication) {
         Long userId = authService.extractUserId(authentication);
-
-        SlotApplicantListResponse response = slotApplicantService.getAllApplicantsBySlots(projectId, userId);
+        SlotApplicantListResponse response = interviewSlotApplicantQueryService.getAllApplicantsBySlots(projectId, userId);
         return ResponseEntity.ok(response);
     }
 }

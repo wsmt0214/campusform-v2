@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAuthorizationService;
-import com.campusform.server.recruiting.application.component.MessageGenerator;
 import com.campusform.server.recruiting.application.dto.response.result.ResultListResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
@@ -25,7 +24,7 @@ public class ResultQueryService {
 
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
-    private final MessageGenerator messageGenerator;
+    private final SmsMessageComposer smsMessageComposer;
     private final ProjectAuthorizationService projectAuthorizationService;
 
     /**
@@ -69,7 +68,7 @@ public class ResultQueryService {
         List<ResultListResponse.ApplicantSummary> applicantSummaries = applicants.stream()
                 .map(app -> {
                     // 각 지원자별로 개인화된 메시지 생성 (@이름, @포지션 치환)
-                    String personalizedMessage = messageGenerator.generateMessage(
+                    String personalizedMessage = smsMessageComposer.compose(
                             projectId, stage, status,
                             app.getName(),
                             app.getPosition() != null ? app.getPosition() : "-");

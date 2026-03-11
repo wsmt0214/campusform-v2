@@ -2,12 +2,10 @@ package com.campusform.server.notification.application.eventhandler;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
 import com.campusform.server.global.event.sheet.ChangeType;
 import com.campusform.server.global.event.sheet.SheetSyncChangeInfo;
 import com.campusform.server.global.event.sheet.SheetSyncCompletedEvent;
@@ -16,20 +14,16 @@ import com.campusform.server.notification.application.service.NotificationServic
 import com.campusform.server.notification.domain.model.value.NotificationType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 알림 이벤트 핸들러
- *
- * 다른 Context에서 발행된 도메인 이벤트를 수신하여 알림을 생성합니다.
- * 비동기 처리(@Async)를 통해 이벤트 발행자에게 영향을 주지 않습니다.
+ * 스프레드시트 동기화 완료 이벤트 알림 핸들러
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationSyncHandler {
+public class SheetSyncNotificationHandler {
 
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
@@ -76,8 +70,8 @@ public class NotificationSyncHandler {
     }
 
     /**
-     * 통계 정보와 변경사항을 기반으로 사용자 친화적인 메시지를 생성합니다.
-     * 지원자 이름을 괄호 안에 포함합니다.
+     * 통계 정보와 변경사항을 기반으로 사용자 친화적인 메시지를 생성
+     * 지원자 이름을 괄호 안에 포함하여 구체적인 변경 내용을 전달
      */
     private String buildMessage(SheetSyncCompletedEvent event) {
         SheetSyncStatistics statistics = event.statistics();
@@ -95,7 +89,6 @@ public class NotificationSyncHandler {
 
         StringBuilder message = new StringBuilder("스프레드시트 동기화가 완료되었습니다. ");
 
-        // 새 지원자 이름 추출
         List<String> newApplicantNames = changes.stream()
                 .filter(change -> change.changeType() == ChangeType.NEW)
                 .map(SheetSyncChangeInfo::applicantName)
@@ -107,7 +100,6 @@ public class NotificationSyncHandler {
                     newApplicantNames.size(), namesText));
         }
 
-        // 업데이트된 지원자 이름 추출
         List<String> updatedApplicantNames = changes.stream()
                 .filter(change -> change.changeType() == ChangeType.UPDATED)
                 .map(SheetSyncChangeInfo::applicantName)
