@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import com.campusform.server.recruiting.application.port.SmsSender;
-import com.campusform.server.recruiting.application.service.SmsMessageComposer;
+import com.campusform.server.recruiting.application.component.SmsMessageComposer;
 import com.campusform.server.recruiting.domain.model.event.ApplicantUpdated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
