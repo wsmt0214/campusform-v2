@@ -9,8 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -86,14 +84,4 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.", null));
     }
 
-    /**
-     * 에러 응답 DTO
-     */
-    @Getter
-    @AllArgsConstructor
-    public static class ErrorResponse {
-        private String code; // 에러 코드
-        private String message; // 에러 메시지
-        private Map<String, String> details; // 상세 에러 정보
-    }
 }
