@@ -47,8 +47,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // 인증 없이 접근 가능한 경로
                                                 .requestMatchers("/", "/login/**", "/oauth2/**",
-                                                                "/api/auth/**", "/api/test/**", // 테스트용
-                                                                                                // API
+                                                                "/api/auth/**",
                                                                 "/api/public/**", // 면접자 공개 API
                                                                 "/swagger-ui/**", "/v3/api-docs/**",
                                                                 "/h2-console/**")
