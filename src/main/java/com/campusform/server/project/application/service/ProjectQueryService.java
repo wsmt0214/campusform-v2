@@ -3,22 +3,18 @@ package com.campusform.server.project.application.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.response.AdminListResponse;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.ProjectDetailExportResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -33,6 +29,7 @@ public class ProjectQueryService {
     private final ProjectRepository projectRepository;
     private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 사용자가 속한 프로젝트 목록 조회 (지원자 수 포함)
@@ -49,9 +46,7 @@ public class ProjectQueryService {
      * 관리자 목록 조회 (OWNER + ADMIN, OWNER는 owner 필드로)
      */
     public AdminListResponse getAdmins(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateAdminAccess(userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         User ownerUser = userRepository.findById(project.getOwnerId())
                 .orElseThrow(() -> new IllegalStateException(
@@ -75,9 +70,7 @@ public class ProjectQueryService {
      * 프로젝트 상세 정보 내보내기 (관리자만 가능)
      */
     public ProjectDetailExportResponse getProjectDetailForExport(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateAdminAccess(userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         long applicantCount = applicantRepository.countByProjectId(project.getId());
 
@@ -102,9 +95,7 @@ public class ProjectQueryService {
      * 프로젝트 지원자의 position 컬럼 고유값 종류 조회
      */
     public PositionValuesResponse getStoredPositionValues(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateAdminAccess(userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         List<String> values = applicantRepository.findDistinctPositionValuesByProjectId(projectId);
         return PositionValuesResponse.from(values);

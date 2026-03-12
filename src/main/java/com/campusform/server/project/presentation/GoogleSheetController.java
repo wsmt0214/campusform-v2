@@ -13,7 +13,7 @@ import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.project.application.dto.response.PositionValuesResponse;
 import com.campusform.server.project.application.dto.response.SheetSyncResponse;
 import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.application.service.SpreadsheetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class GoogleSheetController {
 
     private final SpreadsheetService spreadsheetService;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 시트 헤더 조회 API
@@ -65,7 +65,7 @@ public class GoogleSheetController {
     public ResponseEntity<SheetSyncResponse> syncSheet(
             @Parameter(description = "동기화할 프로젝트의 ID", required = true) @PathVariable Long projectId,
             @CurrentUserId Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         try {
             SheetSyncResponse response = spreadsheetService.syncSheet(projectId);

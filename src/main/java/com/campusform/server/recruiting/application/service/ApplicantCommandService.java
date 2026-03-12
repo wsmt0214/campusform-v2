@@ -3,7 +3,7 @@ package com.campusform.server.recruiting.application.service;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -25,7 +25,7 @@ public class ApplicantCommandService {
 
     private final ApplicantRepository applicantRepository;
     private final ProjectRepository projectRepository;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 지원자 서류/면접 상태(보류·합격·불합격) 변경 
@@ -34,7 +34,7 @@ public class ApplicantCommandService {
     public ApplicantStatusUpdateResponse updateApplicantStatus(Long projectId, Long applicantId,
             RecruitmentStage stage, ScreeningResult status, Long userId) {
 
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
@@ -70,7 +70,7 @@ public class ApplicantCommandService {
     @Transactional
     public void toggleBookmark(Long projectId, Long applicantId, RecruitmentStage stage, Long userId) {
 
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantNotFoundException(applicantId));

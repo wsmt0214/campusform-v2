@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.recruiting.application.component.SmsMessageComposer;
 import com.campusform.server.recruiting.application.dto.response.result.ResultListResponse;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
@@ -26,7 +26,7 @@ public class ResultQueryService {
     private final ApplicantRepository applicantRepository;
     private final MessageTemplateRepository templateRepository;
     private final SmsMessageComposer smsMessageComposer;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 단계별 합격/불합격 명단 및 통계·템플릿 조회
@@ -34,7 +34,7 @@ public class ResultQueryService {
     public ResultListResponse getResults(Long projectId, RecruitmentStage stage, ScreeningResult status,
             Long userId) {
         // 프로젝트 관리자 권한 검증 (OWNER 또는 ADMIN)
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         // 1. Enum으로 변환
         List<Applicant> applicants;

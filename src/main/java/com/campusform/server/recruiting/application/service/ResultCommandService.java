@@ -3,7 +3,7 @@ package com.campusform.server.recruiting.application.service;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.recruiting.application.dto.request.result.ResultAnnouncementRequest;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
@@ -20,14 +20,14 @@ import lombok.RequiredArgsConstructor;
 public class ResultCommandService {
 
     private final ApplicantRepository applicantRepository;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 선택한 지원자들에 대해 합격/불합격 상태를 일괄 확정 (이벤트 발행 포함)
      */
     @Transactional
     public void announceResults(Long projectId, ResultAnnouncementRequest request, Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         List<Applicant> applicants = applicantRepository.findAllById(request.applicantIds());
         boolean allBelongToProject = applicants.stream().allMatch(a -> projectId.equals(a.getProjectId()));

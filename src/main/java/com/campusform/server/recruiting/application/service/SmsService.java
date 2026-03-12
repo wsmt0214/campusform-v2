@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.repository.ProjectRepository;
@@ -30,7 +30,7 @@ public class SmsService {
     private final MessageTemplateRepository templateRepository;
     private final SmsMessageComposer smsMessageComposer;
     private final ProjectRepository projectRepository;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 문자 관련 로직만
@@ -43,7 +43,7 @@ public class SmsService {
      */
     @Transactional
     public void saveTemplate(Long projectId, RecruitmentStage stage, SmsTemplateSaveRequest request, Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         // 프로젝트 상태 검증: 해당 단계가 활성 상태인지 확인
         Project project = projectRepository.findById(projectId)
@@ -66,7 +66,7 @@ public class SmsService {
      */
     @Transactional(readOnly = true)
     public SmsPreviewResponse getPreview(Long projectId, Long applicantId, RecruitmentStage stage, Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         // 1. 지원자 조회
         Applicant applicant = applicantRepository.findById(applicantId)

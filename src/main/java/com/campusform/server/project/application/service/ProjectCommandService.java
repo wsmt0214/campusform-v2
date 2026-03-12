@@ -3,13 +3,9 @@ package com.campusform.server.project.application.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.campusform.server.project.domain.event.AdminAddedEvent;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
 import com.campusform.server.project.application.dto.request.AddAdminRequest;
@@ -19,13 +15,13 @@ import com.campusform.server.project.application.dto.request.UpdateProjectNameRe
 import com.campusform.server.project.application.dto.request.UpdateProjectPeriodRequest;
 import com.campusform.server.project.application.dto.response.AddAdminResponse;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
+import com.campusform.server.project.domain.event.AdminAddedEvent;
 import com.campusform.server.project.domain.exception.TokenNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectValueMapping;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +40,7 @@ public class ProjectCommandService {
     private final ProjectRepository projectRepository;
     private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
+    private final ProjectAccessService projectAccessService;
 
     @Transactional
     public ProjectResponse createProject(Long ownerId, CreateProjectRequest request) {
@@ -81,9 +78,7 @@ public class ProjectCommandService {
     @Transactional
     public ProjectResponse updateProjectName(Long projectId, Long userId,
             UpdateProjectNameRequest request) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateOwnerAccess(userId);
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
         project.updateTitle(request.getTitle());
 
         long applicantCount = applicantRepository.countByProjectId(project.getId());
@@ -93,9 +88,7 @@ public class ProjectCommandService {
     @Transactional
     public ProjectResponse updateProjectPeriod(Long projectId, Long userId,
             UpdateProjectPeriodRequest request) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateAdminAccess(userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
         project.updatePeriod(request.getStartAt(), request.getEndAt());
 
         long applicantCount = applicantRepository.countByProjectId(project.getId());
@@ -104,17 +97,13 @@ public class ProjectCommandService {
 
     @Transactional
     public void deleteProject(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateOwnerAccess(userId);
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
         projectRepository.delete(project);
     }
 
     @Transactional
     public AddAdminResponse addAdmin(Long projectId, Long ownerId, AddAdminRequest request) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateOwnerAccess(ownerId);
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, ownerId);
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -139,9 +128,7 @@ public class ProjectCommandService {
 
     @Transactional
     public void removeAdmin(Long projectId, Long ownerId, Long adminId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateOwnerAccess(ownerId);
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, ownerId);
         project.removeAdmin(adminId);
         projectRepository.save(project);
     }
@@ -149,9 +136,7 @@ public class ProjectCommandService {
     @Transactional
     public void updatePositionValueMappings(Long projectId, Long userId,
             UpdatePositionValueMappingsRequest request) {
-        Project project = projectRepository.findById(projectId).orElseThrow(
-                () -> new ProjectNotFoundException(projectId));
-        project.validateAdminAccess(userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         if (request.getValueMappings() != null) {
             request.getValueMappings().forEach(item -> project

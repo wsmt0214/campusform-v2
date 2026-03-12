@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantDetailResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantListResponse;
@@ -35,14 +35,14 @@ public class ApplicantQueryService {
     private final ApplicantRepository applicantRepository;
     private final CommentRepository commentRepository;
     private final InterviewAssignmentQueryService interviewAssignmentQueryService;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 프로젝트별 지원자 목록 조회
      */
     public ApplicantListResponse getApplicants(Long projectId, RecruitmentStage stage, Long userId) {
 
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         long total;
         long pending;
@@ -149,7 +149,7 @@ public class ApplicantQueryService {
      */
     public ApplicantDetailResponse getApplicantDetail(Long projectId, Long applicantId,
             RecruitmentStage stage, Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         // 1. 지원자 조회 (없으면 예외 발생)
         Applicant applicant = applicantRepository.findById(applicantId)

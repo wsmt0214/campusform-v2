@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.recruiting.domain.event.CommentCreatedEvent;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.application.dto.request.comment.CommentRequest;
@@ -34,14 +34,14 @@ public class CommentCommandService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 댓글 작성 (parentId가 있으면 대댓글, 없으면 루트 댓글)
      */
     public CommentCreateResponse createComment(Long projectId, Long applicantId, Long authorId,
             RecruitmentStage stage, CommentRequest request) {
-        projectAuthorizationService.assertAdmin(projectId, authorId);
+        projectAccessService.getProjectWithAdminAccess(projectId, authorId);
 
         if (!applicantRepository.existsById(applicantId)) {
             throw new EntityNotFoundException("존재하지 않는 지원자입니다.");
@@ -88,7 +88,7 @@ public class CommentCommandService {
     public CommentUpdateResponse updateComment(Long projectId, Long applicantId, Long commentId,
             Long authorId, RecruitmentStage stage, CommentRequest request) {
         // 3. 댓글 수정 (프로젝트 관리자 권한 검증 후, 작성자 본인만 수정 가능)
-        projectAuthorizationService.assertAdmin(projectId, authorId);
+        projectAccessService.getProjectWithAdminAccess(projectId, authorId);
         // 종료된 프로젝트에서는 댓글을 수정할 수 없음
         validateProjectNotCompleted(applicantId);
 
@@ -112,7 +112,7 @@ public class CommentCommandService {
      * 댓글 삭제 (작성자 본인만 가능). 부모 삭제 시 대댓글은 cascade로 함께 삭제됨.
      */
     public void deleteComment(Long projectId, Long commentId, Long authorId, RecruitmentStage stage) {
-        projectAuthorizationService.assertAdmin(projectId, authorId);
+        projectAccessService.getProjectWithAdminAccess(projectId, authorId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 댓글입니다."));

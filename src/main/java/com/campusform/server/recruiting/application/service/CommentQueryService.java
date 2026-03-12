@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.identity.domain.model.User;
 import com.campusform.server.identity.domain.repository.UserRepository;
-import com.campusform.server.project.application.service.ProjectAuthorizationService;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.recruiting.application.dto.response.comment.CommentResponse;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
@@ -29,14 +29,14 @@ public class CommentQueryService {
     private final CommentRepository commentRepository;
     private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
-    private final ProjectAuthorizationService projectAuthorizationService;
+    private final ProjectAccessService projectAccessService;
 
     /**
      * 지원자별 댓글 목록 조회 (계층 구조·작성자 닉네임·프로필 이미지 포함)
      */
     public List<CommentResponse> getComments(Long projectId, Long applicantId, RecruitmentStage stage,
             Long userId) {
-        projectAuthorizationService.assertAdmin(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         if (!applicantRepository.existsById(applicantId)) {
             throw new EntityNotFoundException("존재하지 않는 지원자입니다.");
