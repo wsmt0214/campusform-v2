@@ -4,11 +4,9 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAccessService;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.project.domain.repository.ProjectRepository;
-import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantStatusUpdateResponse;
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
@@ -24,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 public class ApplicantCommandService {
 
     private final ApplicantRepository applicantRepository;
-    private final ProjectRepository projectRepository;
     private final ProjectAccessService projectAccessService;
 
     /**
@@ -34,7 +31,7 @@ public class ApplicantCommandService {
     public ApplicantStatusUpdateResponse updateApplicantStatus(Long projectId, Long applicantId,
             RecruitmentStage stage, ScreeningResult status, Long userId) {
 
-        projectAccessService.getProjectWithAdminAccess(projectId, userId);
+        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
@@ -42,13 +39,10 @@ public class ApplicantCommandService {
             throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
         }
 
-        Project project = projectRepository.findById(applicant.getProjectId())
-                .orElseThrow(() -> new ProjectNotFoundException(applicant.getProjectId()));
-        
         // 프로젝트 단계 active 여부
         validateStageActive(project, stage);
-        // 서류 합격자인지 검증 
-        validateDocumentPassForInterview(applicant, stage);
+        // 면접 단계 작업 가능 여부 검증 
+        applicant.validateInterviewEligibility(stage);
 
         applicant.updateScreeningResult(stage, status);
 
@@ -78,8 +72,8 @@ public class ApplicantCommandService {
         if (!applicant.getProjectId().equals(projectId)) {
             throw new IllegalArgumentException("지원자가 속한 프로젝트와 요청된 프로젝트가 일치하지 않습니다.");
         }
-        // 서류 합격자인지 검증 
-        validateDocumentPassForInterview(applicant, stage);
+        // 면접 단계 작업 가능 여부 검증 
+        applicant.validateInterviewEligibility(stage);
 
         applicant.toggleBookmark(stage);
     }
@@ -89,13 +83,6 @@ public class ApplicantCommandService {
             project.validateDocumentStage();
         } else if (stage == RecruitmentStage.INTERVIEW) {
             project.validateInterviewStage();
-        }
-    }
-
-    private void validateDocumentPassForInterview(Applicant applicant, RecruitmentStage stage) {
-        if (stage == RecruitmentStage.INTERVIEW && applicant.getDocumentStatus() != ScreeningResult.PASS) {
-            throw new IllegalArgumentException(
-                    "서류 합격자만 면접 단계의 대상이 됩니다. 현재 서류 상태: " + applicant.getDocumentStatus());
         }
     }
 }

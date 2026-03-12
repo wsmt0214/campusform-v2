@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.service.ProjectAccessService;
-import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantDetailResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantListResponse;
 import com.campusform.server.recruiting.application.dto.response.applicant.ApplicantResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.InterviewAssignedTimeResponse;
 import com.campusform.server.recruiting.application.dto.response.interview.InterviewTimeSource;
+import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundException;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
@@ -155,7 +155,7 @@ public class ApplicantQueryService {
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantNotFoundException(applicantId));
         // 면접 단계에서는 서류 합격자만 상세 조회 가능
-        validateDocumentPassForInterview(applicant, stage);
+        applicant.validateInterviewEligibility(stage);
 
         // 2. 현재 단계(Stage)에 맞는 합격 상태(Status) 가져오기
         ScreeningResult currentStatus =
@@ -203,13 +203,5 @@ public class ApplicantQueryService {
                 .isFavorite(applicant.isBookmarkedFor(stage)).commentCount(commentCount)
                 .interviewDate(interviewDate).interviewStartTime(interviewStartTime)
                 .interviewTimeSource(interviewTimeSource).answers(answerDtos).build();
-    }
-
-    private void validateDocumentPassForInterview(Applicant applicant, RecruitmentStage stage) {
-        if (stage == RecruitmentStage.INTERVIEW
-                && applicant.getDocumentStatus() != ScreeningResult.PASS) {
-            throw new IllegalArgumentException(
-                    "서류 합격자만 면접 단계의 대상이 됩니다. 현재 서류 상태: " + applicant.getDocumentStatus());
-        }
     }
 }

@@ -28,7 +28,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * 지원자 Entity
- * 지원자 필수 매핑 항목과 단계별 심사 상태를 관리합니다.
  */
 @Entity
 @Table(name = "applicants", uniqueConstraints = {
@@ -110,9 +109,22 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     }
 
     /**
+     * 면접 단계 진입 가능 여부 검증용 메서드
+     * 
+     * 서류 합격자가 아닌 경우 면접 단계 작업을 수행할 수 없음
+     */
+    public void validateInterviewEligibility(RecruitmentStage stage) {
+        if (stage == RecruitmentStage.INTERVIEW && this.documentStatus != ScreeningResult.PASS) {
+            throw new StatusChangeNotAllowedException(
+                    "면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다. 현재 서류 상태: "
+                            + this.documentStatus);
+        }
+    }
+
+    /**
      * [비즈니스 로직] 서류 심사 결과 업데이트 및 이벤트 발행
      * 
-     * 면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다.
+     * 면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 함
      */
     public void updateScreeningResult(RecruitmentStage stage, ScreeningResult status) {
         if (status == null) {
@@ -123,18 +135,12 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
                 return;
             }
             this.documentStatus = status;
-        } else {
-            if (stage == RecruitmentStage.INTERVIEW) {
-                // 면접 단계로 진행하려면 서류 단계에서 합격해야 함
-                if (this.documentStatus != ScreeningResult.PASS) {
-                    throw new StatusChangeNotAllowedException(
-                            "면접 단계로 진행하려면 서류 단계에서 합격(PASS) 상태여야 합니다. 현재 서류 상태: " + this.documentStatus);
-                }
-                if (this.interviewStatus == status) {
-                    return;
-                }
-                this.interviewStatus = status;
+        } else if (stage == RecruitmentStage.INTERVIEW) {
+            validateInterviewEligibility(stage);
+            if (this.interviewStatus == status) {
+                return;
             }
+            this.interviewStatus = status;
         }
 
         this.registerEvent(new ApplicantUpdated(
