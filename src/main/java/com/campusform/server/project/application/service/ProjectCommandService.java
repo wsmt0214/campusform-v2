@@ -110,13 +110,6 @@ public class ProjectCommandService {
                         "해당 이메일로 가입된 사용자가 없습니다. email=" + request.getEmail()));
         Long adminId = user.getId();
 
-        if (project.getOwnerId().equals(adminId)) {
-            throw new IllegalArgumentException("프로젝트 OWNER는 관리자로 추가할 수 없습니다.");
-        }
-        if (project.getAdmins().stream().anyMatch(admin -> admin.getAdminId().equals(adminId))) {
-            throw new IllegalArgumentException("이미 프로젝트 관리자로 등록된 사용자입니다.");
-        }
-
         project.addAdmin(adminId);
         projectRepository.save(project);
         eventPublisher.publishEvent(new AdminAddedEvent(project.getId(), project.getOwnerId(),

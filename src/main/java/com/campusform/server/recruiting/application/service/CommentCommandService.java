@@ -43,12 +43,11 @@ public class CommentCommandService {
             RecruitmentStage stage, CommentRequest request) {
         projectAccessService.getProjectWithAdminAccess(projectId, authorId);
 
-        if (!applicantRepository.existsById(applicantId)) {
-            throw new EntityNotFoundException("존재하지 않는 지원자입니다.");
-        }
-        validateApplicantBelongsToProject(applicantId, projectId);
+        var applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
+        validateApplicantBelongsToProject(applicant, projectId);
         // 종료된 프로젝트에는 댓글을 작성할 수 없음
-        validateProjectNotCompleted(applicantId);
+        validateProjectNotCompleted(applicant);
 
         Comment comment;
         if (request.getParentId() != null) {
@@ -75,7 +74,7 @@ public class CommentCommandService {
         // 저장 후 반환 (parent_comment_id는 JPA가 자동으로 저장)
         Comment savedComment = commentRepository.save(comment);
         // 댓글 생성 알림: 해당 프로젝트의 모든 관리자(댓글 작성자 제외)에게 발송
-        publishCommentCreatedEvent(applicantId, authorId, stage);
+        publishCommentCreatedEvent(applicant, authorId, stage);
 
         return new CommentCreateResponse(savedComment.getId(),
                 savedComment.getParent() != null ? savedComment.getParent().getId() : null,
@@ -89,14 +88,16 @@ public class CommentCommandService {
             Long authorId, RecruitmentStage stage, CommentRequest request) {
         // 3. 댓글 수정 (프로젝트 관리자 권한 검증 후, 작성자 본인만 수정 가능)
         projectAccessService.getProjectWithAdminAccess(projectId, authorId);
-        // 종료된 프로젝트에서는 댓글을 수정할 수 없음
-        validateProjectNotCompleted(applicantId);
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 댓글입니다."));
         if (!comment.getApplicantId().equals(applicantId)) {
             throw new IllegalArgumentException("해당 지원자의 댓글이 아닙니다.");
         }
+        // 종료된 프로젝트에서는 댓글을 수정할 수 없음
+        var applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
+        validateProjectNotCompleted(applicant);
         // stage 일치 검증 (DOCUMENT와 INTERVIEW 댓글 구분)
         if (!comment.getStage().equals(stage)) {
             throw new IllegalArgumentException(String.format(
@@ -116,9 +117,11 @@ public class CommentCommandService {
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 댓글입니다."));
-        validateApplicantBelongsToProject(comment.getApplicantId(), projectId);
+        var applicant = applicantRepository.findById(comment.getApplicantId())
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
+        validateApplicantBelongsToProject(applicant, projectId);
         // 종료된 프로젝트에서는 댓글을 삭제할 수 없음
-        validateProjectNotCompleted(comment.getApplicantId());
+        validateProjectNotCompleted(applicant);
         // stage 일치 검증 (DOCUMENT와 INTERVIEW 댓글 구분)
         if (!comment.getStage().equals(stage)) {
             throw new IllegalArgumentException(String.format(
@@ -130,9 +133,10 @@ public class CommentCommandService {
         commentRepository.delete(comment);
     }
 
-    private void publishCommentCreatedEvent(Long applicantId, Long commenterId, RecruitmentStage stage) {
-        var applicant = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."));
+    private void publishCommentCreatedEvent(
+            com.campusform.server.recruiting.domain.model.applicant.Applicant applicant,
+            Long commenterId,
+            RecruitmentStage stage) {
         var project = projectRepository.findById(applicant.getProjectId())
                 .orElseThrow(() -> new ProjectNotFoundException(applicant.getProjectId()));
         User commenter = userRepository.findById(commenterId).orElse(null);
@@ -150,7 +154,7 @@ public class CommentCommandService {
                 : (commenter != null && commenter.getEmail() != null ? commenter.getEmail() : "알 수 없음");
         String projectTitle = project.getTitle() != null ? project.getTitle().trim() : null;
         eventPublisher.publishEvent(new CommentCreatedEvent(project.getId(), projectTitle,
-                applicantId, applicant.getName() != null ? applicant.getName() : "지원자",
+                applicant.getId(), applicant.getName() != null ? applicant.getName() : "지원자",
                 commenterId, commenterName, recipientIds, stage.name()));
     }
 
@@ -160,19 +164,17 @@ public class CommentCommandService {
         }
     }
 
-    private void validateApplicantBelongsToProject(Long applicantId, Long projectId) {
-        Long applicantProjectId = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."))
-                .getProjectId();
-        if (!applicantProjectId.equals(projectId)) {
+    private void validateApplicantBelongsToProject(
+            com.campusform.server.recruiting.domain.model.applicant.Applicant applicant,
+            Long projectId) {
+        if (!applicant.getProjectId().equals(projectId)) {
             throw new IllegalArgumentException("해당 지원자는 이 프로젝트에 속하지 않습니다.");
         }
     }
 
-    private void validateProjectNotCompleted(Long applicantId) {
-        Long projectId = applicantRepository.findById(applicantId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 지원자입니다."))
-                .getProjectId();
+    private void validateProjectNotCompleted(
+            com.campusform.server.recruiting.domain.model.applicant.Applicant applicant) {
+        Long projectId = applicant.getProjectId();
         projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId))
                 .validateNotCompleted();

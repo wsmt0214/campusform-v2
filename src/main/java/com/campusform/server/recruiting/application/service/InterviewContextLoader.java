@@ -1,9 +1,8 @@
 package com.campusform.server.recruiting.application.service;
 
 import org.springframework.stereotype.Component;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.exception.InterviewSettingNotFoundException;
 import com.campusform.server.recruiting.domain.exception.InvalidInterviewTokenException;
 import com.campusform.server.recruiting.domain.model.interview.setup.InterviewAvailabilityInvestigationLink;
@@ -20,15 +19,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class InterviewContextLoader {
 
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
     private final InterviewSettingRepository interviewSettingRepository;
 
     /**
      * 프로젝트 조회 (없으면 예외)
      */
     public Project loadProjectOrThrow(Long projectId) {
-        return projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        return projectAccessService.loadProject(projectId);
     }
 
     /**

@@ -3,9 +3,8 @@ package com.campusform.server.recruiting.application.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
+import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.model.setting.Project;
-import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProjectStageTransitionService {
 
-    private final ProjectRepository projectRepository;
+    private final ProjectAccessService projectAccessService;
     private final ApplicantRepository applicantRepository;
 
     /**
@@ -28,10 +27,7 @@ public class ProjectStageTransitionService {
      */
     @Transactional
     public ProjectResponse startInterview(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-        project.validateOwnerAccess(userId);
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
         project.startInterview();
 
         return ProjectResponse.from(project);
@@ -43,8 +39,7 @@ public class ProjectStageTransitionService {
      */
     @Transactional
     public ProjectResponse completeDocument(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
 
         long holdCount = applicantRepository.countByProjectIdAndDocumentStatus(projectId, ScreeningResult.HOLD);
         if (holdCount > 0) {
@@ -64,8 +59,7 @@ public class ProjectStageTransitionService {
      */
     @Transactional
     public ProjectResponse completeAll(Long projectId, Long userId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
 
         long holdCount = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
                 projectId, ScreeningResult.PASS, ScreeningResult.HOLD);
