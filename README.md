@@ -17,16 +17,6 @@
 
 ---
 
-### 🧳 사전 준비 사항 (Prerequisites) 
-
-이 프로젝트를 실행하기 위해 아래 도구들이 설치되어 있어야 합니다.
-
-* **JDK 17** 이상
-* **Docker Desktop** (Docker Compose 포함)
-* **IntelliJ IDEA** (권장)
-
----
-
 ### 📋 로컬 실행 가이드 (Getting Started)
 
 아래 절차에 따라 로컬 개발 환경을 세팅해 주세요.
