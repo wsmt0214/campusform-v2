@@ -1,7 +1,8 @@
+name: campusform
+
 services:
   db:
     image: mysql:8.0
-    container_name: campus-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
@@ -21,7 +22,6 @@ services:
 
   app:
     image: ${IMAGE_URI}
-    container_name: campus-server
     restart: unless-stopped
     expose:
       - "8080"
@@ -53,7 +53,6 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
-    container_name: campus-nginx
     restart: unless-stopped
     depends_on:
       app:
@@ -70,3 +69,4 @@ services:
 
 volumes:
   db_data:
+    name: campusform-v2_db_data

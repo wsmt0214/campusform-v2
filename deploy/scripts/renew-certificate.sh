@@ -10,4 +10,4 @@ docker run --rm \
   -v "$PROJECT_DIR/certbot/conf:/etc/letsencrypt" \
   certbot/certbot renew --webroot -w /var/www/certbot --quiet
 
-docker exec campus-nginx nginx -s reload
+docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
