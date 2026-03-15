@@ -78,14 +78,23 @@ jobs:
 
             IMAGE_URI="ghcr.io/${{ github.repository_owner }}/campusform-server:latest"
 
-            if [ -f .env ]; then
-              if grep -q '^IMAGE_URI=' .env; then
-                sed -i "s|^IMAGE_URI=.*|IMAGE_URI=${IMAGE_URI}|" .env
-              else
-                echo "IMAGE_URI=${IMAGE_URI}" >> .env
+            if [ ! -f .env ]; then
+              echo "ERROR: ~/campus-project/.env file is missing." >&2
+              echo "Create it from deploy/.env.prod.example before running deploy." >&2
+              exit 1
+            fi
+
+            for required_var in MYSQL_ROOT_PASS DB_NAME MYSQL_USER_NAME MYSQL_USER_PASS; do
+              if ! grep -Eq "^${required_var}=.+$" .env; then
+                echo "ERROR: ${required_var} is missing or empty in ~/campus-project/.env." >&2
+                exit 1
               fi
+            done
+
+            if grep -q '^IMAGE_URI=' .env; then
+              sed -i "s|^IMAGE_URI=.*|IMAGE_URI=${IMAGE_URI}|" .env
             else
-              echo "IMAGE_URI=${IMAGE_URI}" > .env
+              echo "IMAGE_URI=${IMAGE_URI}" >> .env
             fi
 
             echo "${{ secrets.GHCR_PAT }}" | sudo docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin

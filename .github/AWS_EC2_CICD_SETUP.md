@@ -391,6 +391,8 @@ ls -al ~/campus-project/certbot
 ### 이유
 
 현재 `docker-compose.prod.yml`은 대부분의 설정을 `.env`에서 읽는다.
+특히 새 저장소에서 첫 GitHub Actions 배포를 할 때도 EC2에 `.env`가 미리 있어야 한다.
+`.env`가 없거나 `MYSQL_ROOT_PASS`가 비어 있으면 MySQL 컨테이너는 바로 종료된다.
 
 ### 실행
 
@@ -757,6 +759,7 @@ git push origin main
 ### 새 저장소 기준으로 꼭 알아둘 점
 
 - 이 시점까지 Actions 탭에 아무 것도 없었다가, 첫 push 후에 워크플로가 나타나는 것이 정상이다.
+- 첫 Actions 실행 전에 EC2 `~/campus-project/.env`를 반드시 먼저 만들어 둬야 한다.
 - 첫 배포에서는 `campus-nginx`가 인증서가 없어서 제대로 안 뜰 수 있다.
 - 이건 다음 단계에서 bootstrap 설정으로 바로 잡으면 된다.
 
