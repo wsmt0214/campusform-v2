@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-PROJECT_DIR="${1:-$HOME/campus-project}"
+PROJECT_DIR="${1:-$HOME/campusform-v2}"
 
 cd "$PROJECT_DIR"
 

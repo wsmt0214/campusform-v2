@@ -1,290 +1,290 @@
-# CampusForm AWS EC2 CI/CD 구축 가이드
+﻿# CampusForm AWS EC2 CI/CD 援ъ텞 媛?대뱶
 
-## 1. 문서 목적
+## 1. 臾몄꽌 紐⑹쟻
 
-이 문서는 현재 저장소 기준으로 CampusForm를 아래 구조로 운영 배포하는 방법을 정리한 문서다.
+??臾몄꽌???꾩옱 ??μ냼 湲곗??쇰줈 CampusForm瑜??꾨옒 援ъ“濡??댁쁺 諛고룷?섎뒗 諛⑸쾿???뺣━??臾몄꽌??
 
-- AWS EC2 1대
-- `app`, `db`, `nginx` 3개 컨테이너 분리
-- MySQL은 Amazon RDS가 아니라 Docker 컨테이너로 직접 운영
-- Nginx는 별도 Docker 컨테이너로 운영
-- HTTPS는 Let's Encrypt + Certbot으로 적용
-- CI/CD는 GitHub Actions 사용
-- 이미지 레지스트리는 GHCR 사용
-- GitHub 저장소가 새로 만들어진 상태도 포함
+- AWS EC2 1?
+- `app`, `db`, `nginx` 3媛?而⑦뀒?대꼫 遺꾨━
+- MySQL? Amazon RDS媛 ?꾨땲??Docker 而⑦뀒?대꼫濡?吏곸젒 ?댁쁺
+- Nginx??蹂꾨룄 Docker 而⑦뀒?대꼫濡??댁쁺
+- HTTPS??Let's Encrypt + Certbot?쇰줈 ?곸슜
+- CI/CD??GitHub Actions ?ъ슜
+- ?대?吏 ?덉??ㅽ듃由щ뒗 GHCR ?ъ슜
+- GitHub ??μ냼媛 ?덈줈 留뚮뱾?댁쭊 ?곹깭???ы븿
 
-이 문서는 실제 작업 순서대로 따라갈 수 있게 작성했다.
-각 단계는 아래 기준으로 설명한다.
+??臾몄꽌???ㅼ젣 ?묒뾽 ?쒖꽌?濡??곕씪媛????덇쾶 ?묒꽦?덈떎.
+媛??④퀎???꾨옒 湲곗??쇰줈 ?ㅻ챸?쒕떎.
 
-- 목적: 이 단계에서 끝내야 하는 것
-- 이유: 왜 이 구성이 필요한가
-- 실행: 실제로 무엇을 입력하고 무엇을 눌러야 하는가
-- 검증: 정상인지 어떻게 확인하는가
-- 실패 시 확인: 막히면 어디를 먼저 봐야 하는가
+- 紐⑹쟻: ???④퀎?먯꽌 ?앸궡???섎뒗 寃?
+- ?댁쑀: ????援ъ꽦???꾩슂?쒓?
+- ?ㅽ뻾: ?ㅼ젣濡?臾댁뾿???낅젰?섍퀬 臾댁뾿???뚮윭???섎뒗媛
+- 寃利? ?뺤긽?몄? ?대뼸寃??뺤씤?섎뒗媛
+- ?ㅽ뙣 ???뺤씤: 留됲엳硫??대뵒瑜?癒쇱? 遊먯빞 ?섎뒗媛
 
-## 2. 최종 권장 구조
+## 2. 理쒖쥌 沅뚯옣 援ъ“
 
-### 구조 요약
+### 援ъ“ ?붿빟
 
-- 브라우저 요청은 `api.campusform.kro.kr`로 들어온다.
-- EC2의 `80`, `443` 포트는 Nginx 컨테이너만 받는다.
-- Nginx가 HTTPS를 종료하고 `app:8080`으로 프록시한다.
-- 앱은 `db:3306`으로 MySQL에 연결한다.
-- GitHub Actions가 앱 이미지를 빌드해 GHCR에 push한다.
-- EC2는 새 이미지를 pull해서 `docker compose`로 앱을 갱신한다.
+- 釉뚮씪?곗? ?붿껌? `api.campusform.kro.kr`濡??ㅼ뼱?⑤떎.
+- EC2??`80`, `443` ?ы듃??Nginx 而⑦뀒?대꼫留?諛쏅뒗??
+- Nginx媛 HTTPS瑜?醫낅즺?섍퀬 `app:8080`?쇰줈 ?꾨줉?쒗븳??
+- ?깆? `db:3306`?쇰줈 MySQL???곌껐?쒕떎.
+- GitHub Actions媛 ???대?吏瑜?鍮뚮뱶??GHCR??push?쒕떎.
+- EC2?????대?吏瑜?pull?댁꽌 `docker compose`濡??깆쓣 媛깆떊?쒕떎.
 
-### 실제 요청 흐름
+### ?ㅼ젣 ?붿껌 ?먮쫫
 
 ```text
-사용자 브라우저
+?ъ슜??釉뚮씪?곗?
   -> https://api.campusform.kro.kr
   -> EC2 443
-  -> nginx 컨테이너
-  -> app 컨테이너:8080
-  -> db 컨테이너:3306
+  -> nginx 而⑦뀒?대꼫
+  -> app 而⑦뀒?대꼫:8080
+  -> db 而⑦뀒?대꼫:3306
 ```
 
-### 실제 배포 흐름
+### ?ㅼ젣 諛고룷 ?먮쫫
 
 ```text
-main 브랜치 push
-  -> GitHub Actions 실행
-  -> 테스트
-  -> Docker 이미지 빌드
+main 釉뚮옖移?push
+  -> GitHub Actions ?ㅽ뻾
+  -> ?뚯뒪??
+  -> Docker ?대?吏 鍮뚮뱶
   -> GHCR push
-  -> deploy 자산을 EC2로 복사
-  -> EC2 SSH 접속
-  -> IMAGE_URI 최신값 반영
+  -> deploy ?먯궛??EC2濡?蹂듭궗
+  -> EC2 SSH ?묒냽
+  -> IMAGE_URI 理쒖떊媛?諛섏쁺
   -> docker compose pull app
   -> docker compose up -d --remove-orphans
 ```
 
-## 3. 왜 이 구조를 선택하는가
+## 3. ????援ъ“瑜??좏깮?섎뒗媛
 
-### 3-1. 서버와 DB를 분리하는 이유
+### 3-1. ?쒕쾭? DB瑜?遺꾨━?섎뒗 ?댁쑀
 
-- 앱 재배포와 DB 데이터를 분리할 수 있다.
-- 앱 컨테이너는 계속 교체해도 DB 데이터는 volume에 남는다.
-- 장애 원인을 앱 계층과 DB 계층으로 나눠서 보기 쉬워진다.
+- ???щ같?ъ? DB ?곗씠?곕? 遺꾨━?????덈떎.
+- ??而⑦뀒?대꼫??怨꾩냽 援먯껜?대룄 DB ?곗씠?곕뒗 volume???⑤뒗??
+- ?μ븷 ?먯씤????怨꾩링怨?DB 怨꾩링?쇰줈 ?섎닠??蹂닿린 ?ъ썙吏꾨떎.
 
-### 3-2. Nginx를 별도 컨테이너로 두는 이유
+### 3-2. Nginx瑜?蹂꾨룄 而⑦뀒?대꼫濡??먮뒗 ?댁쑀
 
-- HTTPS 처리와 앱 런타임을 분리할 수 있다.
-- TLS, 리다이렉트, 리버스 프록시를 Nginx에 집중시킬 수 있다.
-- Spring Boot 앱은 API 처리만 맡고, 웹 게이트웨이는 Nginx가 맡는다.
+- HTTPS 泥섎━? ???고??꾩쓣 遺꾨━?????덈떎.
+- TLS, 由щ떎?대젆?? 由щ쾭???꾨줉?쒕? Nginx??吏묒쨷?쒗궗 ???덈떎.
+- Spring Boot ?깆? API 泥섎━留?留↔퀬, ??寃뚯씠?몄썾?대뒗 Nginx媛 留〓뒗??
 
-### 3-3. GHCR를 쓰는 이유
+### 3-3. GHCR瑜??곕뒗 ?댁쑀
 
-- GitHub 저장소와 연동이 쉽다.
-- GitHub Actions에서 바로 push할 수 있다.
-- 무료로 시작하기 쉽다.
+- GitHub ??μ냼? ?곕룞???쎈떎.
+- GitHub Actions?먯꽌 諛붾줈 push?????덈떎.
+- 臾대즺濡??쒖옉?섍린 ?쎈떎.
 
-### 3-4. EC2 한 대로 가는 이유
+### 3-4. EC2 ???濡?媛???댁쑀
 
-- 현재 단계에서 비용이 가장 낮다.
-- 구조가 단순해서 운영하기 쉽다.
-- 문제가 생겨도 추적할 범위가 좁다.
+- ?꾩옱 ?④퀎?먯꽌 鍮꾩슜??媛????떎.
+- 援ъ“媛 ?⑥닚?댁꽌 ?댁쁺?섍린 ?쎈떎.
+- 臾몄젣媛 ?앷꺼??異붿쟻??踰붿쐞媛 醫곷떎.
 
-### 3-5. 이 구조의 한계
+### 3-5. ??援ъ“???쒓퀎
 
-- EC2 한 대가 장애 나면 앱과 DB가 같이 영향받는다.
-- DB 백업과 복구를 직접 관리해야 한다.
-- 인증서 갱신 상태를 직접 봐야 한다.
+- EC2 ???媛 ?μ븷 ?섎㈃ ?깃낵 DB媛 媛숈씠 ?곹뼢諛쏅뒗??
+- DB 諛깆뾽怨?蹂듦뎄瑜?吏곸젒 愿由ы빐???쒕떎.
+- ?몄쬆??媛깆떊 ?곹깭瑜?吏곸젒 遊먯빞 ?쒕떎.
 
-## 4. 현재 저장소에서 이 구조를 담당하는 파일
+## 4. ?꾩옱 ??μ냼?먯꽌 ??援ъ“瑜??대떦?섎뒗 ?뚯씪
 
 - `docker-compose.prod.yml`
-  `app`, `db`, `nginx` 3개 컨테이너 정의
+  `app`, `db`, `nginx` 3媛?而⑦뀒?대꼫 ?뺤쓽
 
 - `.github/workflows/deploy.yml`
-  GitHub Actions 배포 파이프라인
+  GitHub Actions 諛고룷 ?뚯씠?꾨씪??
 
 - `deploy/.env.prod.example`
-  운영 `.env` 예시
+  ?댁쁺 `.env` ?덉떆
 
 - `deploy/nginx/bootstrap.conf.template`
-  인증서가 없을 때 쓰는 임시 HTTP 설정
+  ?몄쬆?쒓? ?놁쓣 ???곕뒗 ?꾩떆 HTTP ?ㅼ젙
 
 - `deploy/nginx/https.conf.template`
-  인증서 발급 후 쓰는 HTTPS 설정
+  ?몄쬆??諛쒓툒 ???곕뒗 HTTPS ?ㅼ젙
 
 - `deploy/nginx/default.conf.template`
-  Nginx 컨테이너가 실제로 읽는 설정 파일
+  Nginx 而⑦뀒?대꼫媛 ?ㅼ젣濡??쎈뒗 ?ㅼ젙 ?뚯씪
 
 - `deploy/scripts/renew-certificate.sh`
-  인증서 자동 갱신 스크립트
+  ?몄쬆???먮룞 媛깆떊 ?ㅽ겕由쏀듃
 
-## 5. 이 문서에서 고정해서 쓰는 값
+## 5. ??臾몄꽌?먯꽌 怨좎젙?댁꽌 ?곕뒗 媛?
 
-| 항목 | 값 |
+| ??ぉ | 媛?|
 | --- | --- |
-| 루트 도메인 | `campusform.kro.kr` |
-| API 도메인 | `api.campusform.kro.kr` |
-| 프론트 도메인 | `web.campusform.kro.kr` |
-| 작업 디렉터리 | `~/campus-project` |
-| 앱 내부 포트 | `8080` |
-| DB 내부 포트 | `3306` |
-| 기본 브랜치 | `main` |
+| 猷⑦듃 ?꾨찓??| `campusform.kro.kr` |
+| API ?꾨찓??| `api.campusform.kro.kr` |
+| ?꾨줎???꾨찓??| `web.campusform.kro.kr` |
+| ?묒뾽 ?붾젆?곕━ | `~/campusform-v2` |
+| ???대? ?ы듃 | `8080` |
+| DB ?대? ?ы듃 | `3306` |
+| 湲곕낯 釉뚮옖移?| `main` |
 
-중요:
+以묒슂:
 
-- 현재 워크플로는 `~/campus-project`를 기준으로 작성되어 있다.
-- 다른 경로를 쓰려면 `.github/workflows/deploy.yml`도 같이 수정해야 한다.
-- GitHub 저장소가 새로 만들어졌다면 `.github/workflows/deploy.yml`이 원격 `main` 브랜치에 올라가기 전까지 Actions 실행 이력은 비어 있는 것이 정상이다.
+- ?꾩옱 ?뚰겕?뚮줈??`~/campusform-v2`瑜?湲곗??쇰줈 ?묒꽦?섏뼱 ?덈떎.
+- ?ㅻⅨ 寃쎈줈瑜??곕젮硫?`.github/workflows/deploy.yml`??媛숈씠 ?섏젙?댁빞 ?쒕떎.
+- GitHub ??μ냼媛 ?덈줈 留뚮뱾?댁죱?ㅻ㈃ `.github/workflows/deploy.yml`???먭꺽 `main` 釉뚮옖移섏뿉 ?щ씪媛湲??꾧퉴吏 Actions ?ㅽ뻾 ?대젰? 鍮꾩뼱 ?덈뒗 寃껋씠 ?뺤긽?대떎.
 
-## 6. 전체 실행 순서
+## 6. ?꾩껜 ?ㅽ뻾 ?쒖꽌
 
-실제 작업은 아래 순서로 진행한다.
+?ㅼ젣 ?묒뾽? ?꾨옒 ?쒖꽌濡?吏꾪뻾?쒕떎.
 
-1. 도메인 구조 확정
-2. EC2 생성
-3. 보안 그룹 설정
-4. EC2 기본 설정
-5. Docker / Compose 설치
-6. 운영 디렉터리 준비
-7. 운영용 `.env` 작성
-8. DNS 연결
-9. 새 GitHub 저장소 생성
-10. 로컬 프로젝트를 새 저장소에 push
-11. GitHub Actions 활성화와 표시 조건 확인
-12. GHCR 준비
-13. GitHub Secrets 등록
-14. GitHub Actions 1회 실행으로 앱 이미지 생성
-15. EC2에 배포 자산이 들어왔는지 확인
-16. Nginx bootstrap 설정 적용
-17. `app + db + nginx` 1차 기동
-18. Certbot으로 인증서 최초 발급
-19. Nginx를 HTTPS 설정으로 전환
-20. 인증서 자동 갱신 설정
-21. Google OAuth 재설정
-22. 정식 자동 배포 흐름 확인
-23. 운영 검증
-24. 백업/복구/장애 대응 준비
+1. ?꾨찓??援ъ“ ?뺤젙
+2. EC2 ?앹꽦
+3. 蹂댁븞 洹몃９ ?ㅼ젙
+4. EC2 湲곕낯 ?ㅼ젙
+5. Docker / Compose ?ㅼ튂
+6. ?댁쁺 ?붾젆?곕━ 以鍮?
+7. ?댁쁺??`.env` ?묒꽦
+8. DNS ?곌껐
+9. ??GitHub ??μ냼 ?앹꽦
+10. 濡쒖뺄 ?꾨줈?앺듃瑜?????μ냼??push
+11. GitHub Actions ?쒖꽦?붿? ?쒖떆 議곌굔 ?뺤씤
+12. GHCR 以鍮?
+13. GitHub Secrets ?깅줉
+14. GitHub Actions 1???ㅽ뻾?쇰줈 ???대?吏 ?앹꽦
+15. EC2??諛고룷 ?먯궛???ㅼ뼱?붾뒗吏 ?뺤씤
+16. Nginx bootstrap ?ㅼ젙 ?곸슜
+17. `app + db + nginx` 1李?湲곕룞
+18. Certbot?쇰줈 ?몄쬆??理쒖큹 諛쒓툒
+19. Nginx瑜?HTTPS ?ㅼ젙?쇰줈 ?꾪솚
+20. ?몄쬆???먮룞 媛깆떊 ?ㅼ젙
+21. Google OAuth ?ъ꽕??
+22. ?뺤떇 ?먮룞 諛고룷 ?먮쫫 ?뺤씤
+23. ?댁쁺 寃利?
+24. 諛깆뾽/蹂듦뎄/?μ븷 ???以鍮?
 
-### 왜 이 순서인가
+### ?????쒖꽌?멸?
 
-이 순서가 중요한 이유는 초기 한 번만 특수한 과정이 있기 때문이다.
+???쒖꽌媛 以묒슂???댁쑀??珥덇린 ??踰덈쭔 ?뱀닔??怨쇱젙???덇린 ?뚮Ц?대떎.
 
-1. GitHub 저장소가 새로 만들어진 상태에서는 Actions 이력이 비어 있다.
-2. `.github/workflows/deploy.yml`이 원격 기본 브랜치에 올라가야 GitHub가 워크플로를 인식한다.
-3. 첫 이미지가 GHCR에 만들어져야 `app` 컨테이너가 pull할 수 있다.
-4. 첫 배포 시점에는 인증서가 없기 때문에 Nginx를 HTTPS 설정으로 바로 띄우면 실패할 수 있다.
-5. 그래서 `새 GitHub repo 준비 -> 첫 Actions 실행 -> EC2 bootstrap 전환 -> Certbot 발급 -> HTTPS 복귀` 순서가 필요하다.
+1. GitHub ??μ냼媛 ?덈줈 留뚮뱾?댁쭊 ?곹깭?먯꽌??Actions ?대젰??鍮꾩뼱 ?덈떎.
+2. `.github/workflows/deploy.yml`???먭꺽 湲곕낯 釉뚮옖移섏뿉 ?щ씪媛??GitHub媛 ?뚰겕?뚮줈瑜??몄떇?쒕떎.
+3. 泥??대?吏媛 GHCR??留뚮뱾?댁졇??`app` 而⑦뀒?대꼫媛 pull?????덈떎.
+4. 泥?諛고룷 ?쒖젏?먮뒗 ?몄쬆?쒓? ?녾린 ?뚮Ц??Nginx瑜?HTTPS ?ㅼ젙?쇰줈 諛붾줈 ?꾩슦硫??ㅽ뙣?????덈떎.
+5. 洹몃옒??`??GitHub repo 以鍮?-> 泥?Actions ?ㅽ뻾 -> EC2 bootstrap ?꾪솚 -> Certbot 諛쒓툒 -> HTTPS 蹂듦?` ?쒖꽌媛 ?꾩슂?섎떎.
 
-## 7. Step 1. 도메인 구조 확정
+## 7. Step 1. ?꾨찓??援ъ“ ?뺤젙
 
-### 목적
+### 紐⑹쟻
 
-쿠키, OAuth, CORS, HTTPS에 사용할 도메인을 확정한다.
+荑좏궎, OAuth, CORS, HTTPS???ъ슜???꾨찓?몄쓣 ?뺤젙?쒕떎.
 
-### 이유
+### ?댁쑀
 
-이 프로젝트는 로그인 세션, Google OAuth redirect URI, CORS 허용 origin, 쿠키 도메인이 모두 도메인 값에 묶여 있다.
+???꾨줈?앺듃??濡쒓렇???몄뀡, Google OAuth redirect URI, CORS ?덉슜 origin, 荑좏궎 ?꾨찓?몄씠 紐⑤몢 ?꾨찓??媛믪뿉 臾띠뿬 ?덈떎.
 
-### 실행
+### ?ㅽ뻾
 
 - API: `https://api.campusform.kro.kr`
-- 프론트: `https://web.campusform.kro.kr`
-- 쿠키 루트 도메인: `campusform.kro.kr`
+- ?꾨줎?? `https://web.campusform.kro.kr`
+- 荑좏궎 猷⑦듃 ?꾨찓?? `campusform.kro.kr`
 
-### 검증
+### 寃利?
 
-문서, `.env`, Google OAuth, 프론트 설정이 모두 위 값을 기준으로 맞는지 확인한다.
+臾몄꽌, `.env`, Google OAuth, ?꾨줎???ㅼ젙??紐⑤몢 ??媛믪쓣 湲곗??쇰줈 留욌뒗吏 ?뺤씤?쒕떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- 프론트가 실제로 `web.campusform.kro.kr`에서 서비스되는지 확인
-- API를 다른 도메인으로 쓸 계획이 남아 있지 않은지 확인
+- ?꾨줎?멸? ?ㅼ젣濡?`web.campusform.kro.kr`?먯꽌 ?쒕퉬?ㅻ릺?붿? ?뺤씤
+- API瑜??ㅻⅨ ?꾨찓?몄쑝濡???怨꾪쉷???⑥븘 ?덉? ?딆?吏 ?뺤씤
 
-## 8. Step 2. EC2 인스턴스 생성
+## 8. Step 2. EC2 ?몄뒪?댁뒪 ?앹꽦
 
-### 목적
+### 紐⑹쟻
 
-운영 서버를 준비한다.
+?댁쁺 ?쒕쾭瑜?以鍮꾪븳??
 
-### 이유
+### ?댁쑀
 
-이 구조는 모든 운영 자산이 EC2 한 대에 올라간다.
+??援ъ“??紐⑤뱺 ?댁쁺 ?먯궛??EC2 ??????щ씪媛꾨떎.
 
-### 실행
+### ?ㅽ뻾
 
-AWS Console에서 EC2 인스턴스를 생성한다.
+AWS Console?먯꽌 EC2 ?몄뒪?댁뒪瑜??앹꽦?쒕떎.
 
-권장값:
+沅뚯옣媛?
 
-- OS: Ubuntu 22.04 LTS 또는 24.04 LTS
-- 인스턴스 타입: `t3.small` 이상
-- 스토리지: `gp3 30GB` 이상
-- Key Pair: 새로 생성
+- OS: Ubuntu 22.04 LTS ?먮뒗 24.04 LTS
+- ?몄뒪?댁뒪 ??? `t3.small` ?댁긽
+- ?ㅽ넗由ъ?: `gp3 30GB` ?댁긽
+- Key Pair: ?덈줈 ?앹꽦
 
-### 왜 이 값을 추천하는가
+### ????媛믪쓣 異붿쿇?섎뒗媛
 
-- `t3.micro`는 `app + mysql + nginx`를 함께 돌리기에 메모리가 빠듯할 수 있다.
-- MySQL 데이터, Docker 이미지, 로그가 쌓이므로 디스크가 너무 작으면 곧 막힌다.
+- `t3.micro`??`app + mysql + nginx`瑜??④퍡 ?뚮━湲곗뿉 硫붾え由ш? 鍮좊벏?????덈떎.
+- MySQL ?곗씠?? Docker ?대?吏, 濡쒓렇媛 ?볦씠誘濡??붿뒪?ш? ?덈Т ?묒쑝硫?怨?留됲엺??
 
-### 검증
+### 寃利?
 
 - EC2 Public IP
-- SSH 접속용 key pair
-- EC2 보안 그룹 ID
+- SSH ?묒냽??key pair
+- EC2 蹂댁븞 洹몃９ ID
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- Ubuntu AMI로 생성했는지 확인
-- key pair를 실제로 내려받았는지 확인
+- Ubuntu AMI濡??앹꽦?덈뒗吏 ?뺤씤
+- key pair瑜??ㅼ젣濡??대젮諛쏆븯?붿? ?뺤씤
 
-## 9. Step 3. 보안 그룹 설정
+## 9. Step 3. 蹂댁븞 洹몃９ ?ㅼ젙
 
-### 목적
+### 紐⑹쟻
 
-외부에 열 포트와 내부에만 둘 포트를 분리한다.
+?몃??????ы듃? ?대??먮쭔 ???ы듃瑜?遺꾨━?쒕떎.
 
-### 이유
+### ?댁쑀
 
-외부에 보여야 하는 것은 Nginx의 `80`, `443`뿐이다.
-MySQL `3306`과 앱 `8080`은 외부에 열면 안 된다.
+?몃???蹂댁뿬???섎뒗 寃껋? Nginx??`80`, `443`肉먯씠??
+MySQL `3306`怨???`8080`? ?몃????대㈃ ???쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
-보안 그룹 Inbound 규칙:
+蹂댁븞 洹몃９ Inbound 洹쒖튃:
 
-- `22`: 본인 고정 IP만 허용
+- `22`: 蹂몄씤 怨좎젙 IP留??덉슜
 - `80`: `0.0.0.0/0`
 - `443`: `0.0.0.0/0`
 
-절대 열지 말 것:
+?덈? ?댁? 留?寃?
 
 - `3306`
 - `8080`
 
-### 검증
+### 寃利?
 
-보안 그룹 화면에서 위 규칙만 열려 있는지 확인한다.
+蹂댁븞 洹몃９ ?붾㈃?먯꽌 ??洹쒖튃留??대젮 ?덈뒗吏 ?뺤씤?쒕떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `22`를 너무 좁게 잡아 SSH가 막히지 않았는지 확인
-- `3306`, `8080`이 실수로 열리지 않았는지 확인
+- `22`瑜??덈Т 醫곴쾶 ?≪븘 SSH媛 留됲엳吏 ?딆븯?붿? ?뺤씤
+- `3306`, `8080`???ㅼ닔濡??대━吏 ?딆븯?붿? ?뺤씤
 
-## 10. Step 4. EC2 기본 설정
+## 10. Step 4. EC2 湲곕낯 ?ㅼ젙
 
-### 목적
+### 紐⑹쟻
 
-서버 패키지와 시간대를 정리한다.
+?쒕쾭 ?⑦궎吏? ?쒓컙?瑜??뺣━?쒕떎.
 
-### 이유
+### ?댁쑀
 
-초기 업데이트와 시간대 설정을 하지 않으면 로그 시간과 cron 시간이 꼬이기 쉽다.
+珥덇린 ?낅뜲?댄듃? ?쒓컙? ?ㅼ젙???섏? ?딆쑝硫?濡쒓렇 ?쒓컙怨?cron ?쒓컙??瑗ъ씠湲??쎈떎.
 
-### 실행
+### ?ㅽ뻾
 
-로컬에서 EC2 접속:
+濡쒖뺄?먯꽌 EC2 ?묒냽:
 
 ```bash
 ssh -i /path/to/key.pem ubuntu@<EC2_PUBLIC_IP>
 ```
 
-EC2에서 실행:
+EC2?먯꽌 ?ㅽ뻾:
 
 ```bash
 sudo apt update
@@ -292,28 +292,28 @@ sudo apt upgrade -y
 sudo timedatectl set-timezone Asia/Seoul
 ```
 
-### 검증
+### 寃利?
 
 ```bash
 timedatectl
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- SSH 접속이 안 되면 보안 그룹 22번 규칙 확인
-- 기본 사용자가 `ubuntu`인지 확인
+- SSH ?묒냽?????섎㈃ 蹂댁븞 洹몃９ 22踰?洹쒖튃 ?뺤씤
+- 湲곕낯 ?ъ슜?먭? `ubuntu`?몄? ?뺤씤
 
-## 11. Step 5. Docker / Compose 설치
+## 11. Step 5. Docker / Compose ?ㅼ튂
 
-### 목적
+### 紐⑹쟻
 
-컨테이너 운영 환경을 준비한다.
+而⑦뀒?대꼫 ?댁쁺 ?섍꼍??以鍮꾪븳??
 
-### 이유
+### ?댁쑀
 
-현재 운영 환경 전체는 `docker compose`로 돌아간다.
+?꾩옱 ?댁쁺 ?섍꼍 ?꾩껜??`docker compose`濡??뚯븘媛꾨떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
 sudo apt install -y ca-certificates curl gnupg
@@ -330,14 +330,14 @@ sudo systemctl enable docker
 sudo systemctl start docker
 ```
 
-선택:
+?좏깮:
 
 ```bash
 sudo usermod -aG docker $USER
 exit
 ```
 
-### 검증
+### 寃利?
 
 ```bash
 docker --version
@@ -345,65 +345,65 @@ docker compose version
 sudo systemctl status docker
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- Docker 저장소가 정상 등록되었는지 확인
-- Ubuntu 버전이 너무 오래되지 않았는지 확인
+- Docker ??μ냼媛 ?뺤긽 ?깅줉?섏뿀?붿? ?뺤씤
+- Ubuntu 踰꾩쟾???덈Т ?ㅻ옒?섏? ?딆븯?붿? ?뺤씤
 
-## 12. Step 6. 운영 디렉터리 준비
+## 12. Step 6. ?댁쁺 ?붾젆?곕━ 以鍮?
 
-### 목적
+### 紐⑹쟻
 
-EC2 안에서 배포 자산을 둘 기준 경로를 만든다.
+EC2 ?덉뿉??諛고룷 ?먯궛????湲곗? 寃쎈줈瑜?留뚮뱺??
 
-### 이유
+### ?댁쑀
 
-현재 워크플로는 `~/campus-project`에 배포 자산을 복사하고 그 안에서 `docker compose`를 실행한다.
+?꾩옱 ?뚰겕?뚮줈??`~/campusform-v2`??諛고룷 ?먯궛??蹂듭궗?섍퀬 洹??덉뿉??`docker compose`瑜??ㅽ뻾?쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-mkdir -p ~/campus-project
-mkdir -p ~/campus-project/certbot/conf
-mkdir -p ~/campus-project/certbot/www
-mkdir -p ~/campus-project/deploy/nginx
-cd ~/campus-project
+mkdir -p ~/campusform-v2
+mkdir -p ~/campusform-v2/certbot/conf
+mkdir -p ~/campusform-v2/certbot/www
+mkdir -p ~/campusform-v2/deploy/nginx
+cd ~/campusform-v2
 ```
 
-### 검증
+### 寃利?
 
 ```bash
-ls -al ~/campus-project
-ls -al ~/campus-project/certbot
+ls -al ~/campusform-v2
+ls -al ~/campusform-v2/certbot
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `~/campusform-v2` 같은 다른 경로를 쓰고 있지 않은지 확인
-- 다른 경로를 꼭 써야 하면 workflow도 같이 수정해야 한다
+- `~/campusform-v2` 媛숈? ?ㅻⅨ 寃쎈줈瑜??곌퀬 ?덉? ?딆?吏 ?뺤씤
+- ?ㅻⅨ 寃쎈줈瑜?瑗??⑥빞 ?섎㈃ workflow??媛숈씠 ?섏젙?댁빞 ?쒕떎
 
-## 13. Step 7. 운영용 `.env` 작성
+## 13. Step 7. ?댁쁺??`.env` ?묒꽦
 
-### 목적
+### 紐⑹쟻
 
-앱, DB, OAuth, 쿠키, CORS, S3 값을 운영 환경 변수 파일에 모은다.
+?? DB, OAuth, 荑좏궎, CORS, S3 媛믪쓣 ?댁쁺 ?섍꼍 蹂???뚯씪??紐⑥???
 
-### 이유
+### ?댁쑀
 
-현재 `docker-compose.prod.yml`은 대부분의 설정을 `.env`에서 읽는다.
-특히 새 저장소에서 첫 GitHub Actions 배포를 할 때도 EC2에 `.env`가 미리 있어야 한다.
-`.env`가 없거나 `MYSQL_ROOT_PASS`가 비어 있으면 MySQL 컨테이너는 바로 종료된다.
+?꾩옱 `docker-compose.prod.yml`? ?遺遺꾩쓽 ?ㅼ젙??`.env`?먯꽌 ?쎈뒗??
+?뱁엳 ????μ냼?먯꽌 泥?GitHub Actions 諛고룷瑜????뚮룄 EC2??`.env`媛 誘몃━ ?덉뼱???쒕떎.
+`.env`媛 ?녾굅??`MYSQL_ROOT_PASS`媛 鍮꾩뼱 ?덉쑝硫?MySQL 而⑦뀒?대꼫??諛붾줈 醫낅즺?쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
-EC2에서 `.env` 파일 생성:
+EC2?먯꽌 `.env` ?뚯씪 ?앹꽦:
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 nano .env
 ```
 
-예시:
+?덉떆:
 
 ```dotenv
 API_DOMAIN=api.campusform.kro.kr
@@ -438,117 +438,114 @@ AWS_ACCESS_KEY=YOUR_S3_ACCESS_KEY
 AWS_SECRET_KEY=YOUR_S3_SECRET_KEY
 ```
 
-반드시 바꿔야 하는 값:
+諛섎뱶??諛붽퓭???섎뒗 媛?
 
 - `YOUR_GITHUB_OWNER`
-- MySQL 비밀번호 2개
-- Google Client ID / Secret
-- S3 관련 값
-
-MySQL 관련 키 이름은 아래처럼 정확히 맞아야 한다.
+- MySQL 鍮꾨?踰덊샇 2媛?- Google Client ID / Secret
+- S3 愿??媛?
+MySQL 愿?????대쫫? ?꾨옒泥섎읆 ?뺥솗??留욎븘???쒕떎.
 
 - `MYSQL_ROOT_PASS`
 - `DB_NAME`
 - `MYSQL_USER_NAME`
 - `MYSQL_USER_PASS`
 
-### 검증
-
+### 寃利?
 ```bash
 grep -E "^(API_DOMAIN|IMAGE_URI|DB_NAME|MYSQL_USER_NAME|FRONTEND_URL|COOKIE_DOMAIN)=" .env
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `=` 앞뒤 공백 확인
-- `https://` 누락 여부 확인
-- `MYSQL_ROOT_PASSWORD`가 아니라 `MYSQL_ROOT_PASS`를 썼는지 확인
-- Windows에서 만든 파일이면 줄바꿈이 `CRLF`거나 BOM이 들어가지 않았는지 확인
+- `=` ?욌뮘 怨듬갚 ?뺤씤
+- `https://` ?꾨씫 ?щ? ?뺤씤
+- `MYSQL_ROOT_PASSWORD`媛 ?꾨땲??`MYSQL_ROOT_PASS`瑜??쇰뒗吏 ?뺤씤
+- Windows?먯꽌 留뚮뱺 ?뚯씪?대㈃ 以꾨컮轅덉씠 `CRLF`嫄곕굹 BOM???ㅼ뼱媛吏 ?딆븯?붿? ?뺤씤
 
-## 14. Step 8. DNS 연결
+## 14. Step 8. DNS ?곌껐
 
-### 목적
+### 紐⑹쟻
 
-도메인이 EC2를 가리키게 만든다.
+?꾨찓?몄씠 EC2瑜?媛由ы궎寃?留뚮뱺??
 
-### 이유
+### ?댁쑀
 
-Let's Encrypt 인증서 발급은 도메인 검증 기반이다.
+Let's Encrypt ?몄쬆??諛쒓툒? ?꾨찓??寃利?湲곕컲?대떎.
 
-### 실행
+### ?ㅽ뻾
 
 - `api.campusform.kro.kr` -> EC2 Public IP
-- `web.campusform.kro.kr` -> 프론트 서비스 위치
+- `web.campusform.kro.kr` -> ?꾨줎???쒕퉬???꾩튂
 
-### 검증
+### 寃利?
 
 ```bash
 nslookup api.campusform.kro.kr
 ping api.campusform.kro.kr
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- A 레코드 IP가 EC2 공인 IP와 같은지 확인
-- DNS 전파 시간이 충분했는지 확인
+- A ?덉퐫??IP媛 EC2 怨듭씤 IP? 媛숈?吏 ?뺤씤
+- DNS ?꾪뙆 ?쒓컙??異⑸텇?덈뒗吏 ?뺤씤
 
-## 15. Step 9. 새 GitHub 저장소 생성
+## 15. Step 9. ??GitHub ??μ냼 ?앹꽦
 
-### 목적
+### 紐⑹쟻
 
-이 프로젝트의 원격 저장소를 새로 만든다.
+???꾨줈?앺듃???먭꺽 ??μ냼瑜??덈줈 留뚮뱺??
 
-### 이유
+### ?댁쑀
 
-GitHub Actions, GHCR, Secrets, Packages는 모두 GitHub 저장소 단위로 연결된다.
-즉, 새 저장소를 먼저 만들어야 이후 단계가 의미가 있다.
+GitHub Actions, GHCR, Secrets, Packages??紐⑤몢 GitHub ??μ냼 ?⑥쐞濡??곌껐?쒕떎.
+利? ????μ냼瑜?癒쇱? 留뚮뱾?댁빞 ?댄썑 ?④퀎媛 ?섎?媛 ?덈떎.
 
-### 실행
+### ?ㅽ뻾
 
-GitHub에서 새 repository 생성:
+GitHub?먯꽌 ??repository ?앹꽦:
 
-- Repository name: 원하는 이름
-- Visibility: private 권장
-- Default branch: `main` 기준으로 운영
+- Repository name: ?먰븯???대쫫
+- Visibility: private 沅뚯옣
+- Default branch: `main` 湲곗??쇰줈 ?댁쁺
 
-중요:
+以묒슂:
 
-- 로컬 프로젝트에 이미 Git 이력이 있다면 GitHub에서 `README`, `.gitignore`, `license`를 넣고 시작하지 않는 편이 단순하다.
-- 빈 저장소로 만드는 편이 최초 push 때 충돌이 없다.
+- 濡쒖뺄 ?꾨줈?앺듃???대? Git ?대젰???덈떎硫?GitHub?먯꽌 `README`, `.gitignore`, `license`瑜??ｊ퀬 ?쒖옉?섏? ?딅뒗 ?몄씠 ?⑥닚?섎떎.
+- 鍮???μ냼濡?留뚮뱶???몄씠 理쒖큹 push ??異⑸룎???녿떎.
 
-### 검증
+### 寃利?
 
-아래 형태의 빈 저장소 URL이 준비되어 있어야 한다.
+?꾨옒 ?뺥깭??鍮???μ냼 URL??以鍮꾨릺???덉뼱???쒕떎.
 
 ```text
 https://github.com/<OWNER>/<REPO>.git
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- GitHub에서 저장소를 다른 계정으로 만들지 않았는지 확인
-- 실수로 템플릿 저장소나 README 초기화를 켜지 않았는지 확인
+- GitHub?먯꽌 ??μ냼瑜??ㅻⅨ 怨꾩젙?쇰줈 留뚮뱾吏 ?딆븯?붿? ?뺤씤
+- ?ㅼ닔濡??쒗뵆由???μ냼??README 珥덇린?붾? 耳쒖? ?딆븯?붿? ?뺤씤
 
-## 16. Step 10. 로컬 프로젝트를 새 저장소에 push
+## 16. Step 10. 濡쒖뺄 ?꾨줈?앺듃瑜?????μ냼??push
 
-### 목적
+### 紐⑹쟻
 
-현재 로컬 프로젝트를 새 GitHub 저장소에 연결하고 기본 브랜치에 올린다.
+?꾩옱 濡쒖뺄 ?꾨줈?앺듃瑜???GitHub ??μ냼???곌껐?섍퀬 湲곕낯 釉뚮옖移섏뿉 ?щ┛??
 
-### 이유
+### ?댁쑀
 
-GitHub Actions가 보이려면 `.github/workflows/deploy.yml`이 원격 저장소의 기본 브랜치에 실제로 올라가 있어야 한다.
+GitHub Actions媛 蹂댁씠?ㅻ㈃ `.github/workflows/deploy.yml`???먭꺽 ??μ냼??湲곕낯 釉뚮옖移섏뿉 ?ㅼ젣濡??щ씪媛 ?덉뼱???쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
-현재 원격 상태 확인:
+?꾩옱 ?먭꺽 ?곹깭 ?뺤씤:
 
 ```bash
 git remote -v
 git branch --show-current
 ```
 
-기존 `origin`이 없다면:
+湲곗〈 `origin`???녿떎硫?
 
 ```bash
 git remote add origin https://github.com/<OWNER>/<REPO>.git
@@ -556,7 +553,7 @@ git branch -M main
 git push -u origin main
 ```
 
-기존 `origin`이 다른 저장소를 가리키면:
+湲곗〈 `origin`???ㅻⅨ ??μ냼瑜?媛由ы궎硫?
 
 ```bash
 git remote set-url origin https://github.com/<OWNER>/<REPO>.git
@@ -564,7 +561,7 @@ git branch -M main
 git push -u origin main
 ```
 
-만약 아직 로컬 커밋이 없다면 먼저 커밋:
+留뚯빟 ?꾩쭅 濡쒖뺄 而ㅻ컠???녿떎硫?癒쇱? 而ㅻ컠:
 
 ```bash
 git add .
@@ -572,126 +569,126 @@ git commit -m "chore: initialize repository"
 git push -u origin main
 ```
 
-### 이 단계에서 중요한 점
+### ???④퀎?먯꽌 以묒슂????
 
-- `.github/workflows/deploy.yml`이 같이 push되어야 한다.
-- 새 저장소라서 Actions 탭이 비어 있는 것은 push 전까지는 정상이다.
+- `.github/workflows/deploy.yml`??媛숈씠 push?섏뼱???쒕떎.
+- ????μ냼?쇱꽌 Actions ??씠 鍮꾩뼱 ?덈뒗 寃껋? push ?꾧퉴吏???뺤긽?대떎.
 
-### 검증
+### 寃利?
 
-GitHub 저장소 파일 목록에서 아래가 보이는지 확인한다.
+GitHub ??μ냼 ?뚯씪 紐⑸줉?먯꽌 ?꾨옒媛 蹂댁씠?붿? ?뺤씤?쒕떎.
 
 - `.github/workflows/deploy.yml`
 - `docker-compose.prod.yml`
 - `deploy/`
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- 현재 브랜치가 `main`인지 확인
-- push한 원격 저장소가 새 저장소가 맞는지 확인
-- `.github/workflows/` 폴더가 `.gitignore`에 걸리지 않는지 확인
+- ?꾩옱 釉뚮옖移섍? `main`?몄? ?뺤씤
+- push???먭꺽 ??μ냼媛 ????μ냼媛 留욌뒗吏 ?뺤씤
+- `.github/workflows/` ?대뜑媛 `.gitignore`??嫄몃━吏 ?딅뒗吏 ?뺤씤
 
-## 17. Step 11. GitHub Actions 활성화와 표시 조건 확인
+## 17. Step 11. GitHub Actions ?쒖꽦?붿? ?쒖떆 議곌굔 ?뺤씤
 
-### 목적
+### 紐⑹쟻
 
-새 GitHub 저장소에서 Actions가 왜 안 보이는지 이해하고, 실제로 동작 가능한 상태로 만든다.
+??GitHub ??μ냼?먯꽌 Actions媛 ????蹂댁씠?붿? ?댄빐?섍퀬, ?ㅼ젣濡??숈옉 媛?ν븳 ?곹깭濡?留뚮뱺??
 
-### 이유
+### ?댁쑀
 
-새 저장소를 만들면 Actions 실행 이력이 비어 있는 것이 정상이다.
-또한 조직이나 저장소 설정에 따라 Actions가 비활성화되어 있을 수도 있다.
+????μ냼瑜?留뚮뱾硫?Actions ?ㅽ뻾 ?대젰??鍮꾩뼱 ?덈뒗 寃껋씠 ?뺤긽?대떎.
+?먰븳 議곗쭅?대굹 ??μ냼 ?ㅼ젙???곕씪 Actions媛 鍮꾪솢?깊솕?섏뼱 ?덉쓣 ?섎룄 ?덈떎.
 
-### 먼저 알아둘 핵심
+### 癒쇱? ?뚯븘???듭떖
 
-- Actions 탭이 비어 있는 것과 Actions가 고장 난 것은 다르다.
-- `.github/workflows/deploy.yml`이 기본 브랜치에 올라가기 전에는 실행할 워크플로 자체가 없다.
-- workflow 파일이 올라간 뒤에도 저장소 설정에서 Actions가 막혀 있으면 실행되지 않는다.
+- Actions ??씠 鍮꾩뼱 ?덈뒗 寃껉낵 Actions媛 怨좎옣 ??寃껋? ?ㅻⅤ??
+- `.github/workflows/deploy.yml`??湲곕낯 釉뚮옖移섏뿉 ?щ씪媛湲??꾩뿉???ㅽ뻾???뚰겕?뚮줈 ?먯껜媛 ?녿떎.
+- workflow ?뚯씪???щ씪媛??ㅼ뿉????μ냼 ?ㅼ젙?먯꽌 Actions媛 留됲? ?덉쑝硫??ㅽ뻾?섏? ?딅뒗??
 
-### 실행
+### ?ㅽ뻾
 
-GitHub 저장소에서 아래를 확인한다.
+GitHub ??μ냼?먯꽌 ?꾨옒瑜??뺤씤?쒕떎.
 
-1. `Actions` 탭으로 이동
-2. 워크플로 목록이 비어 있더라도 먼저 `main` 브랜치에 workflow 파일이 올라갔는지 확인
-3. `Settings -> Actions -> General` 이동
-4. `Actions permissions`에서 Actions 사용이 허용되어 있는지 확인
-5. 외부 action을 쓰므로 `Allow all actions and reusable workflows`를 권장
-6. `Workflow permissions`는 `Read and write permissions`로 두는 편이 단순하다
-7. 저장 후 다시 `Actions` 탭 확인
+1. `Actions` ??쑝濡??대룞
+2. ?뚰겕?뚮줈 紐⑸줉??鍮꾩뼱 ?덈뜑?쇰룄 癒쇱? `main` 釉뚮옖移섏뿉 workflow ?뚯씪???щ씪媛붾뒗吏 ?뺤씤
+3. `Settings -> Actions -> General` ?대룞
+4. `Actions permissions`?먯꽌 Actions ?ъ슜???덉슜?섏뼱 ?덈뒗吏 ?뺤씤
+5. ?몃? action???곕?濡?`Allow all actions and reusable workflows`瑜?沅뚯옣
+6. `Workflow permissions`??`Read and write permissions`濡??먮뒗 ?몄씠 ?⑥닚?섎떎
+7. ??????ㅼ떆 `Actions` ???뺤씤
 
-### 왜 `Read and write permissions`를 권장하는가
+### ??`Read and write permissions`瑜?沅뚯옣?섎뒗媛
 
-현재 workflow는 GHCR push에 `packages: write` 권한을 사용한다.
-workflow 파일 안에도 권한을 명시해 두었지만, 새 저장소 세팅이 너무 보수적이면 처음부터 막힐 수 있다.
+?꾩옱 workflow??GHCR push??`packages: write` 沅뚰븳???ъ슜?쒕떎.
+workflow ?뚯씪 ?덉뿉??沅뚰븳??紐낆떆???먯뿀吏留? ????μ냼 ?명똿???덈Т 蹂댁닔?곸씠硫?泥섏쓬遺??留됲옄 ???덈떎.
 
-### 검증
+### 寃利?
 
-아래 둘 중 하나가 보여야 한다.
+?꾨옒 ??以??섎굹媛 蹂댁뿬???쒕떎.
 
-- `Deploy To EC2` workflow 항목
-- 혹은 `Run workflow` 버튼
+- `Deploy To EC2` workflow ??ぉ
+- ?뱀? `Run workflow` 踰꾪듉
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `.github/workflows/deploy.yml`이 원격 `main`에 실제로 올라갔는지 확인
-- 저장소나 조직에서 Actions가 차단되어 있지 않은지 확인
-- workflow 파일 경로가 정확히 `.github/workflows/deploy.yml`인지 확인
+- `.github/workflows/deploy.yml`???먭꺽 `main`???ㅼ젣濡??щ씪媛붾뒗吏 ?뺤씤
+- ??μ냼??議곗쭅?먯꽌 Actions媛 李⑤떒?섏뼱 ?덉? ?딆?吏 ?뺤씤
+- workflow ?뚯씪 寃쎈줈媛 ?뺥솗??`.github/workflows/deploy.yml`?몄? ?뺤씤
 
-## 18. Step 12. GHCR 준비
+## 18. Step 12. GHCR 以鍮?
 
-### 목적
+### 紐⑹쟻
 
-앱 이미지를 저장할 레지스트리를 준비한다.
+???대?吏瑜???ν븷 ?덉??ㅽ듃由щ? 以鍮꾪븳??
 
-### 이유
+### ?댁쑀
 
-현재 구조는 EC2에서 소스를 직접 빌드하지 않는다.
-CI가 이미지를 만들고 EC2는 그 이미지를 pull한다.
+?꾩옱 援ъ“??EC2?먯꽌 ?뚯뒪瑜?吏곸젒 鍮뚮뱶?섏? ?딅뒗??
+CI媛 ?대?吏瑜?留뚮뱾怨?EC2??洹??대?吏瑜?pull?쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
-현재 workflow가 push하는 이미지 형식:
+?꾩옱 workflow媛 push?섎뒗 ?대?吏 ?뺤떇:
 
 ```text
 ghcr.io/<GITHUB_OWNER>/campusform-server:latest
 ghcr.io/<GITHUB_OWNER>/campusform-server:<git-sha>
 ```
 
-해야 할 일:
+?댁빞 ????
 
-1. GitHub 저장소의 패키지 사용 가능 여부 확인
-2. GHCR pull용 GitHub 계정 결정
-3. `read:packages` 권한이 있는 PAT 생성
+1. GitHub ??μ냼???⑦궎吏 ?ъ슜 媛???щ? ?뺤씤
+2. GHCR pull??GitHub 怨꾩젙 寃곗젙
+3. `read:packages` 沅뚰븳???덈뒗 PAT ?앹꽦
 
-권장:
+沅뚯옣:
 
-- 배포 전용 PAT 1개 생성
-- 최소 권한만 부여
+- 諛고룷 ?꾩슜 PAT 1媛??앹꽦
+- 理쒖냼 沅뚰븳留?遺??
 
-### 새 저장소에서 자주 헷갈리는 점
+### ????μ냼?먯꽌 ?먯＜ ?룰컝由щ뒗 ??
 
-- 아직 첫 이미지 push 전이라면 Packages 탭이 비어 있어도 정상이다.
-- 첫 workflow가 성공해서 이미지가 push된 뒤에 GHCR 패키지가 보이는 경우가 많다.
+- ?꾩쭅 泥??대?吏 push ?꾩씠?쇰㈃ Packages ??씠 鍮꾩뼱 ?덉뼱???뺤긽?대떎.
+- 泥?workflow媛 ?깃났?댁꽌 ?대?吏媛 push???ㅼ뿉 GHCR ?⑦궎吏媛 蹂댁씠??寃쎌슦媛 留롫떎.
 
-### 검증
+### 寃利?
 
-GitHub의 Packages 화면을 열 수 있는지 확인한다.
+GitHub??Packages ?붾㈃???????덈뒗吏 ?뺤씤?쒕떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- private 패키지 접근 권한 확인
-- PAT 권한에 `read:packages` 포함 여부 확인
+- private ?⑦궎吏 ?묎렐 沅뚰븳 ?뺤씤
+- PAT 沅뚰븳??`read:packages` ?ы븿 ?щ? ?뺤씤
 
-## 19. Step 13. GitHub Secrets 등록
+## 19. Step 13. GitHub Secrets ?깅줉
 
-### 목적
+### 紐⑹쟻
 
-GitHub Actions가 EC2와 GHCR에 접근할 수 있게 한다.
+GitHub Actions媛 EC2? GHCR???묎렐?????덇쾶 ?쒕떎.
 
-### 이유
+### ?댁쑀
 
-현재 `.github/workflows/deploy.yml`은 아래 secret이 없으면 동작하지 않는다.
+?꾩옱 `.github/workflows/deploy.yml`? ?꾨옒 secret???놁쑝硫??숈옉?섏? ?딅뒗??
 
 - `EC2_HOST`
 - `EC2_USERNAME`
@@ -699,52 +696,52 @@ GitHub Actions가 EC2와 GHCR에 접근할 수 있게 한다.
 - `GHCR_USERNAME`
 - `GHCR_PAT`
 
-### 실행
+### ?ㅽ뻾
 
-GitHub 저장소에서:
+GitHub ??μ냼?먯꽌:
 
 `Settings -> Secrets and variables -> Actions -> New repository secret`
 
-등록할 값:
+?깅줉??媛?
 
 - `EC2_HOST`
-  EC2 Public IP 또는 Public DNS
+  EC2 Public IP ?먮뒗 Public DNS
 
 - `EC2_USERNAME`
-  보통 `ubuntu`
+  蹂댄넻 `ubuntu`
 
 - `EC2_SSH_KEY`
-  PEM 파일 전체 내용
+  PEM ?뚯씪 ?꾩껜 ?댁슜
 
 - `GHCR_USERNAME`
-  GHCR pull 가능한 GitHub 사용자명
+  GHCR pull 媛?ν븳 GitHub ?ъ슜?먮챸
 
 - `GHCR_PAT`
-  `read:packages` 권한 포함 PAT
+  `read:packages` 沅뚰븳 ?ы븿 PAT
 
-### 검증
+### 寃利?
 
-Secrets 목록에 위 5개가 모두 보이는지 확인한다.
+Secrets 紐⑸줉????5媛쒓? 紐⑤몢 蹂댁씠?붿? ?뺤씤?쒕떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- PEM 시작/끝 줄 포함 여부 확인
-- SSH key 내용 전체를 넣었는지 확인
+- PEM ?쒖옉/??以??ы븿 ?щ? ?뺤씤
+- SSH key ?댁슜 ?꾩껜瑜??ｌ뿀?붿? ?뺤씤
 
-## 20. Step 14. GitHub Actions 1회 실행으로 앱 이미지 생성
+## 20. Step 14. GitHub Actions 1???ㅽ뻾?쇰줈 ???대?吏 ?앹꽦
 
-### 목적
+### 紐⑹쟻
 
-최초 앱 이미지를 GHCR에 만들고, 배포 자산을 EC2에 넣는다.
+理쒖큹 ???대?吏瑜?GHCR??留뚮뱾怨? 諛고룷 ?먯궛??EC2???ｋ뒗??
 
-### 이유
+### ?댁쑀
 
-`app` 서비스는 `IMAGE_URI` 이미지를 pull해서 뜬다.
-즉, 최초 한 번은 GitHub Actions가 먼저 돌아서 이미지를 만들어야 한다.
+`app` ?쒕퉬?ㅻ뒗 `IMAGE_URI` ?대?吏瑜?pull?댁꽌 ?щ떎.
+利? 理쒖큹 ??踰덉? GitHub Actions媛 癒쇱? ?뚯븘???대?吏瑜?留뚮뱾?댁빞 ?쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
-방법 A. `main`에 push:
+諛⑸쾿 A. `main`??push:
 
 ```bash
 git add .
@@ -752,29 +749,28 @@ git commit -m "chore: prepare production deploy"
 git push origin main
 ```
 
-방법 B. GitHub에서 수동 실행:
+諛⑸쾿 B. GitHub?먯꽌 ?섎룞 ?ㅽ뻾:
 
 `Actions -> Deploy To EC2 -> Run workflow`
 
-### 이 단계에서 실제로 일어나는 일
+### ???④퀎?먯꽌 ?ㅼ젣濡??쇱뼱?섎뒗 ??
 
-1. 테스트 실행
-2. 앱 이미지 빌드
+1. ?뚯뒪???ㅽ뻾
+2. ???대?吏 鍮뚮뱶
 3. GHCR push
-4. `docker-compose.prod.yml`, `deploy/`를 EC2로 복사
-5. EC2에서 `docker compose pull app`
-6. EC2에서 `docker compose up -d --remove-orphans`
+4. `docker-compose.prod.yml`, `deploy/`瑜?EC2濡?蹂듭궗
+5. EC2?먯꽌 `docker compose pull app`
+6. EC2?먯꽌 `docker compose up -d --remove-orphans`
 
-### 새 저장소 기준으로 꼭 알아둘 점
+### ????μ냼 湲곗??쇰줈 瑗??뚯븘????
+- ???쒖젏源뚯? Actions ??뿉 ?꾨Т 寃껊룄 ?놁뿀?ㅺ?, 泥?push ?꾩뿉 ?뚰겕?뚮줈媛 ?섑??섎뒗 寃껋씠 ?뺤긽?대떎.
+- 泥?Actions ?ㅽ뻾 ?꾩뿉 EC2 `~/campusform-v2/.env`瑜?諛섎뱶??癒쇱? 留뚮뱾???ъ빞 ?쒕떎.
+- 泥?諛고룷?먯꽌??`campus-nginx`媛 ?몄쬆?쒓? ?놁뼱???쒕?濡????????덈떎.
+- ?닿굔 ?ㅼ쓬 ?④퀎?먯꽌 bootstrap ?ㅼ젙?쇰줈 諛붾줈 ?≪쑝硫??쒕떎.
 
-- 이 시점까지 Actions 탭에 아무 것도 없었다가, 첫 push 후에 워크플로가 나타나는 것이 정상이다.
-- 첫 Actions 실행 전에 EC2 `~/campus-project/.env`를 반드시 먼저 만들어 둬야 한다.
-- 첫 배포에서는 `campus-nginx`가 인증서가 없어서 제대로 안 뜰 수 있다.
-- 이건 다음 단계에서 bootstrap 설정으로 바로 잡으면 된다.
+### 寃利?
 
-### 검증
-
-Actions 로그에서 아래 순서가 보이는지 확인한다.
+Actions 濡쒓렇?먯꽌 ?꾨옒 ?쒖꽌媛 蹂댁씠?붿? ?뺤씤?쒕떎.
 
 - `Run tests`
 - `Build application`
@@ -782,32 +778,32 @@ Actions 로그에서 아래 순서가 보이는지 확인한다.
 - `Copy deploy assets to EC2`
 - `Deploy to EC2`
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `GHCR_PAT` 권한 확인
-- `EC2_HOST`, `EC2_USERNAME`, `EC2_SSH_KEY` 확인
-- Actions 설정이 막혀 있지 않은지 다시 확인
+- `GHCR_PAT` 沅뚰븳 ?뺤씤
+- `EC2_HOST`, `EC2_USERNAME`, `EC2_SSH_KEY` ?뺤씤
+- Actions ?ㅼ젙??留됲? ?덉? ?딆?吏 ?ㅼ떆 ?뺤씤
 
-## 21. Step 15. EC2에 배포 자산이 들어왔는지 확인
+## 21. Step 15. EC2??諛고룷 ?먯궛???ㅼ뼱?붾뒗吏 ?뺤씤
 
-### 목적
+### 紐⑹쟻
 
-EC2 안에 실제 배포 파일이 들어왔는지 확인한다.
+EC2 ?덉뿉 ?ㅼ젣 諛고룷 ?뚯씪???ㅼ뼱?붾뒗吏 ?뺤씤?쒕떎.
 
-### 이유
+### ?댁쑀
 
-bootstrap 전환, Certbot 발급, 자동 갱신은 모두 EC2 안의 배포 자산을 기준으로 진행한다.
+bootstrap ?꾪솚, Certbot 諛쒓툒, ?먮룞 媛깆떊? 紐⑤몢 EC2 ?덉쓽 諛고룷 ?먯궛??湲곗??쇰줈 吏꾪뻾?쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 ls -al
 ls -al deploy
 ls -al deploy/nginx
 ```
 
-최소 확인 파일:
+理쒖냼 ?뺤씤 ?뚯씪:
 
 - `docker-compose.prod.yml`
 - `deploy/nginx/bootstrap.conf.template`
@@ -815,81 +811,81 @@ ls -al deploy/nginx
 - `deploy/nginx/default.conf.template`
 - `deploy/scripts/renew-certificate.sh`
 
-파일이 없으면 수동 복사:
+?뚯씪???놁쑝硫??섎룞 蹂듭궗:
 
 ```bash
-scp -i /path/to/key.pem docker-compose.prod.yml ubuntu@<EC2_PUBLIC_IP>:~/campus-project/
-scp -i /path/to/key.pem -r deploy ubuntu@<EC2_PUBLIC_IP>:~/campus-project/
+scp -i /path/to/key.pem docker-compose.prod.yml ubuntu@<EC2_PUBLIC_IP>:~/campusform-v2/
+scp -i /path/to/key.pem -r deploy ubuntu@<EC2_PUBLIC_IP>:~/campusform-v2/
 ```
 
-### 검증
+### 寃利?
 
-위 파일들이 보이면 다음 단계로 넘어간다.
+???뚯씪?ㅼ씠 蹂댁씠硫??ㅼ쓬 ?④퀎濡??섏뼱媛꾨떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- workflow가 `Copy deploy assets to EC2`까지 성공했는지 확인
-- EC2 경로가 `~/campus-project`가 맞는지 확인
+- workflow媛 `Copy deploy assets to EC2`源뚯? ?깃났?덈뒗吏 ?뺤씤
+- EC2 寃쎈줈媛 `~/campusform-v2`媛 留욌뒗吏 ?뺤씤
 
-## 22. Step 16. Nginx bootstrap 설정 적용
+## 22. Step 16. Nginx bootstrap ?ㅼ젙 ?곸슜
 
-### 목적
+### 紐⑹쟻
 
-인증서가 없는 상태에서도 Nginx를 먼저 띄울 수 있게 한다.
+?몄쬆?쒓? ?녿뒗 ?곹깭?먯꽌??Nginx瑜?癒쇱? ?꾩슱 ???덇쾶 ?쒕떎.
 
-### 이유
+### ?댁쑀
 
-Let's Encrypt는 `/.well-known/acme-challenge/` 경로를 HTTP로 검증한다.
-인증서가 없는 첫 배포에서는 bootstrap 설정이 먼저 필요하다.
+Let's Encrypt??`/.well-known/acme-challenge/` 寃쎈줈瑜?HTTP濡?寃利앺븳??
+?몄쬆?쒓? ?녿뒗 泥?諛고룷?먯꽌??bootstrap ?ㅼ젙??癒쇱? ?꾩슂?섎떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 cp deploy/nginx/bootstrap.conf.template deploy/nginx/default.conf.template
 ```
 
-### 이 단계에서 바뀌는 것
+### ???④퀎?먯꽌 諛붾뚮뒗 寃?
 
-- Nginx는 `80` 포트 기준으로 뜬다
-- `/.well-known/acme-challenge/` 경로를 열 수 있다
-- 인증서가 없어도 시작 가능한 상태가 된다
+- Nginx??`80` ?ы듃 湲곗??쇰줈 ?щ떎
+- `/.well-known/acme-challenge/` 寃쎈줈瑜??????덈떎
+- ?몄쬆?쒓? ?놁뼱???쒖옉 媛?ν븳 ?곹깭媛 ?쒕떎
 
-### 검증
+### 寃利?
 
 ```bash
-cat ~/campus-project/deploy/nginx/default.conf.template
+cat ~/campusform-v2/deploy/nginx/default.conf.template
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- 실제로 바꿔야 하는 파일은 `default.conf.template`이다
-- `bootstrap.conf.template`만 보고 끝내지 않았는지 확인
+- ?ㅼ젣濡?諛붽퓭???섎뒗 ?뚯씪? `default.conf.template`?대떎
+- `bootstrap.conf.template`留?蹂닿퀬 ?앸궡吏 ?딆븯?붿? ?뺤씤
 
-## 23. Step 17. `app + db + nginx` 1차 기동
+## 23. Step 17. `app + db + nginx` 1李?湲곕룞
 
-### 목적
+### 紐⑹쟻
 
-부트스트랩 상태로 운영 컨테이너가 뜨는지 확인한다.
+遺?몄뒪?몃옪 ?곹깭濡??댁쁺 而⑦뀒?대꼫媛 ?⑤뒗吏 ?뺤씤?쒕떎.
 
-### 이유
+### ?댁쑀
 
-인증서 발급 전에 Nginx와 앱과 DB가 기본적으로 살아 있어야 한다.
+?몄쬆??諛쒓툒 ?꾩뿉 Nginx? ?깃낵 DB媛 湲곕낯?곸쑝濡??댁븘 ?덉뼱???쒕떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker compose -f docker-compose.prod.yml up -d
 ```
 
-상태 확인:
+?곹깭 ?뺤씤:
 
 ```bash
 sudo docker compose -f docker-compose.prod.yml ps
 ```
 
-로그 확인:
+濡쒓렇 ?뺤씤:
 
 ```bash
 sudo docker logs campus-mysql --tail 100
@@ -897,32 +893,32 @@ sudo docker logs campus-server --tail 100
 sudo docker logs campus-nginx --tail 100
 ```
 
-### 검증
+### 寃利?
 
-- `campus-mysql`가 `healthy` 상태인지 확인
-- `campus-server`가 종료되지 않는지 확인
-- `campus-nginx`가 종료되지 않는지 확인
+- `campus-mysql`媛 `healthy` ?곹깭?몄? ?뺤씤
+- `campus-server`媛 醫낅즺?섏? ?딅뒗吏 ?뺤씤
+- `campus-nginx`媛 醫낅즺?섏? ?딅뒗吏 ?뺤씤
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- `.env` 값 누락 여부 확인
-- `IMAGE_URI`가 실제 GHCR 이미지인지 확인
-- `default.conf.template`이 bootstrap 상태인지 확인
+- `.env` 媛??꾨씫 ?щ? ?뺤씤
+- `IMAGE_URI`媛 ?ㅼ젣 GHCR ?대?吏?몄? ?뺤씤
+- `default.conf.template`??bootstrap ?곹깭?몄? ?뺤씤
 
-## 24. Step 18. Certbot으로 인증서 최초 발급
+## 24. Step 18. Certbot?쇰줈 ?몄쬆??理쒖큹 諛쒓툒
 
-### 목적
+### 紐⑹쟻
 
-`api.campusform.kro.kr`용 HTTPS 인증서를 발급한다.
+`api.campusform.kro.kr`??HTTPS ?몄쬆?쒕? 諛쒓툒?쒕떎.
 
-### 이유
+### ?댁쑀
 
-운영 환경은 HTTPS가 기본이다.
+?댁쁺 ?섍꼍? HTTPS媛 湲곕낯?대떎.
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker run --rm \
   -v "$(pwd)/certbot/www:/var/www/certbot" \
   -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
@@ -934,152 +930,152 @@ sudo docker run --rm \
   --no-eff-email
 ```
 
-### 검증
+### 寃利?
 
 ```bash
-ls -al ~/campus-project/certbot/conf/live/api.campusform.kro.kr
+ls -al ~/campusform-v2/certbot/conf/live/api.campusform.kro.kr
 ```
 
-보여야 하는 파일:
+蹂댁뿬???섎뒗 ?뚯씪:
 
 - `fullchain.pem`
 - `privkey.pem`
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- DNS가 EC2 IP를 가리키는지 확인
-- 보안 그룹에서 `80` 포트가 열려 있는지 확인
-- `campus-nginx`가 떠 있는지 확인
+- DNS媛 EC2 IP瑜?媛由ы궎?붿? ?뺤씤
+- 蹂댁븞 洹몃９?먯꽌 `80` ?ы듃媛 ?대젮 ?덈뒗吏 ?뺤씤
+- `campus-nginx`媛 ???덈뒗吏 ?뺤씤
 
-## 25. Step 19. Nginx를 HTTPS 설정으로 전환
+## 25. Step 19. Nginx瑜?HTTPS ?ㅼ젙?쇰줈 ?꾪솚
 
-### 목적
+### 紐⑹쟻
 
-발급한 인증서를 실제 서비스에 적용한다.
+諛쒓툒???몄쬆?쒕? ?ㅼ젣 ?쒕퉬?ㅼ뿉 ?곸슜?쒕떎.
 
-### 이유
+### ?댁쑀
 
-인증서가 있어도 Nginx 설정이 HTTPS로 바뀌지 않으면 서비스에는 반영되지 않는다.
+?몄쬆?쒓? ?덉뼱??Nginx ?ㅼ젙??HTTPS濡?諛붾뚯? ?딆쑝硫??쒕퉬?ㅼ뿉??諛섏쁺?섏? ?딅뒗??
 
-### 실행
+### ?ㅽ뻾
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 cp deploy/nginx/https.conf.template deploy/nginx/default.conf.template
 sudo docker compose -f docker-compose.prod.yml up -d nginx
 sudo docker exec campus-nginx nginx -s reload
 ```
 
-### 검증
+### 寃利?
 
 ```bash
 curl -I https://api.campusform.kro.kr
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- 인증서 파일 존재 여부 확인
-- `default.conf.template`이 HTTPS 내용인지 확인
-- Nginx 로그 확인
+- ?몄쬆???뚯씪 議댁옱 ?щ? ?뺤씤
+- `default.conf.template`??HTTPS ?댁슜?몄? ?뺤씤
+- Nginx 濡쒓렇 ?뺤씤
 
-## 26. Step 20. 인증서 자동 갱신 설정
+## 26. Step 20. ?몄쬆???먮룞 媛깆떊 ?ㅼ젙
 
-### 목적
+### 紐⑹쟻
 
-인증서 만료 전에 자동 갱신되게 만든다.
+?몄쬆??留뚮즺 ?꾩뿉 ?먮룞 媛깆떊?섍쾶 留뚮뱺??
 
-### 이유
+### ?댁쑀
 
-Let's Encrypt 인증서는 자동 갱신이 없으면 운영 중 만료될 수 있다.
+Let's Encrypt ?몄쬆?쒕뒗 ?먮룞 媛깆떊???놁쑝硫??댁쁺 以?留뚮즺?????덈떎.
 
-### 실행
+### ?ㅽ뻾
 
-권한 부여:
+沅뚰븳 遺??
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 chmod +x deploy/scripts/renew-certificate.sh
 ```
 
-수동 테스트:
+?섎룞 ?뚯뒪??
 
 ```bash
-./deploy/scripts/renew-certificate.sh ~/campus-project
+./deploy/scripts/renew-certificate.sh ~/campusform-v2
 ```
 
-cron 등록:
+cron ?깅줉:
 
 ```bash
 crontab -e
 ```
 
-추가할 내용:
+異붽????댁슜:
 
 ```cron
-0 3 * * * /bin/sh /home/ubuntu/campus-project/deploy/scripts/renew-certificate.sh /home/ubuntu/campus-project >> /home/ubuntu/campus-project/certbot-renew.log 2>&1
+0 3 * * * /bin/sh /home/ubuntu/campusform-v2/deploy/scripts/renew-certificate.sh /home/ubuntu/campusform-v2 >> /home/ubuntu/campusform-v2/certbot-renew.log 2>&1
 ```
 
-### 검증
+### 寃利?
 
 ```bash
 crontab -l
-tail -n 50 ~/campus-project/certbot-renew.log
+tail -n 50 ~/campusform-v2/certbot-renew.log
 ```
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- EC2 사용자가 `ubuntu`인지 확인
-- 경로가 `/home/ubuntu/campus-project`인지 확인
+- EC2 ?ъ슜?먭? `ubuntu`?몄? ?뺤씤
+- 寃쎈줈媛 `/home/ubuntu/campusform-v2`?몄? ?뺤씤
 
-## 27. Step 21. Google OAuth 재설정
+## 27. Step 21. Google OAuth ?ъ꽕??
 
-### 목적
+### 紐⑹쟻
 
-운영 도메인 기준으로 Google 로그인과 Google Sheets 연동을 다시 맞춘다.
+?댁쁺 ?꾨찓??湲곗??쇰줈 Google 濡쒓렇?멸낵 Google Sheets ?곕룞???ㅼ떆 留욎텣??
 
-### 이유
+### ?댁쑀
 
-이 프로젝트는 Google OAuth를 2가지 용도로 사용한다.
+???꾨줈?앺듃??Google OAuth瑜?2媛吏 ?⑸룄濡??ъ슜?쒕떎.
 
-- 사용자 로그인
-- Google Sheets 연동 토큰 발급
+- ?ъ슜??濡쒓렇??
+- Google Sheets ?곕룞 ?좏겙 諛쒓툒
 
-### 27-1. 로그인 OAuth 흐름
+### 27-1. 濡쒓렇??OAuth ?먮쫫
 
 ```text
-브라우저
+釉뚮씪?곗?
   -> https://api.campusform.kro.kr/oauth2/authorization/google
-  -> Google 로그인
+  -> Google 濡쒓렇??
   -> https://api.campusform.kro.kr/login/oauth2/code/google
-  -> 백엔드가 세션 처리
+  -> 諛깆뿏?쒓? ?몄뀡 泥섎━
   -> https://web.campusform.kro.kr/auth/callback
 ```
 
-핵심:
+?듭떖:
 
-- Google이 직접 호출하는 로그인 콜백은 백엔드 주소다
-- 프론트의 `/auth/callback`은 Google이 직접 부르는 주소가 아니다
+- Google??吏곸젒 ?몄텧?섎뒗 濡쒓렇??肄쒕갚? 諛깆뿏??二쇱냼??
+- ?꾨줎?몄쓽 `/auth/callback`? Google??吏곸젒 遺瑜대뒗 二쇱냼媛 ?꾨땲??
 
-### 27-2. Google Sheets OAuth 흐름
+### 27-2. Google Sheets OAuth ?먮쫫
 
 ```text
-프론트
-  -> 백엔드에 authorize URL 요청
-  -> Google 승인 페이지 이동
+?꾨줎??
+  -> 諛깆뿏?쒖뿉 authorize URL ?붿껌
+  -> Google ?뱀씤 ?섏씠吏 ?대룞
   -> https://web.campusform.kro.kr/oauth/google/callback
-  -> 프론트가 code를 백엔드로 전달
-  -> 백엔드가 token 교환
+  -> ?꾨줎?멸? code瑜?諛깆뿏?쒕줈 ?꾨떖
+  -> 諛깆뿏?쒓? token 援먰솚
 ```
 
-### 27-3. Google Console에서 할 일
+### 27-3. Google Console?먯꽌 ????
 
 1. `APIs & Services -> OAuth consent screen`
 2. `APIs & Services -> Library`
-3. `Google Sheets API` 활성화
+3. `Google Sheets API` ?쒖꽦??
 4. `APIs & Services -> Credentials`
 5. `Create Credentials -> OAuth client ID`
 
-### 27-4. OAuth client 실제 입력값
+### 27-4. OAuth client ?ㅼ젣 ?낅젰媛?
 
 Authorized JavaScript origins:
 
@@ -1094,12 +1090,12 @@ https://api.campusform.kro.kr/login/oauth2/code/google
 https://web.campusform.kro.kr/oauth/google/callback
 ```
 
-주의:
+二쇱쓽:
 
-- origin에는 path를 넣지 않는다
-- `/auth/callback`은 Google redirect URI가 아니다
+- origin?먮뒗 path瑜??ｌ? ?딅뒗??
+- `/auth/callback`? Google redirect URI媛 ?꾨땲??
 
-### 27-5. EC2 `.env` 반영값
+### 27-5. EC2 `.env` 諛섏쁺媛?
 
 ```dotenv
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
@@ -1121,94 +1117,94 @@ SERVER_SERVLET_SESSION_COOKIE_SECURE=true
 SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=none
 ```
 
-반영 후 재기동:
+諛섏쁺 ???ш린??
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 nano .env
 sudo docker compose -f docker-compose.prod.yml up -d
 ```
 
-### 27-6. 로그인 테스트
+### 27-6. 濡쒓렇???뚯뒪??
 
 ```text
 https://api.campusform.kro.kr/oauth2/authorization/google?redirect_uri=https://web.campusform.kro.kr/auth/callback
 ```
 
-### 27-7. Google Sheets 연동 테스트
+### 27-7. Google Sheets ?곕룞 ?뚯뒪??
 
-1. 백엔드가 authorize URL을 만든다
-2. 사용자가 Google 승인한다
-3. Google이 `https://web.campusform.kro.kr/oauth/google/callback`으로 보낸다
-4. 프론트가 받은 `code`를 백엔드에 전달한다
-5. 백엔드가 token 교환에 성공한다
+1. 諛깆뿏?쒓? authorize URL??留뚮뱺??
+2. ?ъ슜?먭? Google ?뱀씤?쒕떎
+3. Google??`https://web.campusform.kro.kr/oauth/google/callback`?쇰줈 蹂대궦??
+4. ?꾨줎?멸? 諛쏆? `code`瑜?諛깆뿏?쒖뿉 ?꾨떖?쒕떎
+5. 諛깆뿏?쒓? token 援먰솚???깃났?쒕떎
 
-### 27-8. 실패 시 가장 먼저 볼 것
+### 27-8. ?ㅽ뙣 ??媛??癒쇱? 蹂?寃?
 
-- `http`와 `https`를 섞지 않았는지 확인
-- `api`와 `web` 도메인을 뒤집지 않았는지 확인
-- `.env` 수정 후 재기동했는지 확인
+- `http`? `https`瑜??욎? ?딆븯?붿? ?뺤씤
+- `api`? `web` ?꾨찓?몄쓣 ?ㅼ쭛吏 ?딆븯?붿? ?뺤씤
+- `.env` ?섏젙 ???ш린?숉뻽?붿? ?뺤씤
 
-## 28. Step 22. 정식 자동 배포 흐름 확인
+## 28. Step 22. ?뺤떇 ?먮룞 諛고룷 ?먮쫫 ?뺤씤
 
-### 목적
+### 紐⑹쟻
 
-bootstrap이 끝난 뒤 자동 배포가 정상적으로 도는지 확인한다.
+bootstrap???앸궃 ???먮룞 諛고룷媛 ?뺤긽?곸쑝濡??꾨뒗吏 ?뺤씤?쒕떎.
 
-### 이유
+### ?댁쑀
 
-최초 1회와 이후 배포는 성격이 다르다.
+理쒖큹 1?뚯? ?댄썑 諛고룷???깃꺽???ㅻⅤ??
 
-### 현재 워크플로의 실제 동작 순서
+### ?꾩옱 ?뚰겕?뚮줈???ㅼ젣 ?숈옉 ?쒖꽌
 
-1. `main` 브랜치에 push
-2. GitHub Actions가 checkout
-3. JDK 17 세팅
+1. `main` 釉뚮옖移섏뿉 push
+2. GitHub Actions媛 checkout
+3. JDK 17 ?명똿
 4. `./gradlew test`
 5. `./gradlew bootJar`
-6. Docker 이미지 빌드
-7. GHCR에 `latest`, `git sha` 태그로 push
-8. `docker-compose.prod.yml`, `deploy/`를 EC2로 복사
-9. EC2에 SSH 접속
-10. `.env`의 `IMAGE_URI` 최신화
+6. Docker ?대?吏 鍮뚮뱶
+7. GHCR??`latest`, `git sha` ?쒓렇濡?push
+8. `docker-compose.prod.yml`, `deploy/`瑜?EC2濡?蹂듭궗
+9. EC2??SSH ?묒냽
+10. `.env`??`IMAGE_URI` 理쒖떊??
 11. `docker compose pull app`
 12. `docker compose up -d --remove-orphans`
-13. 사용하지 않는 이미지 정리
+13. ?ъ슜?섏? ?딅뒗 ?대?吏 ?뺣━
 
-### 검증
+### 寃利?
 
-최초 bootstrap 이후에는 `main` push만으로 배포가 끝나는지 확인한다.
+理쒖큹 bootstrap ?댄썑?먮뒗 `main` push留뚯쑝濡?諛고룷媛 ?앸굹?붿? ?뺤씤?쒕떎.
 
-### 실패 시 확인
+### ?ㅽ뙣 ???뺤씤
 
-- GHCR 로그인 실패 여부
-- EC2 SSH 접속 실패 여부
-- `.env` 누락 여부
+- GHCR 濡쒓렇???ㅽ뙣 ?щ?
+- EC2 SSH ?묒냽 ?ㅽ뙣 ?щ?
+- `.env` ?꾨씫 ?щ?
 
-## 29. Step 23. 운영 검증
+## 29. Step 23. ?댁쁺 寃利?
 
-### 목적
+### 紐⑹쟻
 
-서비스가 실제 운영 가능한 상태인지 최종 점검한다.
+?쒕퉬?ㅺ? ?ㅼ젣 ?댁쁺 媛?ν븳 ?곹깭?몄? 理쒖쥌 ?먭??쒕떎.
 
-### 이유
+### ?댁쑀
 
-컨테이너가 떠 있는 것과 서비스가 정상인 것은 다르다.
+而⑦뀒?대꼫媛 ???덈뒗 寃껉낵 ?쒕퉬?ㅺ? ?뺤긽??寃껋? ?ㅻⅤ??
 
-### 점검 목록
+### ?먭? 紐⑸줉
 
-1. `https://api.campusform.kro.kr` 접속 가능
-2. 인증서 경고 없음
-3. `campus-nginx`가 재시작 반복 없이 유지됨
-4. `campus-server`가 재시작 반복 없이 유지됨
-5. `campus-mysql`가 `healthy` 상태
-6. Google 로그인 동작
-7. Google Sheets 연동 동작
+1. `https://api.campusform.kro.kr` ?묒냽 媛??
+2. ?몄쬆??寃쎄퀬 ?놁쓬
+3. `campus-nginx`媛 ?ъ떆??諛섎났 ?놁씠 ?좎???
+4. `campus-server`媛 ?ъ떆??諛섎났 ?놁씠 ?좎???
+5. `campus-mysql`媛 `healthy` ?곹깭
+6. Google 濡쒓렇???숈옉
+7. Google Sheets ?곕룞 ?숈옉
 
-### 검증 명령
+### 寃利?紐낅졊
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker compose -f docker-compose.prod.yml ps
 curl -I https://api.campusform.kro.kr
 sudo docker logs campus-server --tail 200
@@ -1216,115 +1212,115 @@ sudo docker logs campus-nginx --tail 200
 sudo docker logs campus-mysql --tail 200
 ```
 
-## 30. Step 24. 백업/복구/장애 대응 준비
+## 30. Step 24. 諛깆뾽/蹂듦뎄/?μ븷 ???以鍮?
 
-### 목적
+### 紐⑹쟻
 
-DB 유실과 운영 장애에 대비한다.
+DB ?좎떎怨??댁쁺 ?μ븷???鍮꾪븳??
 
-### 이유
+### ?댁쑀
 
-지금 구조는 MySQL을 직접 Docker로 운영하므로 백업과 복구도 직접 챙겨야 한다.
+吏湲?援ъ“??MySQL??吏곸젒 Docker濡??댁쁺?섎?濡?諛깆뾽怨?蹂듦뎄??吏곸젒 梨숆꺼???쒕떎.
 
-### 최소 백업 전략
+### 理쒖냼 諛깆뾽 ?꾨왂
 
 ```bash
-mkdir -p ~/campus-project/backup
-sudo docker exec campus-mysql sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" campusform' > ~/campus-project/backup/campusform-$(date +%F).sql
+mkdir -p ~/campusform-v2/backup
+sudo docker exec campus-mysql sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" campusform' > ~/campusform-v2/backup/campusform-$(date +%F).sql
 ```
 
-권장:
+沅뚯옣:
 
-- 최소 7일치 보관
-- 배포 전 수동 백업 추가
-- 가능하면 다른 스토리지에 1부 더 보관
+- 理쒖냼 7?쇱튂 蹂닿?
+- 諛고룷 ???섎룞 諛깆뾽 異붽?
+- 媛?ν븯硫??ㅻⅨ ?ㅽ넗由ъ???1遺 ??蹂닿?
 
-### 자주 쓰는 운영 명령
+### ?먯＜ ?곕뒗 ?댁쁺 紐낅졊
 
-상태 확인:
+?곹깭 ?뺤씤:
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker compose -f docker-compose.prod.yml ps
 ```
 
-전체 재기동:
+?꾩껜 ?ш린??
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker compose -f docker-compose.prod.yml up -d
 ```
 
-앱 로그:
+??濡쒓렇:
 
 ```bash
 sudo docker logs campus-server --tail 200
 ```
 
-DB 로그:
+DB 濡쒓렇:
 
 ```bash
 sudo docker logs campus-mysql --tail 200
 ```
 
-Nginx 로그:
+Nginx 濡쒓렇:
 
 ```bash
 sudo docker logs campus-nginx --tail 200
 ```
 
-앱만 새 이미지로 갱신:
+?깅쭔 ???대?吏濡?媛깆떊:
 
 ```bash
-cd ~/campus-project
+cd ~/campusform-v2
 sudo docker compose -f docker-compose.prod.yml pull app
 sudo docker compose -f docker-compose.prod.yml up -d app
 ```
 
-### 장애 대응 포인트
+### ?μ븷 ????ъ씤??
 
-#### HTTPS가 안 붙는다
+#### HTTPS媛 ??遺숇뒗??
 
-- 인증서 파일 존재 여부 확인
-- Nginx 설정이 bootstrap인지 HTTPS인지 확인
-- `80`, `443` 보안 그룹 확인
-- DNS A 레코드 확인
+- ?몄쬆???뚯씪 議댁옱 ?щ? ?뺤씤
+- Nginx ?ㅼ젙??bootstrap?몄? HTTPS?몄? ?뺤씤
+- `80`, `443` 蹂댁븞 洹몃９ ?뺤씤
+- DNS A ?덉퐫???뺤씤
 
-#### 브라우저에서 502 또는 504
+#### 釉뚮씪?곗??먯꽌 502 ?먮뒗 504
 
-- `campus-server` 로그 확인
-- DB 연결 성공 여부 확인
-- 앱 컨테이너 재시작 반복 여부 확인
+- `campus-server` 濡쒓렇 ?뺤씤
+- DB ?곌껐 ?깃났 ?щ? ?뺤씤
+- ??而⑦뀒?대꼫 ?ъ떆??諛섎났 ?щ? ?뺤씤
 
-#### DB 연결 실패
+#### DB ?곌껐 ?ㅽ뙣
 
-- `campus-mysql` 상태 확인
-- `.env`의 DB 계정과 비밀번호 확인
-- `DB_URL`이 `db:3306`을 가리키는지 확인
+- `campus-mysql` ?곹깭 ?뺤씤
+- `.env`??DB 怨꾩젙怨?鍮꾨?踰덊샇 ?뺤씤
+- `DB_URL`??`db:3306`??媛由ы궎?붿? ?뺤씤
 
-#### GHCR pull 실패
+#### GHCR pull ?ㅽ뙣
 
-- `GHCR_USERNAME` 확인
-- `GHCR_PAT` 확인
-- 패키지 접근 권한 확인
-- 이미지 경로 오타 확인
+- `GHCR_USERNAME` ?뺤씤
+- `GHCR_PAT` ?뺤씤
+- ?⑦궎吏 ?묎렐 沅뚰븳 ?뺤씤
+- ?대?吏 寃쎈줈 ?ㅽ? ?뺤씤
 
-## 31. 구조 요약
+## 31. 援ъ“ ?붿빟
 
-### 장점
+### ?μ젏
 
-- 비용이 낮다
-- 구조가 단순하다
-- 앱, DB, 프록시가 역할별로 분리된다
-- HTTPS와 배포 흐름이 명확하다
+- 鍮꾩슜????떎
+- 援ъ“媛 ?⑥닚?섎떎
+- ?? DB, ?꾨줉?쒓? ??븷蹂꾨줈 遺꾨━?쒕떎
+- HTTPS? 諛고룷 ?먮쫫??紐낇솗?섎떎
 
-### 단점
+### ?⑥젏
 
-- 운영 책임을 직접 져야 한다
-- EC2 단일 장애 지점이 있다
-- DB 백업을 직접 챙겨야 한다
+- ?댁쁺 梨낆엫??吏곸젒 ?몄빞 ?쒕떎
+- EC2 ?⑥씪 ?μ븷 吏?먯씠 ?덈떎
+- DB 諛깆뾽??吏곸젒 梨숆꺼???쒕떎
 
-## 32. 공식 문서 참고
+## 32. 怨듭떇 臾몄꽌 李멸퀬
 
 - AWS EC2 Key Pairs  
   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html
@@ -1344,15 +1340,16 @@ sudo docker compose -f docker-compose.prod.yml up -d app
 - Google OAuth Web Server Apps  
   https://developers.google.com/identity/protocols/oauth2/web-server
 
-## 33. 최종 결론
+## 33. 理쒖쥌 寃곕줎
 
-현재 이 프로젝트의 가장 현실적인 구조는 아래와 같다.
+?꾩옱 ???꾨줈?앺듃??媛???꾩떎?곸씤 援ъ“???꾨옒? 媛숇떎.
 
-- EC2 1대
-- `app`, `db`, `nginx` 3컨테이너 분리
-- MySQL 직접 Docker 운영
-- Nginx 별도 Docker 운영
-- GHCR를 통한 이미지 저장
-- GitHub Actions 자동 배포
+- EC2 1?
+- `app`, `db`, `nginx` 3而⑦뀒?대꼫 遺꾨━
+- MySQL 吏곸젒 Docker ?댁쁺
+- Nginx 蹂꾨룄 Docker ?댁쁺
+- GHCR瑜??듯븳 ?대?吏 ???
+- GitHub Actions ?먮룞 諛고룷
 
-새 GitHub 저장소에서 시작하더라도, `workflow 파일을 main에 올리고 -> Actions를 허용하고 -> Secrets를 넣고 -> 첫 이미지를 만든 뒤 -> bootstrap/HTTPS 전환` 순서로 가면 운영 가능한 상태까지 연결할 수 있다.
+??GitHub ??μ냼?먯꽌 ?쒖옉?섎뜑?쇰룄, `workflow ?뚯씪??main???щ━怨?-> Actions瑜??덉슜?섍퀬 -> Secrets瑜??ｊ퀬 -> 泥??대?吏瑜?留뚮뱺 ??-> bootstrap/HTTPS ?꾪솚` ?쒖꽌濡?媛硫??댁쁺 媛?ν븳 ?곹깭源뚯? ?곌껐?????덈떎.
+
