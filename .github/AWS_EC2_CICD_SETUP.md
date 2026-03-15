@@ -445,6 +445,13 @@ AWS_SECRET_KEY=YOUR_S3_SECRET_KEY
 - Google Client ID / Secret
 - S3 관련 값
 
+MySQL 관련 키 이름은 아래처럼 정확히 맞아야 한다.
+
+- `MYSQL_ROOT_PASS`
+- `DB_NAME`
+- `MYSQL_USER_NAME`
+- `MYSQL_USER_PASS`
+
 ### 검증
 
 ```bash
@@ -455,6 +462,8 @@ grep -E "^(API_DOMAIN|IMAGE_URI|DB_NAME|MYSQL_USER_NAME|FRONTEND_URL|COOKIE_DOMA
 
 - `=` 앞뒤 공백 확인
 - `https://` 누락 여부 확인
+- `MYSQL_ROOT_PASSWORD`가 아니라 `MYSQL_ROOT_PASS`를 썼는지 확인
+- Windows에서 만든 파일이면 줄바꿈이 `CRLF`거나 BOM이 들어가지 않았는지 확인
 
 ## 14. Step 8. DNS 연결
 
