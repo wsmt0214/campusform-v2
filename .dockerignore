@@ -1,0 +1,10 @@
+.git
+.github
+.gradle
+.idea
+.cursor
+.vscode
+build
+docs
+db_data
+*.md

@@ -1,21 +1,24 @@
-FROM gradle:7.6-jdk17 AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
-WORKDIR /build
+WORKDIR /app
 
-COPY build.gradle settings.gradle /build/
+COPY gradlew build.gradle settings.gradle ./
+COPY gradle ./gradle
 
-RUN gradle build -x test --parallel --continue > /dev/null 2>&1 || true
+RUN chmod +x gradlew
 
-COPY src /build/src
+COPY src ./src
 
-RUN gradle build -x test --parallel
+RUN ./gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /build/build/libs/*SNAPSHOT.jar app.jar
+COPY --from=builder /app/build/libs/*SNAPSHOT.jar app.jar
 
 ENV TZ=Asia/Seoul
+
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

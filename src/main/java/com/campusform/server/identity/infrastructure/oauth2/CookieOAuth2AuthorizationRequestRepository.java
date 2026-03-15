@@ -33,7 +33,7 @@ public class CookieOAuth2AuthorizationRequestRepository
     private static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
     private static final int COOKIE_EXPIRE_SECONDS = 180; // 3분
 
-    @Value("${COOKIE_DOMAIN:campus-form-server.kro.kr}")
+    @Value("${COOKIE_DOMAIN:}")
     private String cookieDomain;
 
     @Value("${COOKIE_SECURE:true}")

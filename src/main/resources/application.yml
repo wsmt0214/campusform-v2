@@ -20,8 +20,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: ${GOOGLE_CLIENT_ID:dummy-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-google-client-secret}
             scope:
               - email
               - profile
@@ -42,15 +42,15 @@ aws:
     bucket: ${AWS_S3_BUCKET:dummy-bucket}
     region: ${AWS_S3_REGION:ap-northeast-2}
   credentials:
-    access-key: ${AWS_ACCESS_KEY:dummy-access-key}
-    secret-key: ${AWS_SECRET_KEY:dummy-secret-key}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
 
 # OAuth2 Redirect URI (공통 기본값)
 app:
   oauth2:
-    login-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/auth/callback
-    sheets-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/oauth/google/callback
-    allowed-redirect-uris: http://localhost:3000,https://web.campus-form-server.kro.kr
+    login-redirect-uri: ${APP_OAUTH2_LOGIN_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/auth/callback}
+    sheets-redirect-uri: ${APP_OAUTH2_SHEETS_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/oauth/google/callback}
+    allowed-redirect-uris: ${APP_OAUTH2_ALLOWED_REDIRECT_URIS:http://localhost:3000}
 
 ---
 # 로컬 개발용
@@ -108,7 +108,7 @@ server:
     session:
       timeout: 24h
       cookie:
-        domain: campus-form-server.kro.kr
-        same-site: none
-        secure: true
+        domain: ${SERVER_SERVLET_SESSION_COOKIE_DOMAIN:}
+        same-site: ${SERVER_SERVLET_SESSION_COOKIE_SAME_SITE:none}
+        secure: ${SERVER_SERVLET_SESSION_COOKIE_SECURE:true}
         http-only: true
