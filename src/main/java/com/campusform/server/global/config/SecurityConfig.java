@@ -1,6 +1,8 @@
 package com.campusform.server.global.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -88,7 +90,7 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(Arrays.asList(corsAllowedOrigins.split(",")));
+                configuration.setAllowedOriginPatterns(buildAllowedOriginPatterns());
                 configuration.setAllowedMethods(
                                 Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -97,5 +99,18 @@ public class SecurityConfig {
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
                 return source;
+        }
+
+        private List<String> buildAllowedOriginPatterns() {
+                List<String> patterns = new ArrayList<>();
+                patterns.add("http://localhost:*");
+                patterns.add("http://127.0.0.1:*");
+                patterns.add("https://localhost:*");
+                patterns.add("https://127.0.0.1:*");
+                patterns.addAll(Arrays.stream(corsAllowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(origin -> !origin.isEmpty())
+                                .toList());
+                return patterns;
         }
 }
