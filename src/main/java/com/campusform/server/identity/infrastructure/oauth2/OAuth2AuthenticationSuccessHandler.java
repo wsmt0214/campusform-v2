@@ -1,6 +1,7 @@
 package com.campusform.server.identity.infrastructure.oauth2;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -46,8 +47,21 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     private boolean isAuthorizedRedirectUri(String uri) {
+        if (isLocalRedirectUri(uri)) {
+            return true;
+        }
         return Arrays.stream(allowedRedirectUrisString.split(","))
                 .map(String::trim)
                 .anyMatch(uri::startsWith);
+    }
+
+    private boolean isLocalRedirectUri(String uri) {
+        try {
+            URI parsedUri = URI.create(uri);
+            String host = parsedUri.getHost();
+            return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
