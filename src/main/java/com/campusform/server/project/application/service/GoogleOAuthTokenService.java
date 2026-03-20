@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -38,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GoogleOAuthTokenService {
 
+    private static final Pattern REDIRECT_URI_PATTERN = Pattern.compile("redirect_uri=([^&]+)");
+
     private final GoogleOAuthTokenRepository tokenRepository;
     private final RestTemplate restTemplate;
 
@@ -55,6 +59,8 @@ public class GoogleOAuthTokenService {
      */
     @Transactional
     public ExchangeGoogleOAuthCodeResponse exchangeCode(ExchangeGoogleOAuthCodeRequest request) {
+        log.info("Google OAuth2 redirect URI debug - requestedRedirectUri: {}, configuredDefaultRedirectUri: {}",
+                request.getRedirectUri(), defaultRedirectUri);
         log.info("Google OAuth2 code 교환 시작 - code: {}, redirectUri: {}",
                 request.getCode().substring(0, Math.min(20, request.getCode().length())) + "...",
                 request.getRedirectUri());
@@ -119,6 +125,8 @@ public class GoogleOAuthTokenService {
 
             log.info("Google OAuth2 code 교환 성공 - expiresIn: {}초, scope: {}", expiresIn, scope);
 
+            log.info("Google OAuth2 redirect URI debug - token exchange succeeded with redirectUri: {}",
+                    request.getRedirectUri());
             return new ExchangeGoogleOAuthCodeResponse(
                     accessToken,
                     refreshToken,
@@ -130,6 +138,8 @@ public class GoogleOAuthTokenService {
             // 401/400 등 Google이 반환한 상태코드와 응답 본문(error, error_description)을 로그·메시지에 포함
             String responseBody = e.getResponseBodyAsString();
             log.error("Google OAuth2 code 교환 실패 status={} body={}", e.getStatusCode(), responseBody, e);
+            log.error("Google OAuth2 redirect URI debug - token exchange failed with redirectUri: {}, configuredDefaultRedirectUri: {}",
+                    request.getRedirectUri(), defaultRedirectUri);
             String detail = responseBody != null && !responseBody.isEmpty()
                     ? responseBody
                     : e.getMessage();
@@ -186,8 +196,11 @@ public class GoogleOAuthTokenService {
      * @return 구글 동의 화면 URL
      */
     public String buildAuthorizeUrl(boolean useLocalhost) {
-        String redirectUri = useLocalhost ? "http://localhost:3000/oauth/google/callback" : defaultRedirectUri;
-        return buildAuthorizeUrlWithRedirectUri(redirectUri);
+        String redirectUri = resolveRedirectUri(useLocalhost);
+        String authorizeUrl = buildAuthorizeUrlWithRedirectUri(redirectUri);
+        log.info("Google OAuth2 redirect URI debug - authorize URL created. useLocalhost: {}, resolvedRedirectUri: {}, configuredDefaultRedirectUri: {}, authorizeUrlRedirectUri: {}",
+                useLocalhost, redirectUri, defaultRedirectUri, extractRedirectUriFromAuthorizeUrl(authorizeUrl));
+        return authorizeUrl;
     }
 
     private String buildAuthorizeUrlWithRedirectUri(String redirectUri) {
@@ -206,6 +219,18 @@ public class GoogleOAuthTokenService {
                         "access_type=offline&" + // 더불어 refresh_token 받기 위해 필수.
                         "prompt=consent", // 항상 권한 승인 화면 표시, 없으면 이미 승인한 경우 refresh_token을 받지 못할 수 있음
                 clientId, encodedRedirectUri, encodedScope);
+    }
+
+    private String resolveRedirectUri(boolean useLocalhost) {
+        return useLocalhost ? "http://localhost:3000/oauth/google/callback" : defaultRedirectUri;
+    }
+
+    private String extractRedirectUriFromAuthorizeUrl(String authorizeUrl) {
+        Matcher matcher = REDIRECT_URI_PATTERN.matcher(authorizeUrl);
+        if (!matcher.find()) {
+            return "N/A";
+        }
+        return java.net.URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8);
     }
 
     /**

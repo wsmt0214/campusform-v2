@@ -41,6 +41,8 @@ public class GoogleOAuthController {
     public ResponseEntity<ExchangeGoogleOAuthCodeResponse> exchangeCode(
             @RequestBody ExchangeGoogleOAuthCodeRequest request,
             @CurrentUserId Long userId) {
+        log.info("Google OAuth2 redirect URI debug - exchange-code requested. userId: {}, redirectUri: {}",
+                userId, request.getRedirectUri());
         // 구글 토큰 엔드포인트(https://oauth2.googleapis.com/token)에 Post 요청하여 Code를 Token으로 교환
         ExchangeGoogleOAuthCodeResponse response = tokenService.exchangeCode(request);
 
@@ -69,6 +71,7 @@ public class GoogleOAuthController {
     @GetMapping("/authorize-url")
     public ResponseEntity<Map<String, String>> getAuthorizeUrl(
             @RequestParam(required = false, defaultValue = "false") boolean useLocalhost) {
+        log.info("Google OAuth2 redirect URI debug - authorize-url requested. useLocalhost: {}", useLocalhost);
         String authorizeUrl = tokenService.buildAuthorizeUrl(useLocalhost);
         return ResponseEntity.ok(Map.of("authorizeUrl", authorizeUrl));
     }
