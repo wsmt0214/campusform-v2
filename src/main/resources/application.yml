@@ -46,11 +46,20 @@ aws:
     secret-key: ${AWS_SECRET_KEY:}
 
 # OAuth2 Redirect URI (공통 기본값)
+
+
+#app:
+  #oauth2:
+    #login-redirect-uri: ${APP_OAUTH2_LOGIN_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/auth/callback}
+    #sheets-redirect-uri: ${APP_OAUTH2_SHEETS_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/oauth/google/callback}
+    #allowed-redirect-uris: ${APP_OAUTH2_ALLOWED_REDIRECT_URIS:http://localhost:3000}
 app:
   oauth2:
-    login-redirect-uri: ${APP_OAUTH2_LOGIN_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/auth/callback}
-    sheets-redirect-uri: ${APP_OAUTH2_SHEETS_REDIRECT_URI:${FRONTEND_URL:http://localhost:3000}/oauth/google/callback}
-    allowed-redirect-uris: ${APP_OAUTH2_ALLOWED_REDIRECT_URIS:http://localhost:3000}
+    login-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/auth/callback
+    sheets-redirect-uri: ${FRONTEND_URL:http://localhost:3000}/oauth/google/callback
+    allowed-redirect-uris:
+      - ${APP_OAUTH2_ALLOWED_REDIRECT_URIS}
+      - http://localhost:3000
 
 ---
 # 로컬 개발용
