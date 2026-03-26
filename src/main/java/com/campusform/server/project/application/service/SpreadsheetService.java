@@ -96,6 +96,7 @@ public class SpreadsheetService {
     public SheetSyncResponse syncSheet(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        boolean isInitialSync = project.getLastSyncedAt() == null;
 
         String sheetUrl = project.getSheetUrl();
         Long ownerId = project.getOwnerId();
@@ -223,12 +224,14 @@ public class SpreadsheetService {
             SheetSyncStatistics statistics = new SheetSyncStatistics(
                     syncedCount, newCount, updatedCount);
 
-            // 이벤트 발행
-            List<Long> adminIds = project.getAdminIds();
-            List<SheetSyncChangeInfo> finalChanges = eventChanges.isEmpty() ? null : eventChanges;
-            String projectTitle = project.getTitle() != null ? project.getTitle().trim() : null;
-            eventPublisher.publishEvent(new SheetSyncCompletedEvent(
-                    project.getId(), projectTitle, adminIds, statistics, finalChanges));
+            // 최초 동기화는 프로젝트 생성 직후 대량 유입이 기본 동작이므로 알림을 생략
+            if (!isInitialSync) {
+                List<Long> adminIds = project.getAdminIds();
+                List<SheetSyncChangeInfo> finalChanges = eventChanges.isEmpty() ? null : eventChanges;
+                String projectTitle = project.getTitle() != null ? project.getTitle().trim() : null;
+                eventPublisher.publishEvent(new SheetSyncCompletedEvent(
+                        project.getId(), projectTitle, adminIds, statistics, finalChanges));
+            }
 
             project.updateSyncStatus(SyncStatus.OK);
             projectRepository.save(project);
