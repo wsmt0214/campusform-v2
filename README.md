@@ -1,88 +1,131 @@
-## Campus Form Server
+# CampusForm Server
 
-**Campus Form** 프로젝트의 백엔드 서버 레포지토리입니다.
+CampusForm Server는 Google Form/Sheet 기반 지원자 모집 운영을 위한 백엔드 API 서버입니다.  
+프로젝트 생성, 지원자 동기화, 심사, 댓글 협업, 면접 운영, 알림/SMS 처리까지 운영 플로우를 하나로 묶는 데 초점을 둡니다.
 
----
+## 프로젝트 소개
 
-### 🐳 Tech Stack 
+CampusForm은 스프레드시트에 쌓이는 지원 데이터를 프로젝트 단위로 관리하고, 운영진이 같은 기준으로 심사와 면접을 진행할 수 있게 만드는 서비스입니다.  
+이 서버는 그 중심에서 인증, 프로젝트 관리, 지원자 관리, 인터뷰 운영, 알림 기능을 제공합니다.
 
-| Category | Technology | Version |
-| --- | --- | --- |
-| **Language** | Java | 17 |
-| **Framework** | Spring Boot | 3.5.9 |
-| **Build Tool** | Gradle | 8.x |
-| **Database** | MySQL | 8.0 |
-| **Infra** | AWS EC2, Docker | - |
-| **CI/CD** | GitHub Actions | - |
+## 해결하려는 문제
 
----
+기존 모집 운영은 폼, 시트, 메신저, 문서가 분산되어 있어 상태 관리와 협업 기록이 끊기기 쉽습니다.  
+CampusForm Server는 Google Sheet를 입력 소스로 유지하면서도, 그 이후의 심사/협업/면접 운영을 백엔드 도메인으로 통합합니다.
 
-### 📋 로컬 실행 가이드 (Getting Started)
+## 핵심 기능
 
-아래 절차에 따라 로컬 개발 환경을 세팅해 주세요.
+- 프로젝트 생성, 수정, 삭제
+- OWNER / ADMIN 권한 분리 및 관리자 관리
+- Google OAuth 및 Google Sheets 연동
+- 지원자 동기화, 조회, 상태 변경, 북마크
+- 댓글 협업, 알림 조회/읽음 처리
+- 면접 가능 시간 수집, 스마트 스케줄, 수동 배정
+- 결과 안내용 SMS 템플릿 및 미리보기
 
-#### 1. 프로젝트 클론
+## 시스템 아키텍처
 
-```bash
-git clone https://github.com/Konkuk-KUIT/CAMPUSFORM-Server.git
-cd CAMPUSFORM-Server
+도메인 중심 패키지 구조를 사용하며, 각 컨텍스트 내부에서 `presentation -> application -> domain -> infrastructure` 레이어로 책임을 나눕니다.
 
+```text
+src/main/java/com/campusform/server
+├─ identity
+├─ project
+├─ recruiting
+├─ notification
+└─ global
 ```
 
-#### 2. 환경 변수 설정 (.env)
+- `identity`: 로그인, 사용자 정보, 프로필, 알림 수신 설정
+- `project`: 프로젝트 관리, 관리자 관리, Google OAuth, Google Sheets 연동
+- `recruiting`: 지원자 심사, 댓글, 면접 설정, 스케줄링, 결과 안내
+- `notification`: 알림 저장/조회 및 이벤트 기반 알림 생성
+- `global`: 보안, 공통 예외 처리, 설정
 
-프로젝트 **최상위 루트(`root`)** 경로에 `.env` 파일을 생성하고, 팀 노션을 참고하여 값을 채워주세요.
+이벤트 기반 후처리도 일부 적용되어 있습니다.
 
-#### 3. DB 컨테이너 실행
+- `AdminAddedEvent` -> 관리자 추가 알림
+- `CommentCreatedEvent` -> 댓글 알림
+- `SheetSyncCompletedEvent` -> 동기화 결과 알림
+- `ApplicantUpdated` -> SMS 발송
 
-로컬 DB는 Docker를 통해 실행합니다. (로컬 3306 포트 충돌 방지를 위해 **3307** 포트를 사용합니다.)
+## 기술 스택
 
-```bash
-# 백그라운드 모드로 DB만 실행
-docker-compose up -d db
+| Category | Technology |
+| --- | --- |
+| Language | Java 17 |
+| Framework | Spring Boot 3.5.9 |
+| Security | Spring Security, OAuth2 Client |
+| Persistence | Spring Data JPA |
+| Database | MySQL 8.0, H2 |
+| API Docs | Swagger UI, OpenAPI |
+| External Integration | Google OAuth, Google Sheets API, AWS S3 |
+| Infra | Docker, Nginx, AWS EC2, GHCR |
+| CI/CD | GitHub Actions |
+
+## 주요 도메인 흐름
+
+1. 운영진이 프로젝트를 생성하고 Google Sheets 권한을 연결합니다.
+2. 서버가 Sheet 응답을 읽어 지원자를 프로젝트에 동기화합니다.
+3. 운영진이 지원자를 심사하고 댓글로 협업합니다.
+4. 면접 단계에서는 가능 시간 수집, 스마트 스케줄 생성, 수동 조정을 진행합니다.
+5. 결과 안내와 운영 이벤트는 알림/SMS 후처리로 이어집니다.
+
+프로젝트 상태 흐름:
+
+```text
+DOCUMENT -> INTERVIEW -> INTERVIEW_COMPLETE
+DOCUMENT -> DOCUMENT_COMPLETE
 ```
 
-* **확인:** `docker ps` 명령어로 `campus-mysql` 컨테이너가 떠 있는지 확인하세요.
-* **접속 정보:**
-* Host: `localhost`
-* Port: `3307`
-* User/PW: `.env`에 설정한 값
+## 환경 변수 / 외부 연동
 
-#### 4. Spring Boot 실행
+이 프로젝트는 아래 연동에 의존합니다.
 
-IntelliJ에서 `CampusFormServerApplication`을 Run 하거나, 터미널에서 아래 명령어로 실행합니다.
+- DB: MySQL 운영 DB, H2 로컬 개발 DB
+- Google OAuth: 로그인 및 Sheets 권한 위임
+- Google Sheets API: 지원자 데이터 동기화
+- AWS S3: 프로필 이미지 저장
+- CORS / Cookie / 배포 변수: 프론트엔드 연동 및 운영 환경 설정
 
-```bash
-./gradlew bootRun
+대표 환경 변수 범주는 다음과 같습니다.
 
-```
+- DB: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+- OAuth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FRONTEND_URL`
+- Sheets Redirect: `APP_OAUTH2_LOGIN_REDIRECT_URI`, `APP_OAUTH2_SHEETS_REDIRECT_URI`
+- CORS / Cookie: `CORS_ALLOWED_ORIGINS`, `COOKIE_DOMAIN`, `COOKIE_SECURE`
+- AWS S3: `AWS_S3_BUCKET`, `AWS_S3_REGION`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`
 
----
+## API 문서 
 
-### 🤝 협업 및 배포 전략 (GitHub Flow & CI/CD) 
+- Swagger UI: `/swagger-ui/index.html`
+- OpenAPI Docs: `/v3/api-docs`
+- 인증 방식: `JSESSIONID` 쿠키 기반
 
-#### Branch Strategy
+## 배포 방식
 
-* **`main`**: **유일한 기준 브랜치**입니다. 항상 배포 가능한 상태를 유지하며, 이곳에 Merge되면 **AWS EC2로 자동 배포**됩니다.
-* **`feat/기능명`**: 개별 기능 개발 브랜치입니다. `main`에서 분기하여 작업 완료 후 `main`으로 PR을 보냅니다.
+배포는 GitHub Actions 기반으로 자동화되어 있습니다.
 
----
+1. `main` 브랜치에 push
+2. 테스트 실행
+3. Docker 이미지 빌드 및 GHCR push
+4. EC2로 배포 자산 복사 후 `docker compose` 재기동
 
-#### Work Flow 
+운영 구성은 `app`, `db`, `nginx` 서비스 기준이며, 자세한 파이프라인은 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), 컨테이너 구성은 [`docker-compose.prod.yml`](docker-compose.prod.yml)에서 확인할 수 있습니다.
 
-1. 이슈 생성
-2. `main` 브랜치에서 새로운 브랜치 생성 (`feat/기능명`)
-3. 작업 완료 후 `main`으로 Pull Request (PR)
-4. 코드 리뷰 및 Merge (1개 이상의 Approve 후 Merge → 자동 배포 트리거)
-
----
+## ERD / 다이어그램
 
 ### ERD
+
 <img width="3438" height="2416" alt="CampusForm 최종 ERD" src="https://github.com/user-attachments/assets/233b237b-68ac-4bd2-bce9-6609c29b47a9" />
 
----
-
 ### 아키텍처 다이어그램
-<img width="697" height="398" alt="KakaoTalk_20260219_113319858" src="https://github.com/user-attachments/assets/7f35a691-9e30-4164-b31a-19bdbfc5edd7" />
 
+<img width="697" height="398" alt="CampusForm Architecture" src="https://github.com/user-attachments/assets/7f35a691-9e30-4164-b31a-19bdbfc5edd7" />
 
+## 협업 방식
+
+- 기준 브랜치는 `main`이며, 운영 배포와 연결됩니다.
+- 기능 개발은 `feat/기능명` 브랜치에서 진행하고 PR로 병합합니다.
+- 리뷰 후 `main`에 병합되면 GitHub Actions를 통해 자동 배포됩니다.
+- 도메인 책임 분리와 이벤트 기반 후처리 원칙을 유지하는 것을 우선합니다.
