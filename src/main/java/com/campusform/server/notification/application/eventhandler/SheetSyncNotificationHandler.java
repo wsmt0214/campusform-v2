@@ -64,11 +64,12 @@ public class SheetSyncNotificationHandler {
         }
     }
 
-    private record SheetSyncPayload(String message, String projectTitle, int syncedCount) {
+    private record SheetSyncPayload(Long applicantId, String message, String projectTitle, int syncedCount) {
     }
 
     private String createSheetSyncPayload(SheetSyncCompletedEvent event, SheetSyncChangeInfo change) {
         SheetSyncPayload payload = new SheetSyncPayload(
+                change.applicantId(),
                 buildMessage(change),
                 event.projectTitle(),
                 event.statistics().totalSyncedCount());
