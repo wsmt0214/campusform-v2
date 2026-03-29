@@ -46,4 +46,14 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     public int markAllAsReadByReceiverId(Long receiverId) {
         return notificationJpaRepository.markAllAsReadByReceiverId(receiverId);
     }
+
+    @Override
+    public void deleteByProjectId(Long projectId) {
+        notificationJpaRepository.deleteByProjectId(projectId);
+    }
+
+    @Override
+    public void deleteByReceiverId(Long receiverId) {
+        notificationJpaRepository.deleteByReceiverId(receiverId);
+    }
 }

@@ -15,6 +15,16 @@ import com.campusform.server.recruiting.domain.model.comment.Comment;
  */
 public interface CommentJpaRepository extends JpaRepository<Comment, Long> {
 
+    List<Comment> findByAuthorIdAndParentIsNull(Long authorId);
+
+    List<Comment> findByAuthorId(Long authorId);
+
+    boolean existsByAuthorId(Long authorId);
+
+    boolean existsByParent_Id(Long parentId);
+
+    List<Comment> findByApplicantIdInAndParentIsNull(List<Long> applicantIds);
+
     List<Comment> findAllByApplicantIdAndStageOrderByCreatedAtAsc(Long applicantId, RecruitmentStage stage);
 
     @Query("SELECT c FROM Comment c " +

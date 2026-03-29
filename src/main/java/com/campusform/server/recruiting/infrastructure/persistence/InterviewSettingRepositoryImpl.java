@@ -38,4 +38,12 @@ public class InterviewSettingRepositoryImpl implements InterviewSettingRepositor
     public Optional<InterviewSetting> findByInvestigationLinkToken(String token) {
         return interviewSettingJpaRepository.findByInvestigationLinkToken(token);
     }
+
+    @Override
+    public void delete(InterviewSetting setting) {
+        if (setting == null) {
+            throw new IllegalArgumentException("InterviewSetting은 null일 수 없습니다.");
+        }
+        interviewSettingJpaRepository.delete(setting);
+    }
 }

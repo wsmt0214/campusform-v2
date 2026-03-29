@@ -16,4 +16,6 @@ public interface MessageTemplateRepository{
     // 조회
     Optional<MessageTemplate> findByProjectId(Long projectId);
 
+    void deleteByProjectId(Long projectId);
+
 }

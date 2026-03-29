@@ -41,6 +41,7 @@ public class ProjectCommandService {
     private final ApplicantRepository applicantRepository;
     private final UserRepository userRepository;
     private final ProjectAccessService projectAccessService;
+    private final ProjectRelatedDataDeletionService projectRelatedDataDeletionService;
 
     @Transactional
     public ProjectResponse createProject(Long ownerId, CreateProjectRequest request) {
@@ -98,6 +99,7 @@ public class ProjectCommandService {
     @Transactional
     public void deleteProject(Long projectId, Long userId) {
         Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
+        projectRelatedDataDeletionService.deleteAllForProject(projectId);
         projectRepository.delete(project);
     }
 

@@ -24,4 +24,9 @@ public class MessageTemplateRepositoryImpl implements MessageTemplateRepository 
     public Optional<MessageTemplate> findByProjectId(Long projectId) {
         return jpaRepository.findById(projectId);
     }
+
+    @Override
+    public void deleteByProjectId(Long projectId) {
+        jpaRepository.findById(projectId).ifPresent(jpaRepository::delete);
+    }
 }

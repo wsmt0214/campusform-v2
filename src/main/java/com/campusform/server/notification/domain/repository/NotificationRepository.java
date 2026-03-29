@@ -27,4 +27,8 @@ public interface NotificationRepository {
      * 사용자의 모든 안읽은 알림을 읽음 처리 (벌크 업데이트)
      */
     int markAllAsReadByReceiverId(Long receiverId);
+
+    void deleteByProjectId(Long projectId);
+
+    void deleteByReceiverId(Long receiverId);
 }

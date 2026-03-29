@@ -44,4 +44,30 @@ public class CommentRepositoryImpl implements CommentRepository {
     public List<Comment> findAllByProjectIdAndStageOrderByCreatedAtAsc(Long projectId, RecruitmentStage stage) {
         return jpaRepository.findAllByProjectIdAndStageOrderByCreatedAtAsc(projectId, stage);
     }
+
+    @Override
+    public List<Comment> findRootCommentsByApplicantIds(List<Long> applicantIds) {
+        if (applicantIds == null || applicantIds.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findByApplicantIdInAndParentIsNull(applicantIds);
+    }
+
+    @Override
+    public void deleteAllWrittenByAuthorId(Long authorId) {
+        if (authorId == null) {
+            return;
+        }
+        for (Comment root : jpaRepository.findByAuthorIdAndParentIsNull(authorId)) {
+            jpaRepository.delete(root);
+        }
+        while (jpaRepository.existsByAuthorId(authorId)) {
+            Comment leaf = jpaRepository.findByAuthorId(authorId).stream()
+                    .filter(c -> !jpaRepository.existsByParent_Id(c.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                            "작성자 댓글 삭제 중 순서를 결정할 수 없습니다. authorId=" + authorId));
+            jpaRepository.delete(leaf);
+        }
+    }
 }

@@ -51,4 +51,9 @@ public class UserRepositoryImpl implements UserRepository {
     public List<User> findByIds(List<Long> ids) {
         return userJpaRepository.findAllById(ids);
     }
+
+    @Override
+    public void delete(User user) {
+        userJpaRepository.delete(user);
+    }
 }
