@@ -55,4 +55,15 @@ public class IntervieweeAvailabilitySlotRepositoryImpl implements IntervieweeAva
     public List<IntervieweeAvailabilitySlot> findByInterviewDayIdIn(List<Long> interviewDayIds) {
         return jpaRepository.findByInterviewDayIdIn(interviewDayIds);
     }
+
+    @Override
+    public void deleteAllByInterviewDayIdIn(List<Long> interviewDayIds) {
+        if (interviewDayIds == null || interviewDayIds.isEmpty()) {
+            return;
+        }
+        List<IntervieweeAvailabilitySlot> slots = jpaRepository.findByInterviewDayIdIn(interviewDayIds);
+        if (!slots.isEmpty()) {
+            jpaRepository.deleteAll(slots);
+        }
+    }
 }

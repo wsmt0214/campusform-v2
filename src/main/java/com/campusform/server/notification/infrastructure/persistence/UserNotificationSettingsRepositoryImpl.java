@@ -34,4 +34,9 @@ public class UserNotificationSettingsRepositoryImpl implements UserNotificationS
     public boolean existsByUserId(Long userId) {
         return settingsJpaRepository.existsByUserId(userId);
     }
+
+    @Override
+    public void delete(UserNotificationSettings settings) {
+        settingsJpaRepository.delete(settings);
+    }
 }

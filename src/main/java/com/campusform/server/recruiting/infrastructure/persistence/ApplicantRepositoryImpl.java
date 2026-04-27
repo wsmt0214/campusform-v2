@@ -126,4 +126,12 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     public List<String> findDistinctPositionValuesByProjectId(Long projectId) {
         return applicantJpaRepository.findDistinctPositionByProjectId(projectId);
     }
+
+    @Override
+    public void deleteAllByProjectId(Long projectId) {
+        List<Applicant> applicants = applicantJpaRepository.findByProjectId(projectId);
+        if (!applicants.isEmpty()) {
+            applicantJpaRepository.deleteAll(applicants);
+        }
+    }
 }

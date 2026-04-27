@@ -25,4 +25,6 @@ public interface UserRepository {
     boolean existsById(Long adminId);
 
     List<User> findByIds(List<Long> ids);
+
+    void delete(User user);
 }

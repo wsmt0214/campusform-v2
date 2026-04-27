@@ -84,4 +84,9 @@ public interface ApplicantRepository {
      * 프로젝트 지원자들의 포지션 컬럼에 등장하는 고유값 목록 조회 (null·공백 제외, 정렬)
      */
     List<String> findDistinctPositionValuesByProjectId(Long projectId);
+
+    /**
+     * 프로젝트에 속한 지원자 전체 삭제 (추가 답변 등 cascade는 영속성 컨텍스트 기준)
+     */
+    void deleteAllByProjectId(Long projectId);
 }

@@ -24,4 +24,6 @@ public interface InterviewSettingRepository {
      * 루트 애그리거트를 통해 접근합니다.
      */
     Optional<InterviewSetting> findByInvestigationLinkToken(String token);
+
+    void delete(InterviewSetting setting);
 }

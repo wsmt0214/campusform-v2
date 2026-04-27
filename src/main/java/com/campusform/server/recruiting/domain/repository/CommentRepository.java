@@ -22,4 +22,15 @@ public interface CommentRepository {
     List<Comment> findAllByApplicantIdAndStageOrderByCreatedAtAsc(Long applicantId, RecruitmentStage stage);
 
     List<Comment> findAllByProjectIdAndStageOrderByCreatedAtAsc(Long projectId, RecruitmentStage stage);
+
+    /**
+     * 지원자별 최상위 댓글(parent가 없는 댓글)만 조회. 하위 답글은 삭제 시 cascade로 제거됩니다.
+     */
+    List<Comment> findRootCommentsByApplicantIds(List<Long> applicantIds);
+
+    /**
+     * 해당 작성자가 남긴 댓글·답글을 모두 삭제합니다.
+     * 루트 댓글은 기존 단건 삭제와 같이 하위 답글 전체가 함께 제거됩니다.
+     */
+    void deleteAllWrittenByAuthorId(Long authorId);
 }

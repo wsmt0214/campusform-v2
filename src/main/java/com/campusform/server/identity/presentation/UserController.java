@@ -1,5 +1,7 @@
 package com.campusform.server.identity.presentation;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -7,11 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.identity.application.dto.request.UpdateNotificationSettingRequest;
 import com.campusform.server.identity.application.dto.response.NotificationSettingResponse;
 import com.campusform.server.identity.application.dto.response.UserExistsResponse;
 import com.campusform.server.identity.application.service.UserQueryService;
+import com.campusform.server.identity.application.service.UserWithdrawalService;
 import com.campusform.server.notification.application.service.NotificationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +32,7 @@ public class UserController {
 
     private final UserQueryService userQueryService;
     private final NotificationService notificationService;
+    private final UserWithdrawalService userWithdrawalService;
 
     /**
      * 이메일로 회원 존재 여부 확인
@@ -57,5 +63,16 @@ public class UserController {
             @RequestBody UpdateNotificationSettingRequest request) {
         boolean enabled = notificationService.updateNotificationSetting(userId, request.enabled());
         return new NotificationSettingResponse(enabled);
+    }
+
+    /**
+     * 회원 탈퇴 (소유 프로젝트 삭제·공동 관리자 해제 후 사용자 및 연동 정보 삭제, 세션 무효화)
+     */
+    @Operation(summary = "회원 탈퇴", description = "현재 계정을 삭제합니다. 본인이 소유한 프로젝트와 관련 데이터가 함께 삭제되며, 다른 프로젝트의 공동 관리자인 경우 해당 프로젝트에서만 제외됩니다.")
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(@CurrentUserId Long userId, HttpServletRequest request) {
+        userWithdrawalService.withdraw(userId);
+        request.getSession().invalidate();
+        return ResponseEntity.noContent().build();
     }
 }

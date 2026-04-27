@@ -14,4 +14,6 @@ public interface UserNotificationSettingsRepository {
     Optional<UserNotificationSettings> findByUserId(Long userId);
 
     boolean existsByUserId(Long userId);
+
+    void delete(UserNotificationSettings settings);
 }

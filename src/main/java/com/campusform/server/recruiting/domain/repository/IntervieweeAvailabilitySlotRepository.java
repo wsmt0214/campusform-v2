@@ -44,4 +44,9 @@ public interface IntervieweeAvailabilitySlotRepository {
      * 스마트 시간표 알고리즘에서 사용합니다.
      */
     List<IntervieweeAvailabilitySlot> findByInterviewDayIdIn(List<Long> interviewDayIds);
+
+    /**
+     * 해당 면접일 ID들에 연결된 지원자 가능 슬롯 전부 삭제
+     */
+    void deleteAllByInterviewDayIdIn(List<Long> interviewDayIds);
 }
