@@ -34,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProjectCommandService {
 
-    private final SpreadsheetService spreadsheetService;
     private final GoogleOAuthTokenService tokenService;
     private final ApplicationEventPublisher eventPublisher;
     private final ProjectRepository projectRepository;
@@ -71,7 +70,6 @@ public class ProjectCommandService {
             throw new TokenNotFoundException(
                     "Google Sheets 권한이 필요합니다. OAuth 인증을 먼저 진행해주세요. ownerId=" + ownerId);
         }
-        spreadsheetService.syncSheet(project.getId());
 
         return ProjectResponse.from(project);
     }
