@@ -22,6 +22,13 @@ public interface ApplicantRepository {
     // 2. 일괄 저장 (ResultCommandService.announceResults에서 사용)
     void saveAll(List<Applicant> applicants);
 
+    /**
+     * 일괄 저장 후 저장된 엔티티 반환
+     *
+     * 시트 동기화처럼 "신규 생성 후 생성된 id를 즉시 응답에 포함"해야 하는 유즈케이스에서 사용
+     */
+    List<Applicant> saveAllReturning(List<Applicant> applicants);
+
     // 3. 단건 조회 (SmsService에서 사용)
     Optional<Applicant> findById(Long id);
 
@@ -63,6 +70,14 @@ public interface ApplicantRepository {
      * 최종 면접시간(Manual 우선 + Auto fallback) 조회 API에서 사용됩니다.
      */
     List<Applicant> findByProjectId(Long projectId);
+
+    /**
+     * 시트 동기화 전용 preload 조회
+     *
+     * 동기화 로직의 변경 감지 단계에서 extraAnswers 접근이 포함되므로,
+     * extraAnswers까지 함께 로딩하는 전용 조회로 분리
+     */
+    List<Applicant> findByProjectIdForSheetSync(Long projectId);
 
     /**
      * 프로젝트ID, 이름, 전화번호로 지원자 조회

@@ -35,6 +35,11 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
         applicantJpaRepository.saveAll(applicants);
     }
 
+    @Override
+    public List<Applicant> saveAllReturning(List<Applicant> applicants) {
+        return applicantJpaRepository.saveAll(applicants);
+    }
+
     // 3. ID로 조회 (여러 건)
     @Override
     public List<Applicant> findAllById(List<Long> ids) {
@@ -105,6 +110,11 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     @Override
     public List<Applicant> findByProjectId(Long projectId) {
         return applicantJpaRepository.findByProjectId(projectId);
+    }
+
+    @Override
+    public List<Applicant> findByProjectIdForSheetSync(Long projectId) {
+        return applicantJpaRepository.findByProjectIdForSheetSync(projectId);
     }
 
     @Override

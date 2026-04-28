@@ -1,6 +1,7 @@
 package com.campusform.server.project.application.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ import com.campusform.server.project.domain.model.setting.value.SyncStatus;
 import com.campusform.server.project.domain.model.sheet.SpreadsheetColumn;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.project.domain.service.SpreadsheetReader;
+import com.campusform.server.project.loadtest.SheetSyncDiagnosticsRecorder;
+import com.campusform.server.project.loadtest.SheetSyncPhaseRecorder;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.ApplicantExtraAnswer;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
@@ -46,6 +49,8 @@ public class SpreadsheetService {
 
     private final ProjectRepository projectRepository;
     private final ApplicantRepository applicantRepository;
+    private final SheetSyncDiagnosticsRecorder diagnosticsRecorder;
+    private final SheetSyncPhaseRecorder phaseRecorder;
 
     /**
      * 스프레드시트 헤더 조회 -> 칼럼 매핑 위함
@@ -94,8 +99,12 @@ public class SpreadsheetService {
      */
     @Transactional
     public SheetSyncResponse syncSheet(Long projectId) {
+        long methodStartNs = System.nanoTime();
+        long[] phaseNs = new long[] { methodStartNs };
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException(projectId));
+        phaseRecorder.recordPhase(projectId, -1, "load_project", elapsedMsAndReset(phaseNs));
         boolean isInitialSync = project.getLastSyncedAt() == null;
 
         String sheetUrl = project.getSheetUrl();
@@ -115,7 +124,15 @@ public class SpreadsheetService {
 
             // Google Sheets API를 사용하여 헤더 및 데이터 읽기
             List<SpreadsheetColumn> headers = spreadsheetReader.readHeader(sheetUrl, ownerId);
+            phaseRecorder.recordPhase(project.getId(), -1, "read_header", elapsedMsAndReset(phaseNs));
             List<String[]> dataRows = spreadsheetReader.readAllLines(sheetUrl, ownerId);
+            int sheetRows = dataRows.size();
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "read_rows", elapsedMsAndReset(phaseNs));
+
+            // 기존 지원자 preload (extraAnswers 포함) 후 메모리 Map 구성
+            Map<ApplicantKey, Applicant> existingApplicantMap = buildExistingApplicantMap(project.getId());
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "preload_applicants_build_map", elapsedMsAndReset(phaseNs));
+            Set<ApplicantKey> seenSheetKeys = new HashSet<>();
 
             // 포지션 값 치환 규칙: 시트 원시값 → 저장용 값 (동기화 시 적용)
             Map<String, String> positionMapping = project.getValueMappings().stream()
@@ -126,13 +143,22 @@ public class SpreadsheetService {
             List<SheetSyncChangeInfo> eventChanges = new ArrayList<>();
             // 응답 DTO용 변경사항 리스트
             List<SheetSyncResponse.ApplicantChangeInfo> responseChanges = new ArrayList<>();
+            // 신규/수정 대상 누적(배치 저장용)
+            List<Applicant> newApplicantsToSave = new ArrayList<>();
+            List<Applicant> updatedApplicantsToSave = new ArrayList<>();
+
+            int matchedExistingRows = 0;
+            int newCandidateRows = 0;
+            int updatedCandidateRows = 0;
+            int unchangedRows = 0;
+            int duplicateSheetRows = 0;
 
             // 각 행을 지원자로 변환
             int syncedCount = 0;
             for (String[] columns : dataRows) {
                 // 필수 필드 추출
-                String name = getColumnValue(columns, mapping.getNameIdx());
-                String email = getColumnValue(columns, mapping.getEmailIdx());
+                String name = normalizeName(getColumnValue(columns, mapping.getNameIdx()));
+                String email = normalizeEmail(getColumnValue(columns, mapping.getEmailIdx()));
                 String phone = getColumnValue(columns, mapping.getPhoneIdx());
                 String gender = getColumnValue(columns, mapping.getGenderIdx());
                 String school = getColumnValue(columns, mapping.getSchoolIdx());
@@ -141,45 +167,50 @@ public class SpreadsheetService {
                 // 포지션 치환 규칙
                 String position = applyPositionMapping(positionRaw, positionMapping);
 
-                // 기존 지원자 조회 (projectId, name, email로 식별)
-                Applicant applicant = applicantRepository
-                        .findByProjectIdAndNameAndEmail(project.getId(), name, email)
-                        .orElse(null);
+                if (name == null || email == null) {
+                    throw new IllegalArgumentException("시트 필수 값 누락 name/email");
+                }
+
+                ApplicantKey key = ApplicantKey.of(name, email);
+                if (!seenSheetKeys.add(key)) {
+                    duplicateSheetRows++;
+                    syncedCount++;
+                    continue;
+                }
+
+                // 기존 지원자 조회는 메모리 Map에서 수행
+                Applicant applicant = existingApplicantMap.get(key);
 
                 if (applicant != null) { // 기존 응답 존재
-                    List<String> changedFields = detectChangedFields(
+                    matchedExistingRows++;
+                    ChangeDetection detection = detectChanges(
                             applicant, columns, headers, mapping, requiredIndices, position);
 
-                    if (!changedFields.isEmpty()) { // UPDATE 감지됨
-                        // 필수 항목 UPDATE
-                        applicant.updateFromSheet(phone, gender, school, major, position);
-
-                        // 추가 항목 UPDATE
-                        for (int i = 0; i < columns.length && i < headers.size(); i++) {
-                            if (requiredIndices.contains(i))
-                                continue;
-                            String questionText = headers.get(i).getName();
-                            String answerText = getColumnValue(columns, i);
-                            applicant.addExtraAnswer(questionText, answerText, i);
+                    if (!detection.changedFields().isEmpty()) { // UPDATE 감지됨
+                        updatedCandidateRows++;
+                        if (detection.basicChanged()) {
+                            applicant.updateBasicFieldsFromSheet(phone, gender, school, major, position);
+                        }
+                        if (detection.extraChanged()) {
+                            applicant.syncExtraAnswersFromSheet(extractExtraAnswers(columns, headers, requiredIndices));
                         }
 
-                        applicantRepository.save(applicant); // Upsert로 동작
-                        syncedCount++;
+                        updatedApplicantsToSave.add(applicant);
 
                         // 변경사항 기록 (이벤트용)
                         eventChanges.add(new SheetSyncChangeInfo(
                                 applicant.getId(),
                                 applicant.getName(),
                                 ChangeType.UPDATED,
-                                changedFields));
+                                detection.changedFields()));
                         // 변경사항 기록 (응답 DTO용)
                         responseChanges.add(new SheetSyncResponse.ApplicantChangeInfo(
                                 applicant.getId(),
                                 applicant.getName(),
                                 ChangeType.UPDATED,
-                                changedFields));
+                                detection.changedFields()));
                     } else {
-                        syncedCount++;
+                        unchangedRows++;
                     }
                 } else { // 기존 응답 미존재 = 새로운 row 추가
                     applicant = Applicant.create(
@@ -189,30 +220,57 @@ public class SpreadsheetService {
                     for (int i = 0; i < columns.length && i < headers.size(); i++) {
                         if (requiredIndices.contains(i))
                             continue;
+                        if (isTimestampHeader(headers.get(i)))
+                            continue;
                         String questionText = headers.get(i).getName();
                         String answerText = getColumnValue(columns, i);
                         // 시트 헤더의 인덱스를 순서로 저장하여 질문-답변 매칭 보장
                         applicant.addExtraAnswer(questionText, answerText, i);
                     }
 
-                    // 새 지원자를 DB에 저장 (영속성 컨텍스트에 등록)
-                    applicant = applicantRepository.save(applicant);
-                    syncedCount++;
-
-                    // 변경사항 기록 (이벤트용)
-                    eventChanges.add(new SheetSyncChangeInfo(
-                            applicant.getId(),
-                            applicant.getName(),
-                            ChangeType.NEW,
-                            List.of()));
-                    // 변경사항 기록 (응답 DTO용)
-                    responseChanges.add(new SheetSyncResponse.ApplicantChangeInfo(
-                            applicant.getId(),
-                            applicant.getName(),
-                            ChangeType.NEW,
-                            List.of()));
+                    newCandidateRows++;
+                    newApplicantsToSave.add(applicant);
                 }
+
+                syncedCount++;
             }
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "diff_loop", elapsedMsAndReset(phaseNs));
+
+            // 배치 저장 적용
+            List<Applicant> savedNewApplicants = newApplicantsToSave.isEmpty()
+                    ? List.of()
+                    : applicantRepository.saveAllReturning(newApplicantsToSave);
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "save_new", elapsedMsAndReset(phaseNs));
+            if (!updatedApplicantsToSave.isEmpty()) {
+                applicantRepository.saveAll(updatedApplicantsToSave);
+            }
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "save_updated", elapsedMsAndReset(phaseNs));
+
+            // 신규 지원자 변경사항은 저장 후 id를 확보한 뒤 기록
+            for (Applicant applicant : savedNewApplicants) {
+                eventChanges.add(new SheetSyncChangeInfo(
+                        applicant.getId(),
+                        applicant.getName(),
+                        ChangeType.NEW,
+                        List.of()));
+                responseChanges.add(new SheetSyncResponse.ApplicantChangeInfo(
+                        applicant.getId(),
+                        applicant.getName(),
+                        ChangeType.NEW,
+                        List.of()));
+            }
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "build_changes", elapsedMsAndReset(phaseNs));
+
+            diagnosticsRecorder.recordCounts(
+                    project.getId(),
+                    sheetRows,
+                    existingApplicantMap.size(),
+                    matchedExistingRows,
+                    newCandidateRows,
+                    updatedCandidateRows,
+                    unchangedRows,
+                    duplicateSheetRows
+            );
 
             // 통계 정보 계산
             int newCount = (int) eventChanges.stream()
@@ -235,12 +293,56 @@ public class SpreadsheetService {
 
             project.updateSyncStatus(SyncStatus.OK);
             projectRepository.save(project);
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "project_status_save", elapsedMsAndReset(phaseNs));
+            phaseRecorder.recordPhase(project.getId(), sheetRows, "method_return", (System.nanoTime() - methodStartNs) / 1_000_000);
 
             return SheetSyncResponse.success(syncedCount, responseChanges);
         } catch (Exception e) {
             project.updateSyncStatus(SyncStatus.ERROR);
             projectRepository.save(project);
             throw e;
+        }
+    }
+
+    private long elapsedMsAndReset(long[] phaseNsRef) {
+        long now = System.nanoTime();
+        long elapsedMs = (now - phaseNsRef[0]) / 1_000_000;
+        phaseNsRef[0] = now;
+        return elapsedMs;
+    }
+
+    private Map<ApplicantKey, Applicant> buildExistingApplicantMap(Long projectId) {
+        List<Applicant> applicants = applicantRepository.findByProjectIdForSheetSync(projectId);
+        Map<ApplicantKey, Applicant> map = new HashMap<>(Math.max(16, applicants.size() * 2));
+        for (Applicant a : applicants) {
+            ApplicantKey key = ApplicantKey.of(normalizeName(a.getName()), normalizeEmail(a.getEmail()));
+            if (key.name() == null || key.email() == null) {
+                continue;
+            }
+            map.putIfAbsent(key, a);
+        }
+        return map;
+    }
+
+    private static String normalizeName(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String v = raw.trim();
+        return v.isEmpty() ? null : v;
+    }
+
+    private static String normalizeEmail(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        String v = raw.trim().toLowerCase();
+        return v.isEmpty() ? null : v;
+    }
+
+    private record ApplicantKey(String name, String email) {
+        static ApplicantKey of(String name, String email) {
+            return new ApplicantKey(name, email);
         }
     }
 
@@ -268,7 +370,7 @@ public class SpreadsheetService {
     /**
      * 기존 지원자와 시트 데이터를 비교하여 변경된 필드를 감지합니다.
      */
-    private List<String> detectChangedFields(
+    private ChangeDetection detectChanges(
             Applicant applicant,
             String[] columns,
             List<SpreadsheetColumn> headers,
@@ -277,10 +379,13 @@ public class SpreadsheetService {
             String appliedPosition) {
 
         List<String> changedFields = new ArrayList<>();
+        boolean basicChanged = false;
+        boolean extraChanged = false;
 
         // 필수 필드 비교
         String newPhone = getColumnValue(columns, mapping.getPhoneIdx());
         if (!Objects.equals(applicant.getPhone(), newPhone)) {
+            basicChanged = true;
             String headerName = getHeaderName(headers, mapping.getPhoneIdx());
             if (headerName != null) {
                 changedFields.add(headerName);
@@ -289,6 +394,7 @@ public class SpreadsheetService {
 
         String newGender = getColumnValue(columns, mapping.getGenderIdx());
         if (!Objects.equals(applicant.getGender(), newGender)) {
+            basicChanged = true;
             String headerName = getHeaderName(headers, mapping.getGenderIdx());
             if (headerName != null) {
                 changedFields.add(headerName);
@@ -297,6 +403,7 @@ public class SpreadsheetService {
 
         String newSchool = getColumnValue(columns, mapping.getSchoolIdx());
         if (!Objects.equals(applicant.getSchool(), newSchool)) {
+            basicChanged = true;
             String headerName = getHeaderName(headers, mapping.getSchoolIdx());
             if (headerName != null) {
                 changedFields.add(headerName);
@@ -305,6 +412,7 @@ public class SpreadsheetService {
 
         String newMajor = getColumnValue(columns, mapping.getMajorIdx());
         if (!Objects.equals(applicant.getMajor(), newMajor)) {
+            basicChanged = true;
             String headerName = getHeaderName(headers, mapping.getMajorIdx());
             if (headerName != null) {
                 changedFields.add(headerName);
@@ -312,6 +420,7 @@ public class SpreadsheetService {
         }
 
         if (!Objects.equals(applicant.getPosition(), appliedPosition)) {
+            basicChanged = true;
             String headerName = getHeaderName(headers, mapping.getPositionIdx());
             if (headerName != null) {
                 changedFields.add(headerName);
@@ -330,6 +439,8 @@ public class SpreadsheetService {
         for (int i = 0; i < columns.length && i < headers.size(); i++) {
             if (requiredIndices.contains(i))
                 continue;
+            if (isTimestampHeader(headers.get(i)))
+                continue;
 
             String questionText = headers.get(i).getName();
             String newAnswer = getColumnValue(columns, i);
@@ -340,11 +451,39 @@ public class SpreadsheetService {
             String normalizedOldAnswer = (oldAnswer == null) ? "" : oldAnswer;
 
             if (!normalizedNewAnswer.equals(normalizedOldAnswer)) {
+                extraChanged = true;
                 changedFields.add(questionText);
             }
         }
 
-        return changedFields;
+        return new ChangeDetection(changedFields, basicChanged, extraChanged);
+    }
+
+    private List<Applicant.SheetExtraAnswer> extractExtraAnswers(
+            String[] columns,
+            List<SpreadsheetColumn> headers,
+            Set<Integer> requiredIndices) {
+        List<Applicant.SheetExtraAnswer> answers = new ArrayList<>();
+        for (int i = 0; i < columns.length && i < headers.size(); i++) {
+            if (requiredIndices.contains(i)) {
+                continue;
+            }
+            SpreadsheetColumn header = headers.get(i);
+            if (isTimestampHeader(header)) {
+                continue;
+            }
+            String questionText = header.getName();
+            String answerText = getColumnValue(columns, i);
+            answers.add(new Applicant.SheetExtraAnswer(questionText, answerText, i));
+        }
+        return answers;
+    }
+
+    private record ChangeDetection(
+            List<String> changedFields,
+            boolean basicChanged,
+            boolean extraChanged
+    ) {
     }
 
     /**

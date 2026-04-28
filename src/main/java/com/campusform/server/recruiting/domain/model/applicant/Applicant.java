@@ -2,7 +2,10 @@ package com.campusform.server.recruiting.domain.model.applicant;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.AbstractAggregateRoot;
@@ -113,6 +116,66 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
         extraAnswers.add(ApplicantExtraAnswer.create(this, questionText, answerText, orderIndex));
     }
 
+    public void updateBasicFieldsFromSheet(String phone, String gender, String school, String major, String position) {
+        this.phone = phone;
+        this.gender = gender;
+        this.school = school;
+        this.major = major;
+        this.position = position;
+    }
+
+    public void syncExtraAnswersFromSheet(List<SheetExtraAnswer> newAnswers) {
+        Map<Integer, ApplicantExtraAnswer> existingByOrderIndex = new HashMap<>();
+        for (ApplicantExtraAnswer a : this.extraAnswers) {
+            if (a.getOrderIndex() == null) {
+                continue;
+            }
+            existingByOrderIndex.put(a.getOrderIndex(), a);
+        }
+
+        Map<Integer, SheetExtraAnswer> incomingByOrderIndex = new HashMap<>();
+        for (SheetExtraAnswer incoming : newAnswers) {
+            if (incoming.orderIndex() == null) {
+                continue;
+            }
+            incomingByOrderIndex.put(incoming.orderIndex(), incoming);
+        }
+
+        // update or insert
+        for (SheetExtraAnswer incoming : incomingByOrderIndex.values()) {
+            ApplicantExtraAnswer existing = existingByOrderIndex.remove(incoming.orderIndex());
+            if (existing == null) {
+                addExtraAnswer(incoming.questionText(), incoming.answerText(), incoming.orderIndex());
+                continue;
+            }
+            String normalizedNew = normalizeAnswer(incoming.answerText());
+            String normalizedOld = normalizeAnswer(existing.getAnswerText());
+            if (!Objects.equals(normalizedNew, normalizedOld) || !Objects.equals(incoming.questionText(), existing.getQuestionText())) {
+                existing.updateAnswer(incoming.questionText(), incoming.answerText());
+            }
+        }
+
+        // delete remaining (not present anymore)
+        if (!existingByOrderIndex.isEmpty()) {
+            this.extraAnswers.removeIf(a -> a.getOrderIndex() != null && existingByOrderIndex.containsKey(a.getOrderIndex()));
+        }
+    }
+
+    private static String normalizeAnswer(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String v = raw.trim();
+        return v.isEmpty() ? "" : v;
+    }
+
+    public record SheetExtraAnswer(
+            String questionText,
+            String answerText,
+            Integer orderIndex
+    ) {
+    }
+
     /**
      * 면접 단계 진입 가능 여부 검증용 메서드
      * 
@@ -172,12 +235,8 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
      * 심사 상태와 즐겨찾기는 유지하고, 기본 정보와 추가 답변만 업데이트합니다.
      */
     public void updateFromSheet(String phone, String gender, String school, String major, String position) {
-        this.phone = phone;
-        this.gender = gender;
-        this.school = school;
-        this.major = major;
-        this.position = position;
-        // extraAnswers는 orphanRemoval=true이므로 리스트를 비우면 자동 삭제됨
+        updateBasicFieldsFromSheet(phone, gender, school, major, position);
+        // 기존 구현 호환을 위해 유지, Step 6에서는 updateBasicFieldsFromSheet + syncExtraAnswersFromSheet 사용
         this.extraAnswers.clear();
     }
 

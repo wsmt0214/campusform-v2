@@ -66,4 +66,9 @@ public class ApplicantExtraAnswer {
         extraAnswer.orderIndex = orderIndex;
         return extraAnswer;
     }
+
+    public void updateAnswer(String questionText, String answerText) {
+        this.questionText = questionText;
+        this.answerText = answerText;
+    }
 }

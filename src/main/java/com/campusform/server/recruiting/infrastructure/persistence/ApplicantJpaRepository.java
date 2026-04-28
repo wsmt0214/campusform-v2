@@ -44,6 +44,20 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
     List<Applicant> findByProjectId(Long projectId);
 
     /**
+     * 시트 동기화 전용 preload 조회
+     *
+     * 동기화 로직에서 extraAnswers 비교(detectChangedFields)가 포함되므로,
+     * N+1 가능성을 줄이기 위해 extraAnswers까지 함께 로딩하는 조회로 분리
+     */
+    @Query("""
+            select distinct a
+            from Applicant a
+            left join fetch a.extraAnswers
+            where a.projectId = :projectId
+            """)
+    List<Applicant> findByProjectIdForSheetSync(@Param("projectId") Long projectId);
+
+    /**
      * 프로젝트ID, 이름, 전화번호로 지원자 조회
      */
     Optional<Applicant> findByProjectIdAndNameAndPhone(Long projectId, String name, String phone);
