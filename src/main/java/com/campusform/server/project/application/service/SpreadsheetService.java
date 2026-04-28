@@ -8,18 +8,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.campusform.server.project.application.dto.response.SheetSyncResponse;
+import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
 import com.campusform.server.project.domain.event.sheet.ChangeType;
-import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.event.sheet.SheetSyncChangeInfo;
 import com.campusform.server.project.domain.event.sheet.SheetSyncCompletedEvent;
 import com.campusform.server.project.domain.event.sheet.SheetSyncStatistics;
-import com.campusform.server.project.application.dto.response.SpreadsheetColumnResponse;
-import com.campusform.server.project.application.dto.response.SheetSyncResponse;
+import com.campusform.server.project.domain.exception.ProjectNotFoundException;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectRequiredMapping;
 import com.campusform.server.project.domain.model.setting.ProjectValueMapping;
@@ -32,7 +30,6 @@ import com.campusform.server.project.loadtest.SheetSyncPhaseRecorder;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.ApplicantExtraAnswer;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -166,10 +163,6 @@ public class SpreadsheetService {
                 String positionRaw = getColumnValue(columns, mapping.getPositionIdx());
                 // 포지션 치환 규칙
                 String position = applyPositionMapping(positionRaw, positionMapping);
-
-                if (name == null || email == null) {
-                    throw new IllegalArgumentException("시트 필수 값 누락 name/email");
-                }
 
                 ApplicantKey key = ApplicantKey.of(name, email);
                 if (!seenSheetKeys.add(key)) {
