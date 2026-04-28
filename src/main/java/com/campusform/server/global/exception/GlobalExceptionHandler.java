@@ -2,12 +2,14 @@ package com.campusform.server.global.exception;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +65,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("ILLEGAL_STATE", ex.getMessage(), null));
+    }
+
+    /**
+     * 동시 수정 충돌(낙관적 락) 예외 처리
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleOptimisticLockException(OptimisticLockException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("OPTIMISTIC_LOCK_CONFLICT", "동시 수정 충돌이 감지되었습니다.", null));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(OptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("OPTIMISTIC_LOCK_CONFLICT", "동시 수정 충돌이 감지되었습니다.", null));
     }
 
     /**

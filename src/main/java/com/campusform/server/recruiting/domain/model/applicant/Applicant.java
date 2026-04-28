@@ -22,6 +22,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,6 +42,10 @@ public class Applicant extends AbstractAggregateRoot<Applicant> {
     @Id
     @GeneratedValue
     private Long id;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
 
     @Column(name = "project_id", nullable = false)
     private Long projectId;

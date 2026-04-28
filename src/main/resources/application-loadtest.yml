@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/campusform_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: campusform
+    password: campusform
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        "[format_sql]": true
+
+logging:
+  level:
+    "[org.hibernate.SQL]": info
+
