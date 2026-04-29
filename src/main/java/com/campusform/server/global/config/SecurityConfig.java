@@ -12,7 +12,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.context.annotation.Profile;
 import com.campusform.server.identity.infrastructure.oauth2.CookieOAuth2AuthorizationRequestRepository;
 import com.campusform.server.identity.infrastructure.oauth2.CustomLogoutSuccessHandler;
 import com.campusform.server.identity.infrastructure.oauth2.CustomOAuth2UserService;
@@ -25,7 +24,6 @@ import lombok.RequiredArgsConstructor;
  */
 @Configuration
 @EnableWebSecurity
-@Profile("!loadtest")
 @RequiredArgsConstructor
 public class SecurityConfig {
 
