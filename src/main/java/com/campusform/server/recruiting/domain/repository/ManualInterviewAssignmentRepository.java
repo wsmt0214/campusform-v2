@@ -30,6 +30,13 @@ public interface ManualInterviewAssignmentRepository {
     List<ManualInterviewAssignment> findByProjectId(Long projectId);
 
     /**
+     * 프로젝트 ID + 지원자 ID 목록으로 수동 배정 목록 조회
+     *
+     * - 면접 탭 목록처럼 “현재 조회한 지원자들”에 대해서만 수동 배정이 있는지 확인하는 목적
+     */
+    List<ManualInterviewAssignment> findByProjectIdAndApplicantIds(Long projectId, List<Long> applicantIds);
+
+    /**
      * 지원자 ID로 수동 배정 조회
      * 
      * @param applicantId 지원자 ID

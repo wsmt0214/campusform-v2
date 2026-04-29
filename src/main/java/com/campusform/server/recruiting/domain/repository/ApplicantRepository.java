@@ -5,6 +5,9 @@ import java.util.Optional;
 
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantListRow;
+import com.campusform.server.recruiting.domain.repository.projection.ScreeningResultCountRow;
+import com.campusform.server.recruiting.domain.repository.projection.ProjectIdCountRow;
 
 /**
  * 도메인 계층의 Repository 인터페이스
@@ -38,6 +41,13 @@ public interface ApplicantRepository {
     // 프로젝트의 전체 지원자 수 (통계용)
     long countByProjectId(Long projectId);
 
+    /**
+     * 여러 프로젝트에 대한 지원자 수 집계
+     *
+     * - 프로젝트 목록 화면에서 프로젝트별 count를 N번 호출하지 않기 위한 목적
+     */
+    List<ProjectIdCountRow> countByProjectIdsGroupByProjectId(List<Long> projectIds);
+
     // 서류 단계 상태로 조회
     List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status);
 
@@ -62,6 +72,21 @@ public interface ApplicantRepository {
     long countByProjectIdAndDocumentStatusAndInterviewStatus(Long projectId, ScreeningResult documentStatus,
             ScreeningResult interviewStatus);
 
+    /**
+     * 서류 상태별 통계 집계
+     *
+     * - projectId 기준으로 documentStatus별 count를 1회 쿼리로 집계하는 목적
+     */
+    List<ScreeningResultCountRow> countDocumentStatusByProjectId(Long projectId);
+
+    /**
+     * 면접 상태별 통계 집계 (서류 PASS 대상만)
+     *
+     * - projectId + documentStatus=PASS 조건에서 interviewStatus별 count를 1회 쿼리로 집계하는 목적
+     */
+    List<ScreeningResultCountRow> countInterviewStatusByProjectIdWithDocumentStatus(Long projectId,
+            ScreeningResult documentStatus);
+
     boolean existsById(Long applicantId);
 
     /**
@@ -70,6 +95,20 @@ public interface ApplicantRepository {
      * 최종 면접시간(Manual 우선 + Auto fallback) 조회 API에서 사용됩니다.
      */
     List<Applicant> findByProjectId(Long projectId);
+
+    /**
+     * 목록 화면 전용 projection 조회
+     *
+     * - 엔티티 전체 로딩을 피하고, 목록에 필요한 최소 컬럼만 조회하는 목적
+     */
+    List<ApplicantListRow> findListRowsByProjectId(Long projectId);
+
+    /**
+     * 목록 화면 전용 projection 조회 (서류 상태 조건 포함)
+     *
+     * - 면접 탭에서 서류 PASS 대상만 조회하는 목적
+     */
+    List<ApplicantListRow> findListRowsByProjectIdAndDocumentStatus(Long projectId, ScreeningResult documentStatus);
 
     /**
      * 시트 동기화 전용 preload 조회

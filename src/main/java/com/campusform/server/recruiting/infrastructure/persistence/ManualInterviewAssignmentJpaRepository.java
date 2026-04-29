@@ -17,6 +17,8 @@ public interface ManualInterviewAssignmentJpaRepository
 
     List<ManualInterviewAssignment> findByProjectId(Long projectId);
 
+    List<ManualInterviewAssignment> findByProjectIdAndApplicantIdIn(Long projectId, List<Long> applicantIds);
+
     Optional<ManualInterviewAssignment> findByApplicantId(Long applicantId);
 
     Optional<ManualInterviewAssignment> findByProjectIdAndApplicantId(Long projectId, Long applicantId);

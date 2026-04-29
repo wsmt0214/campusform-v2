@@ -22,6 +22,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -36,6 +37,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "applicants", uniqueConstraints = {
         @UniqueConstraint(name = "uk_project_name_email", columnNames = { "project_id", "name", "email" })
+}, indexes = {
+        @Index(name = "idx_project_document_interview", columnList = "project_id, document_status, interview_status")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

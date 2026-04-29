@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantIdCountRow;
 
 /**
  * 도메인 계층의 댓글 Repository 인터페이스
@@ -22,6 +23,13 @@ public interface CommentRepository {
     List<Comment> findAllByApplicantIdAndStageOrderByCreatedAtAsc(Long applicantId, RecruitmentStage stage);
 
     List<Comment> findAllByProjectIdAndStageOrderByCreatedAtAsc(Long projectId, RecruitmentStage stage);
+
+    /**
+     * 프로젝트 + 단계 기준으로 지원자별 댓글 수 집계
+     *
+     * - 댓글 엔티티 전체 로딩 없이 GROUP BY 집계 결과만 조회하는 목적
+     */
+    List<ApplicantIdCountRow> countByProjectIdAndStageGroupByApplicantId(Long projectId, RecruitmentStage stage);
 
     /**
      * 지원자별 최상위 댓글(parent가 없는 댓글)만 조회. 하위 답글은 삭제 시 cascade로 제거됩니다.

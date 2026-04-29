@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantListRow;
+import com.campusform.server.recruiting.domain.repository.projection.ScreeningResultCountRow;
+import com.campusform.server.recruiting.domain.repository.projection.ProjectIdCountRow;
 
 import lombok.RequiredArgsConstructor;
 
@@ -60,6 +63,14 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
         return applicantJpaRepository.countByProjectId(projectId);
     }
 
+    @Override
+    public List<ProjectIdCountRow> countByProjectIdsGroupByProjectId(List<Long> projectIds) {
+        if (projectIds == null || projectIds.isEmpty()) {
+            return List.of();
+        }
+        return applicantJpaRepository.countByProjectIdsGroupByProjectId(projectIds);
+    }
+
     // 6. 서류 전형 상태별 조회
     @Override
     public List<Applicant> findByProjectIdAndDocumentStatus(Long projectId, ScreeningResult status) {
@@ -108,8 +119,29 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
     }
 
     @Override
+    public List<ScreeningResultCountRow> countDocumentStatusByProjectId(Long projectId) {
+        return applicantJpaRepository.countDocumentStatusByProjectId(projectId);
+    }
+
+    @Override
+    public List<ScreeningResultCountRow> countInterviewStatusByProjectIdWithDocumentStatus(Long projectId,
+            ScreeningResult documentStatus) {
+        return applicantJpaRepository.countInterviewStatusByProjectIdWithDocumentStatus(projectId, documentStatus);
+    }
+
+    @Override
     public List<Applicant> findByProjectId(Long projectId) {
         return applicantJpaRepository.findByProjectId(projectId);
+    }
+
+    @Override
+    public List<ApplicantListRow> findListRowsByProjectId(Long projectId) {
+        return applicantJpaRepository.findListRowsByProjectId(projectId);
+    }
+
+    @Override
+    public List<ApplicantListRow> findListRowsByProjectIdAndDocumentStatus(Long projectId, ScreeningResult documentStatus) {
+        return applicantJpaRepository.findListRowsByProjectIdAndDocumentStatus(projectId, documentStatus);
     }
 
     @Override

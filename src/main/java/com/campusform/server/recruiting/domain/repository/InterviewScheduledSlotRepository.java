@@ -22,5 +22,12 @@ public interface InterviewScheduledSlotRepository {
      */
     List<InterviewScheduledSlot> findByProjectIdWithApplicants(Long projectId);
 
+    /**
+     * 프로젝트의 배정된 슬롯을 지원자(applicants)까지 함께 조회하되, applicantId 목록에 해당하는 신청만 로딩합니다.
+     *
+     * - 면접 탭 목록처럼 “현재 조회한 지원자들”에 대해서만 AUTO 배정 정보를 매핑하는 목적
+     */
+    List<InterviewScheduledSlot> findByProjectIdWithApplicantsFiltered(Long projectId, List<Long> applicantIds);
+
     void deleteByProjectId(Long projectId);
 }

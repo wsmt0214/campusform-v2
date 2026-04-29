@@ -2,6 +2,7 @@ package com.campusform.server.project.application.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.ProjectAdmin;
 import com.campusform.server.project.domain.repository.ProjectRepository;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
+import com.campusform.server.recruiting.domain.repository.projection.ProjectIdCountRow;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -36,10 +38,17 @@ public class ProjectQueryService {
      */
     public List<ProjectResponse> getProjectsByUserId(Long userId) {
         List<Project> projects = projectRepository.findByUserId(userId);
-        return projects.stream().map(project -> {
-            long applicantCount = applicantRepository.countByProjectId(project.getId());
-            return ProjectResponse.from(project, applicantCount);
-        }).collect(Collectors.toList());
+        List<Long> projectIds = projects.stream().map(Project::getId).toList();
+        Map<Long, Long> countMap = applicantRepository.countByProjectIdsGroupByProjectId(projectIds).stream()
+                .collect(Collectors.toMap(
+                        ProjectIdCountRow::getProjectId,
+                        r -> r.getCount() != null ? r.getCount() : 0L,
+                        (a, b) -> a + b
+                ));
+
+        return projects.stream()
+                .map(project -> ProjectResponse.from(project, countMap.getOrDefault(project.getId(), 0L)))
+                .toList();
     }
 
     /**
@@ -95,7 +104,7 @@ public class ProjectQueryService {
      * 프로젝트 지원자의 position 컬럼 고유값 종류 조회
      */
     public PositionValuesResponse getStoredPositionValues(Long projectId, Long userId) {
-        Project project = projectAccessService.getProjectWithAdminAccess(projectId, userId);
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
 
         List<String> values = applicantRepository.findDistinctPositionValuesByProjectId(projectId);
         return PositionValuesResponse.from(values);

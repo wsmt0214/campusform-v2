@@ -18,9 +18,11 @@ import com.campusform.server.recruiting.domain.exception.ApplicantNotFoundExcept
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
-import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
 import com.campusform.server.recruiting.domain.repository.CommentRepository;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantListRow;
+import com.campusform.server.recruiting.domain.repository.projection.ScreeningResultCountRow;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantIdCountRow;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -50,36 +52,40 @@ public class ApplicantQueryService {
         long fail;
         // Stage에 따라 대상 범위·집계 기준 결정
         if (stage == RecruitmentStage.DOCUMENT) {
-            // [서류 탭] 전체 지원자 기준, documentStatus로 카운트
-            total = applicantRepository.countByProjectId(projectId);
-            pending = applicantRepository.countByProjectIdAndDocumentStatus(projectId,
-                    ScreeningResult.HOLD);
-            pass = applicantRepository.countByProjectIdAndDocumentStatus(projectId,
-                    ScreeningResult.PASS);
-            fail = applicantRepository.countByProjectIdAndDocumentStatus(projectId,
-                    ScreeningResult.FAIL);
+            // [서류 탭] 전체 지원자 기준, documentStatus로 카운트 (GROUP BY 집계)
+            List<ScreeningResultCountRow> rows = applicantRepository.countDocumentStatusByProjectId(projectId);
+            Map<ScreeningResult, Long> countMap = rows.stream()
+                    .collect(Collectors.toMap(ScreeningResultCountRow::getStatus,
+                            r -> r.getCount() != null ? r.getCount() : 0L,
+                            (a, b) -> a + b));
+            pending = countMap.getOrDefault(ScreeningResult.HOLD, 0L);
+            pass = countMap.getOrDefault(ScreeningResult.PASS, 0L);
+            fail = countMap.getOrDefault(ScreeningResult.FAIL, 0L);
+            total = pending + pass + fail;
         } else if (stage == RecruitmentStage.INTERVIEW) {
-            // [면접 탭] 서류 합격자만 대상, documentStatus=PASS + interviewStatus로 카운트
-            total = applicantRepository.countByProjectIdAndDocumentStatus(projectId,
-                    ScreeningResult.PASS);
-            pending = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
-                    projectId, ScreeningResult.PASS, ScreeningResult.HOLD);
-            pass = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
-                    projectId, ScreeningResult.PASS, ScreeningResult.PASS);
-            fail = applicantRepository.countByProjectIdAndDocumentStatusAndInterviewStatus(
-                    projectId, ScreeningResult.PASS, ScreeningResult.FAIL);
+            // [면접 탭] 서류 합격자만 대상, documentStatus=PASS + interviewStatus로 카운트 (GROUP BY 집계)
+            List<ScreeningResultCountRow> rows = applicantRepository
+                    .countInterviewStatusByProjectIdWithDocumentStatus(projectId, ScreeningResult.PASS);
+            Map<ScreeningResult, Long> countMap = rows.stream()
+                    .collect(Collectors.toMap(ScreeningResultCountRow::getStatus,
+                            r -> r.getCount() != null ? r.getCount() : 0L,
+                            (a, b) -> a + b));
+            pending = countMap.getOrDefault(ScreeningResult.HOLD, 0L);
+            pass = countMap.getOrDefault(ScreeningResult.PASS, 0L);
+            fail = countMap.getOrDefault(ScreeningResult.FAIL, 0L);
+            total = pending + pass + fail;
         } else {
             throw new IllegalArgumentException("서류 또는 면접 단계 중 하나를 선택해야 합니다.");
         }
 
         // 목록 조회 전략
-        List<Applicant> applicants;
+        List<ApplicantListRow> applicants;
         if (stage == RecruitmentStage.DOCUMENT) {
             // 서류 탭: 프로젝트의 모든 지원자
-            applicants = applicantRepository.findByProjectId(projectId);
+            applicants = applicantRepository.findListRowsByProjectId(projectId);
         } else if (stage == RecruitmentStage.INTERVIEW) {
             // 면접 탭: 서류 단계에서 합격(PASS)한 지원자만
-            applicants = applicantRepository.findByProjectIdAndDocumentStatus(projectId,
+            applicants = applicantRepository.findListRowsByProjectIdAndDocumentStatus(projectId,
                     ScreeningResult.PASS);
         } else {
             // 위에서 이미 예외 처리했지만, 방어적 코드
@@ -88,16 +94,21 @@ public class ApplicantQueryService {
 
         // 단계별 댓글 개수 집계 (해당 프로젝트 + 단계 기준)
         Map<Long, Long> commentCountMap = commentRepository
-                .findAllByProjectIdAndStageOrderByCreatedAtAsc(projectId, stage).stream()
-                .collect(Collectors.groupingBy(Comment::getApplicantId, Collectors.counting()));
+                .countByProjectIdAndStageGroupByApplicantId(projectId, stage).stream()
+                .collect(Collectors.toMap(
+                        ApplicantIdCountRow::getApplicantId,
+                        r -> r.getCount() != null ? r.getCount() : 0L,
+                        (a, b) -> a + b
+                ));
 
         // 면접 단계일 때만 최종 배정 면접 시간 조회
         // 수동 배정은 InterviewSetting 없이도 가능하므로, 면접 설정 유무와 관계없이 항상 조회
         // (getAssignedTimes 내부에서 수동/자동/미배정을 구분해 반환)
         Map<Long, InterviewAssignedTimeResponse> assignedTimeMap = Map.of();
         if (stage == RecruitmentStage.INTERVIEW) {
+            List<Long> applicantIds = applicants.stream().map(ApplicantListRow::getId).toList();
             List<InterviewAssignedTimeResponse> assignedTimes =
-                    interviewAssignmentQueryService.getAssignedTimes(projectId, userId);
+                    interviewAssignmentQueryService.getAssignedTimesForApplicants(projectId, applicantIds, userId);
             assignedTimeMap = assignedTimes.stream()
                     .collect(Collectors.toMap(InterviewAssignedTimeResponse::getApplicantId,
                             it -> it, (existing, replacement) -> existing));
@@ -124,16 +135,22 @@ public class ApplicantQueryService {
                     interviewTimeSource = assigned.getSource();
                 }
             }
-            return ApplicantResponse.builder().id(applicant.getId()).name(applicant.getName())
-                    .school(applicant.getSchool()).position(applicant.getPosition())
+            boolean bookmarked = (stage == RecruitmentStage.DOCUMENT)
+                    ? Boolean.TRUE.equals(applicant.getDocumentBookmarked())
+                    : Boolean.TRUE.equals(applicant.getInterviewBookmarked());
+
+            return ApplicantResponse.builder()
+                    .id(applicant.getId())
+                    .name(applicant.getName())
+                    .school(applicant.getSchool())
+                    .position(applicant.getPosition())
                     .major(applicant.getMajor())
-                    // 현재 단계 기준 즐겨찾기 여부
-                    .bookmarked(applicant.isBookmarkedFor(stage))
-                    // 현재 단계 기준 상태
+                    .bookmarked(bookmarked)
                     .status(currentStatus.name())
-                    // 현재 단계 댓글 개수
-                    .commentCount(commentCount).interviewDate(interviewDate)
-                    .interviewStartTime(interviewStartTime).interviewTimeSource(interviewTimeSource)
+                    .commentCount(commentCount)
+                    .interviewDate(interviewDate)
+                    .interviewStartTime(interviewStartTime)
+                    .interviewTimeSource(interviewTimeSource)
                     .build();
         }).toList();
 

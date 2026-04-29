@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- 콘솔 출력: INFO 이상 표시 (log.info가 보이도록) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
     </appender>
 
     <!-- 루트 로거: 콘솔에 INFO 이상 출력 -->
@@ -19,4 +15,11 @@
     <!-- Spring 기본 로그는 WARN으로 줄여서 노이즈 감소 (선택) -->
     <logger name="org.springframework" level="WARN"/>
     <logger name="org.hibernate" level="WARN"/>
+
+    <!-- loadtest에서는 SQL/바인딩 로그를 보기 위해 콘솔 레벨을 완화 -->
+    <springProfile name="loadtest">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 </configuration>

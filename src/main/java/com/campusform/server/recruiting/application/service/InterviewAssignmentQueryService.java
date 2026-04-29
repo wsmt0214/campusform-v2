@@ -81,6 +81,54 @@ public class InterviewAssignmentQueryService {
     }
 
     /**
+     * 특정 지원자 목록(applicantIds)의 최종 면접시간 조회
+     *
+     * - 면접 탭 목록처럼 “현재 조회된 지원자들”만 대상으로 면접 시간을 매핑하는 목적
+     * - 프로젝트 전체 지원자 엔티티 재조회 비용을 제거하는 목적
+     */
+    public List<InterviewAssignedTimeResponse> getAssignedTimesForApplicants(Long projectId, List<Long> applicantIds,
+            Long userId) {
+        Project project = contextLoader.loadProjectOrThrow(projectId);
+        project.validateAdminAccess(userId);
+
+        if (applicantIds == null || applicantIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, ManualInterviewAssignment> manualMap = manualAssignmentRepository
+                .findByProjectIdAndApplicantIds(projectId, applicantIds).stream()
+                .collect(Collectors.toMap(ManualInterviewAssignment::getApplicantId, a -> a));
+
+        Map<Long, AutoTime> autoMap = scheduledSlotRepository
+                .findByProjectIdWithApplicantsFiltered(projectId, applicantIds).stream()
+                .sorted(Comparator.comparing(InterviewScheduledSlot::getDate)
+                        .thenComparing(InterviewScheduledSlot::getStartTime))
+                .flatMap(slot -> slot.getApplicants().stream()
+                        .map(a -> new AutoTime(a.getApplicantId(), slot.getDate(), slot.getStartTime())))
+                .collect(Collectors.toMap(AutoTime::applicantId, t -> t, (existing, replacement) -> existing));
+
+        return applicantIds.stream()
+                .map(applicantId -> {
+                    ManualInterviewAssignment manual = manualMap.get(applicantId);
+                    if (manual != null) {
+                        return InterviewAssignedTimeResponse.of(
+                                applicantId, manual.getInterviewDate(), manual.getStartTime(),
+                                InterviewTimeSource.MANUAL);
+                    }
+
+                    AutoTime auto = autoMap.get(applicantId);
+                    if (auto != null) {
+                        return InterviewAssignedTimeResponse.of(
+                                applicantId, auto.date(), auto.startTime(),
+                                InterviewTimeSource.AUTO);
+                    }
+
+                    return InterviewAssignedTimeResponse.of(applicantId, null, null, InterviewTimeSource.NONE);
+                })
+                .toList();
+    }
+
+    /**
      * 특정 지원자(applicantId)의 면접 시간 배정만 조회
      */
     public Optional<InterviewAssignedTimeResponse> getAssignedTimeForApplicant(

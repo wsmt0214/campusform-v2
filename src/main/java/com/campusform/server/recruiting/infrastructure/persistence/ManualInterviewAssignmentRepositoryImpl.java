@@ -39,6 +39,14 @@ public class ManualInterviewAssignmentRepositoryImpl
     }
 
     @Override
+    public List<ManualInterviewAssignment> findByProjectIdAndApplicantIds(Long projectId, List<Long> applicantIds) {
+        if (applicantIds == null || applicantIds.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findByProjectIdAndApplicantIdIn(projectId, applicantIds);
+    }
+
+    @Override
     public Optional<ManualInterviewAssignment> findByApplicantId(Long applicantId) {
         return jpaRepository.findByApplicantId(applicantId);
     }

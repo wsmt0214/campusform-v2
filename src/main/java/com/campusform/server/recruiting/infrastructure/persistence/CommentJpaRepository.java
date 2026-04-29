@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantIdCountRow;
 
 /**
  * JPA 기반 댓글 Repository (Infrastructure 계층)
@@ -33,4 +34,19 @@ public interface CommentJpaRepository extends JpaRepository<Comment, Long> {
             "ORDER BY c.createdAt ASC")
     List<Comment> findAllByProjectIdAndStageOrderByCreatedAtAsc(@Param("projectId") Long projectId,
             @Param("stage") RecruitmentStage stage);
+
+    @Query("""
+            select
+                c.applicantId as applicantId,
+                count(c.id) as count
+            from Comment c
+            join Applicant a on c.applicantId = a.id
+            where a.projectId = :projectId
+              and c.stage = :stage
+            group by c.applicantId
+            """)
+    List<ApplicantIdCountRow> countByProjectIdAndStageGroupByApplicantId(
+            @Param("projectId") Long projectId,
+            @Param("stage") RecruitmentStage stage
+    );
 }

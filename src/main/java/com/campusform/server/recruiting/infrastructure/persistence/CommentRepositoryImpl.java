@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.campusform.server.recruiting.domain.model.applicant.value.RecruitmentStage;
 import com.campusform.server.recruiting.domain.model.comment.Comment;
 import com.campusform.server.recruiting.domain.repository.CommentRepository;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantIdCountRow;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +44,11 @@ public class CommentRepositoryImpl implements CommentRepository {
     @Override
     public List<Comment> findAllByProjectIdAndStageOrderByCreatedAtAsc(Long projectId, RecruitmentStage stage) {
         return jpaRepository.findAllByProjectIdAndStageOrderByCreatedAtAsc(projectId, stage);
+    }
+
+    @Override
+    public List<ApplicantIdCountRow> countByProjectIdAndStageGroupByApplicantId(Long projectId, RecruitmentStage stage) {
+        return jpaRepository.countByProjectIdAndStageGroupByApplicantId(projectId, stage);
     }
 
     @Override

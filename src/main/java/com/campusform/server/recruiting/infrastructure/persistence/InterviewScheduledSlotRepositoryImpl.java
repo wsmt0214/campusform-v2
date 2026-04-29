@@ -36,6 +36,14 @@ public class InterviewScheduledSlotRepositoryImpl implements InterviewScheduledS
         return jpaRepository.findByProjectIdWithApplicants(projectId);
     }
 
+    @Override
+    public List<InterviewScheduledSlot> findByProjectIdWithApplicantsFiltered(Long projectId, List<Long> applicantIds) {
+        if (applicantIds == null || applicantIds.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findByProjectIdWithApplicantsFiltered(projectId, applicantIds);
+    }
+
     /**
      * 프로젝트의 배정 슬롯 전체 삭제.
      * 자식(applicants, interviewers)이 있어 FK 제약이 있으므로 엔티티 조회 후 deleteAll로 삭제해 cascade로 자식 먼저 삭제되게 함.

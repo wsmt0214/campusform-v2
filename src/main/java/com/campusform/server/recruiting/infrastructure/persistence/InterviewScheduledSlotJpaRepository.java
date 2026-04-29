@@ -21,4 +21,12 @@ public interface InterviewScheduledSlotJpaRepository extends JpaRepository<Inter
             "LEFT JOIN FETCH s.applicants " +
             "WHERE s.projectId = :projectId")
     List<InterviewScheduledSlot> findByProjectIdWithApplicants(@Param("projectId") Long projectId);
+
+    @Query("SELECT DISTINCT s FROM InterviewScheduledSlot s " +
+            "LEFT JOIN FETCH s.applicants a " +
+            "WHERE s.projectId = :projectId AND a.applicantId IN :applicantIds")
+    List<InterviewScheduledSlot> findByProjectIdWithApplicantsFiltered(
+            @Param("projectId") Long projectId,
+            @Param("applicantIds") List<Long> applicantIds
+    );
 }

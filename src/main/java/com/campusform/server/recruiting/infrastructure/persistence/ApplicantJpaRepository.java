@@ -1,17 +1,17 @@
 package com.campusform.server.recruiting.infrastructure.persistence;
 
 
-import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
-
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import com.campusform.server.recruiting.domain.model.applicant.Applicant;
+import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
+import com.campusform.server.recruiting.domain.repository.projection.ApplicantListRow;
+import com.campusform.server.recruiting.domain.repository.projection.ScreeningResultCountRow;
+import com.campusform.server.recruiting.domain.repository.projection.ProjectIdCountRow;
 
 /**
  * Spring Data JPA를 위한 Applicant Repository
@@ -77,4 +77,86 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
      */
     @Query("SELECT DISTINCT a.position FROM Applicant a WHERE a.projectId = :projectId AND a.position IS NOT NULL AND TRIM(a.position) != '' ORDER BY a.position")
     List<String> findDistinctPositionByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 목록 화면 전용 projection 조회
+     */
+    @Query("""
+            select
+                a.id as id,
+                a.name as name,
+                a.school as school,
+                a.major as major,
+                a.position as position,
+                a.documentStatus as documentStatus,
+                a.interviewStatus as interviewStatus,
+                a.documentBookmarked as documentBookmarked,
+                a.interviewBookmarked as interviewBookmarked
+            from Applicant a
+            where a.projectId = :projectId
+            """)
+    List<ApplicantListRow> findListRowsByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 목록 화면 전용 projection 조회 (서류 상태 조건 포함)
+     */
+    @Query("""
+            select
+                a.id as id,
+                a.name as name,
+                a.school as school,
+                a.major as major,
+                a.position as position,
+                a.documentStatus as documentStatus,
+                a.interviewStatus as interviewStatus,
+                a.documentBookmarked as documentBookmarked,
+                a.interviewBookmarked as interviewBookmarked
+            from Applicant a
+            where a.projectId = :projectId
+              and a.documentStatus = :documentStatus
+            """)
+    List<ApplicantListRow> findListRowsByProjectIdAndDocumentStatus(
+            @Param("projectId") Long projectId,
+            @Param("documentStatus") ScreeningResult documentStatus
+    );
+
+    /**
+     * 서류 상태별 통계 집계
+     */
+    @Query("""
+            select
+                a.documentStatus as status,
+                count(a.id) as count
+            from Applicant a
+            where a.projectId = :projectId
+            group by a.documentStatus
+            """)
+    List<ScreeningResultCountRow> countDocumentStatusByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 면접 상태별 통계 집계 (서류 상태 조건 포함)
+     */
+    @Query("""
+            select
+                a.interviewStatus as status,
+                count(a.id) as count
+            from Applicant a
+            where a.projectId = :projectId
+              and a.documentStatus = :documentStatus
+            group by a.interviewStatus
+            """)
+    List<ScreeningResultCountRow> countInterviewStatusByProjectIdWithDocumentStatus(
+            @Param("projectId") Long projectId,
+            @Param("documentStatus") ScreeningResult documentStatus
+    );
+
+    @Query("""
+            select
+                a.projectId as projectId,
+                count(a.id) as count
+            from Applicant a
+            where a.projectId in :projectIds
+            group by a.projectId
+            """)
+    List<ProjectIdCountRow> countByProjectIdsGroupByProjectId(@Param("projectIds") List<Long> projectIds);
 }
