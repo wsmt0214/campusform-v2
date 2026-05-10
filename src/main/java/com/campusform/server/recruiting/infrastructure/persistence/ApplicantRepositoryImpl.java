@@ -176,4 +176,9 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
             applicantJpaRepository.deleteAll(applicants);
         }
     }
+
+    @Override
+    public void resetInterviewDataByProjectId(Long projectId) {
+        applicantJpaRepository.resetInterviewDataByProjectId(projectId, ScreeningResult.HOLD);
+    }
 }

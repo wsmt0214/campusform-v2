@@ -263,6 +263,20 @@ public class Project {
     }
 
     /**
+     * 서류 단계로 롤백: INTERVIEW 또는 DOCUMENT_COMPLETE → DOCUMENT
+     *
+     * OWNER만 가능합니다.
+     */
+    public void revertToDocument(Long userId) {
+        validateOwnerAccess(userId);
+        if (state != ProjectState.INTERVIEW && state != ProjectState.DOCUMENT_COMPLETE) {
+            throw new IllegalStateException(
+                    "DOCUMENT 단계로 롤백은 INTERVIEW 또는 DOCUMENT_COMPLETE 상태에서만 가능합니다. 현재 상태: " + state);
+        }
+        this.state = ProjectState.DOCUMENT;
+    }
+
+    /**
      * 시트 동기화 상태 업데이트
      * 
      * @param status 동기화 상태 (OK 또는 ERROR)

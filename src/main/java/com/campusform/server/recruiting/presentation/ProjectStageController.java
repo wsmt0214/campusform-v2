@@ -54,4 +54,13 @@ public class ProjectStageController {
         ProjectResponse response = projectStageTransitionService.completeAll(projectId, userId);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "서류 단계로 롤백", description = "INTERVIEW 또는 DOCUMENT_COMPLETE 상태에서 DOCUMENT 단계로 되돌립니다. INTERVIEW 롤백 시 면접 관련 데이터가 모두 삭제됩니다. (소유자만 가능)")
+    @PatchMapping("/{projectId}/revert-to-document")
+    public ResponseEntity<ProjectResponse> revertToDocument(
+            @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
+            @CurrentUserId Long userId) {
+        ProjectResponse response = projectStageTransitionService.revertToDocument(projectId, userId);
+        return ResponseEntity.ok(response);
+    }
 }
