@@ -78,4 +78,12 @@ public class InterviewerAvailabilityBlockRepositoryImpl implements InterviewerAv
     public List<InterviewerAvailabilityBlock> findByInterviewDayIdIn(List<Long> interviewDayIds) {
         return jpaRepository.findByInterviewDayIdIn(interviewDayIds);
     }
+
+    @Override
+    public void deleteByInterviewDayIdIn(List<Long> interviewDayIds) {
+        if (interviewDayIds == null || interviewDayIds.isEmpty()) {
+            return;
+        }
+        jpaRepository.deleteByInterviewDayIdIn(interviewDayIds);
+    }
 }

@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.campusform.server.recruiting.domain.model.interview.availability.InterviewerAvailabilityBlock;
@@ -35,4 +38,11 @@ public interface InterviewerAvailabilityBlockJpaRepository extends JpaRepository
      * 여러 날짜의 모든 면접관 가용 시간 블록 조회
      */
     List<InterviewerAvailabilityBlock> findByInterviewDayIdIn(List<Long> interviewDayIds);
+
+    /**
+     * 여러 날짜에 해당하는 모든 면접관 가용 시간 블록 일괄 삭제
+     */
+    @Modifying
+    @Query("DELETE FROM InterviewerAvailabilityBlock b WHERE b.interviewDayId IN :interviewDayIds")
+    void deleteByInterviewDayIdIn(@Param("interviewDayIds") List<Long> interviewDayIds);
 }

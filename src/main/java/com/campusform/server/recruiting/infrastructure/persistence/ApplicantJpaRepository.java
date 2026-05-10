@@ -4,6 +4,7 @@ package com.campusform.server.recruiting.infrastructure.persistence;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -77,6 +78,13 @@ public interface ApplicantJpaRepository extends JpaRepository<Applicant, Long> {
      */
     @Query("SELECT DISTINCT a.position FROM Applicant a WHERE a.projectId = :projectId AND a.position IS NOT NULL AND TRIM(a.position) != '' ORDER BY a.position")
     List<String> findDistinctPositionByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 면접 관련 필드 일괄 리셋
+     */
+    @Modifying
+    @Query("UPDATE Applicant a SET a.interviewStatus = :status, a.interviewBookmarked = false WHERE a.projectId = :projectId")
+    void resetInterviewDataByProjectId(@Param("projectId") Long projectId, @Param("status") ScreeningResult status);
 
     /**
      * 목록 화면 전용 projection 조회

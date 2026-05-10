@@ -143,4 +143,9 @@ public interface ApplicantRepository {
      * 프로젝트에 속한 지원자 전체 삭제 (추가 답변 등 cascade는 영속성 컨텍스트 기준)
      */
     void deleteAllByProjectId(Long projectId);
+
+    /**
+     * 프로젝트 지원자의 면접 관련 데이터(interviewStatus, interviewBookmarked)를 초기값으로 일괄 리셋
+     */
+    void resetInterviewDataByProjectId(Long projectId);
 }
