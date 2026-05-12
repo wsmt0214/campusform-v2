@@ -60,16 +60,19 @@ public class SmartScheduleService {
     private final SmartScheduleGenerator generator = new SmartScheduleGenerator();
 
     /**
-     * 스마트 시간표 미리보기 (저장하지 않음)
+     * 스마트 시간표 생성만 수행 (저장하지 않음)
      */
     @Transactional(readOnly = true)
     public SmartScheduleResponse generateSchedule(Long projectId, Long userId) {
         validateScheduleNotConfirmed(projectId);
+        Project project = contextLoader.loadContext(projectId).project();
+        project.validateOwnerAccess(userId);
+        project.validateInterviewStage();
         return toResponse(generateScheduleInternal(projectId));
     }
 
     /**
-     * 스마트 시간표 생성 및 저장
+     * 스마트 시간표 확정: 알고리즘 실행 후 결과를 DB에 저장합니다.
      */
     @Transactional
     public SmartScheduleResponse generateAndSaveSchedule(Long projectId, Long userId) {
