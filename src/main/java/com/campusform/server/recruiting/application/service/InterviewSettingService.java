@@ -26,6 +26,7 @@ public class InterviewSettingService {
     private final InterviewContextLoader contextLoader;
     private final InterviewSettingRepository interviewSettingRepository;
     private final ProjectAccessService projectAccessService;
+    private final InterviewFlowDataDeletionService interviewFlowDataDeletionService;
 
     /**
      * 면접 정보 설정 조회 (프로젝트 OWNER/ADMIN만 조회 가능)
@@ -80,6 +81,20 @@ public class InterviewSettingService {
         }
 
         return convertToResponse(setting);
+    }
+
+    /**
+     * 면접 설정·수집·배정 데이터를 모두 삭제합니다. (1~4단계 초기화, 처음부터 다시 설정)
+     *
+     * <p>{@link InterviewFlowDataDeletionService}와 동일 범위: 스마트 시간표 확정·미배정·수동 배정,
+     * 지원자/면접관 가능 시간, {@link InterviewSetting} 전체 삭제, 지원자 면접 심사 필드 리셋.</p>
+     */
+    @Transactional
+    public void deleteInterviewSettingCompletely(Long projectId, Long userId) {
+        projectAccessService.getProjectWithAdminAccess(projectId, userId);
+        Project project = contextLoader.loadProjectOrThrow(projectId);
+        project.validateInterviewStage();
+        interviewFlowDataDeletionService.deleteAllInterviewFlowData(projectId);
     }
 
     /**
