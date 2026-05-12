@@ -1,7 +1,5 @@
 package com.campusform.server.recruiting.application.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campusform.server.project.application.dto.response.ProjectResponse;
@@ -9,14 +7,7 @@ import com.campusform.server.project.application.service.ProjectAccessService;
 import com.campusform.server.project.domain.model.setting.Project;
 import com.campusform.server.project.domain.model.setting.value.ProjectState;
 import com.campusform.server.recruiting.domain.model.applicant.value.ScreeningResult;
-import com.campusform.server.recruiting.domain.model.interview.setup.InterviewDay;
 import com.campusform.server.recruiting.domain.repository.ApplicantRepository;
-import com.campusform.server.recruiting.domain.repository.InterviewScheduleUnassignedApplicantRepository;
-import com.campusform.server.recruiting.domain.repository.InterviewScheduledSlotRepository;
-import com.campusform.server.recruiting.domain.repository.InterviewSettingRepository;
-import com.campusform.server.recruiting.domain.repository.IntervieweeAvailabilitySlotRepository;
-import com.campusform.server.recruiting.domain.repository.InterviewerAvailabilityBlockRepository;
-import com.campusform.server.recruiting.domain.repository.ManualInterviewAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -31,12 +22,7 @@ public class ProjectStageTransitionService {
 
     private final ProjectAccessService projectAccessService;
     private final ApplicantRepository applicantRepository;
-    private final InterviewSettingRepository interviewSettingRepository;
-    private final IntervieweeAvailabilitySlotRepository intervieweeAvailabilitySlotRepository;
-    private final InterviewerAvailabilityBlockRepository interviewerAvailabilityBlockRepository;
-    private final InterviewScheduledSlotRepository interviewScheduledSlotRepository;
-    private final ManualInterviewAssignmentRepository manualInterviewAssignmentRepository;
-    private final InterviewScheduleUnassignedApplicantRepository interviewScheduleUnassignedApplicantRepository;
+    private final InterviewFlowDataDeletionService interviewFlowDataDeletionService;
 
     /**
      * 면접 단계 시작: DOCUMENT → INTERVIEW
@@ -99,29 +85,10 @@ public class ProjectStageTransitionService {
         Project project = projectAccessService.getProjectWithOwnerAccess(projectId, userId);
 
         if (project.getState() == ProjectState.INTERVIEW) {
-            deleteInterviewData(projectId);
+            interviewFlowDataDeletionService.deleteAllInterviewFlowData(projectId);
         }
 
         project.revertToDocument(userId);
         return ProjectResponse.from(project);
-    }
-
-    private void deleteInterviewData(Long projectId) {
-        interviewScheduledSlotRepository.deleteByProjectId(projectId);
-        manualInterviewAssignmentRepository.deleteByProjectId(projectId);
-        interviewScheduleUnassignedApplicantRepository.deleteByProjectId(projectId);
-
-        interviewSettingRepository.findByProjectId(projectId).ifPresent(setting -> {
-            List<Long> dayIds = setting.getDays().stream()
-                    .map(InterviewDay::getId)
-                    .toList();
-            if (!dayIds.isEmpty()) {
-                intervieweeAvailabilitySlotRepository.deleteAllByInterviewDayIdIn(dayIds);
-                interviewerAvailabilityBlockRepository.deleteByInterviewDayIdIn(dayIds);
-            }
-            interviewSettingRepository.delete(setting);
-        });
-
-        applicantRepository.resetInterviewDataByProjectId(projectId);
     }
 }
