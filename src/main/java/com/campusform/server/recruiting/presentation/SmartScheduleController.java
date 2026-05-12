@@ -1,7 +1,6 @@
 package com.campusform.server.recruiting.presentation;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,18 +24,22 @@ public class SmartScheduleController {
 
     private final SmartScheduleService smartScheduleService;
 
-    @Operation(summary = "스마트 시간표 생성 미리보기", description = "현재까지 수집된 정보를 바탕으로 스마트 시간표를 생성했을 때의 결과를 미리보기로 조회합니다. (저장되지 않음)")
-    @GetMapping
-    public ResponseEntity<SmartScheduleResponse> previewSchedule(
+    @Operation(
+            summary = "스마트 시간표 생성",
+            description = "수집된 정보로 알고리즘을 실행해 결과만 반환합니다. DB에 저장하지 않습니다.")
+    @PostMapping("/generate")
+    public ResponseEntity<SmartScheduleResponse> generateSchedule(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @CurrentUserId Long userId) {
         SmartScheduleResponse response = smartScheduleService.generateSchedule(projectId, userId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "스마트 시간표 생성 및 확정", description = "스마트 시간표를 생성하고, 그 결과를 최종 확정하여 저장합니다.")
-    @PostMapping
-    public ResponseEntity<SmartScheduleResponse> generateAndSaveSchedule(
+    @Operation(
+            summary = "스마트 시간표 확정",
+            description = "알고리즘을 다시 실행한 뒤 그 결과를 DB에 저장하여 확정합니다. (입력이 동일하면 생성 API와 같은 배정이 나옵니다.)")
+    @PostMapping("/confirm")
+    public ResponseEntity<SmartScheduleResponse> confirmSchedule(
             @Parameter(description = "프로젝트 ID") @PathVariable Long projectId,
             @CurrentUserId Long userId) {
         SmartScheduleResponse response = smartScheduleService.generateAndSaveSchedule(projectId, userId);
