@@ -36,7 +36,11 @@ public class AuthService {
 
         return userRepository.findByEmail(email)
                 .map(user -> AuthMeResponse.authenticated(
-                        user.getId(), user.getEmail(), user.getNickname(), user.getProfileImageUrl()))
+                        user.getId(),
+                        user.getEmail(),
+                        user.getNickname(),
+                        user.getProfileImageUrl(),
+                        user.isOnboarded()))
                 .orElseGet(AuthMeResponse::unauthenticated);
     }
 

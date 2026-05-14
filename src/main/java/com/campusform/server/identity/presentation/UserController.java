@@ -14,7 +14,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import com.campusform.server.global.security.CurrentUserId;
 import com.campusform.server.identity.application.dto.request.UpdateNotificationSettingRequest;
 import com.campusform.server.identity.application.dto.response.NotificationSettingResponse;
+import com.campusform.server.identity.application.dto.response.OnboardingCompletedResponse;
 import com.campusform.server.identity.application.dto.response.UserExistsResponse;
+import com.campusform.server.identity.application.service.OnboardingService;
 import com.campusform.server.identity.application.service.UserQueryService;
 import com.campusform.server.identity.application.service.UserWithdrawalService;
 import com.campusform.server.notification.application.service.NotificationService;
@@ -33,6 +35,7 @@ public class UserController {
     private final UserQueryService userQueryService;
     private final NotificationService notificationService;
     private final UserWithdrawalService userWithdrawalService;
+    private final OnboardingService onboardingService;
 
     /**
      * 이메일로 회원 존재 여부 확인
@@ -63,6 +66,13 @@ public class UserController {
             @RequestBody UpdateNotificationSettingRequest request) {
         boolean enabled = notificationService.updateNotificationSetting(userId, request.enabled());
         return new NotificationSettingResponse(enabled);
+    }
+
+    @Operation(summary = "온보딩 완료 처리", description = "현재 로그인한 사용자의 온보딩 완료 상태를 true로 변경합니다.")
+    @PatchMapping("/onboarding")
+    public ResponseEntity<OnboardingCompletedResponse> completeOnboarding(@CurrentUserId Long userId) {
+        OnboardingCompletedResponse response = onboardingService.completeOnboarding(userId);
+        return ResponseEntity.ok(response);
     }
 
     /**

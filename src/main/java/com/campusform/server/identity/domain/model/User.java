@@ -43,6 +43,9 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "is_onboarded", nullable = false, columnDefinition = "boolean default false")
+    private boolean onboarded = false;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,6 +65,10 @@ public class User {
      */
     public void updateProfileImage(String newProfileImageUrl) {
         this.profileImageUrl = newProfileImageUrl;
+    }
+
+    public void completeOnboarding() {
+        this.onboarded = true;
     }
 
     /**
